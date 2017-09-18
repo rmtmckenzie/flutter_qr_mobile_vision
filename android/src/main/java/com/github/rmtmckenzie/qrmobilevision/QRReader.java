@@ -47,8 +47,8 @@ public class QRReader {
     void initializeDetector() {
         SplitBarcodeDetector.FrameReceiver frameReceiver = new SplitBarcodeDetector.FrameReceiver() {
             @Override
-            public void receiveFrame(ByteBuffer frame) {
-                communicator.cameraFrame(frame.array());
+            public void receiveFrame(byte[] frame, int rotation) {
+                communicator.cameraFrame(frame, rotation);
             }
         };
 
@@ -57,9 +57,9 @@ public class QRReader {
             public void receiveQr(Barcode barcode) {
                 communicator.qrRead(barcode.displayValue);
             }
-        }
+        };
 
-        detector = new SplitBarcodeDetector(context, googleDetector, frameReceiver);
+        detector = new SplitBarcodeDetector(context, frameReceiver, qrReceiver);
     }
 
     void start(int width, int height, int heartBeatTimeout) throws IOException, Exception {

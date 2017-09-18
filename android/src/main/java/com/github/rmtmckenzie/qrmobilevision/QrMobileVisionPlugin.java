@@ -1,6 +1,7 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
 import android.content.Context;
+import android.os.Handler;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
@@ -8,7 +9,11 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
 
 import java.io.IOException;
-
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.lang.Integer;
+import java.lang.Runnable;
 
 /**
  * QrMobileVisionPlugin
@@ -35,7 +40,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
   @Override
   public void onMethodCall(MethodCall methodCall, Result result) {
     switch (methodCall.method) {
-      case "start":
+      case "start": {
         Integer width = methodCall.argument("width");
         Integer height = methodCall.argument("height");
         Integer heartbeatTimeout = methodCall.argument("heartbeatTimeout");
@@ -48,42 +53,44 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
           );
           result.success(null);
         } catch (IOException e) {
+          e.printStackTrace();
           result.error("IOException", "Error starting camera because of IOException: " + e.getLocalizedMessage(), null);
         } catch (QRReader.Exception e) {
+          e.printStackTrace();
           result.error(e.reason().name(), "Error starting camera for reason: " + e.reason().name(), null);
         }
+
         break;
-      case "stop":
+      }
+      case "stop": {
         reader.stop();
         result.success(null);
         break;
-      case "heartbeat":
+      }
+      case "heartbeat": {
         reader.heartBeat();
+        result.success(null);
+        break;
+      }
       default:
         result.notImplemented();
     }
   }
 
+  /**
+   *
+   * @param frame
+   * @param rotation - rotation of the camera frame; 0=none, 1=90 degress cc, 2=180, 3=270 degrees cc
+   */
   @Override
-  public void cameraFrame(byte[] frame) {
-    channel.invokeMethod("cameraFrame", frame);
+  public void cameraFrame(byte[] frame, int rotation) {
+    List<Object> arguments = new ArrayList<Object>(Arrays.asList(frame, new Integer(rotation)));
+    channel.invokeMethod("cameraFrame", arguments);
   }
 
   @Override
   public void qrRead(String data) {
+    System.out.println("Invoking qrRead");
     channel.invokeMethod("qrRead", data);
   }
 }
-
-
-/*****
- com.pipa/qrreader
- start
- stop
- heartbeat
-
-
- cameraFrame
- qrRead
-
- */
