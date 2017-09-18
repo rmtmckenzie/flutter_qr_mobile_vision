@@ -45,35 +45,21 @@ public class QRReader {
     }
 
     void initializeDetector() {
-        BarcodeDetector googleDetector = new BarcodeDetector.Builder(context.getApplicationContext()).setBarcodeFormats(
-                Barcode.QR_CODE).build();
-
-        googleDetector.setProcessor(new Detector.Processor<Barcode>() {
-
-            @Override
-            public void release() {
-                // handled when camera is released
-            }
-
-            @Override
-            public void receiveDetections(Detector.Detections<Barcode> detections) {
-                SparseArray<Barcode> detectedItems = detections.getDetectedItems();
-
-                for(int i = 0; i < detectedItems.size(); ++i) {
-                    Barcode barcode = detectedItems.valueAt(0);
-                    communicator.qrRead(barcode.displayValue);
-                }
-            }
-        });
-
-        SplitBarcodeDetector.FrameReceiver receiver = new SplitBarcodeDetector.FrameReceiver() {
+        SplitBarcodeDetector.FrameReceiver frameReceiver = new SplitBarcodeDetector.FrameReceiver() {
             @Override
             public void receiveFrame(ByteBuffer frame) {
                 communicator.cameraFrame(frame.array());
             }
         };
 
-        detector = new SplitBarcodeDetector(googleDetector, receiver);
+        SplitBarcodeDetector.QRReceiver qrReceiver = new SplitBarcodeDetector.QRReceiver() {
+            @Override
+            public void receiveQr(Barcode barcode) {
+                communicator.qrRead(barcode.displayValue);
+            }
+        }
+
+        detector = new SplitBarcodeDetector(context, googleDetector, frameReceiver);
     }
 
     void start(int width, int height, int heartBeatTimeout) throws IOException, Exception {

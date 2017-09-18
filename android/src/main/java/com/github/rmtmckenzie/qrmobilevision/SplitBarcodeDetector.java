@@ -14,13 +14,19 @@ public class SplitBarcodeDetector extends Detector<Barcode> {
 
     private final BarcodeDetector detector;
     private final FrameReceiver frameReceiver;
+    private final QRReceiver qrReceiver;
 
     interface FrameReceiver {
         void receiveFrame(ByteBuffer frame);
     }
 
-    public SplitBarcodeDetector(BarcodeDetector detector, FrameReceiver frameReceiver) {
-        this.detector = detector;
+    interface QRReceiver {
+        void receiveQr(Barcode data);
+    }
+
+    public SplitBarcodeDetector(Context context, FrameReceiver frameReceiver, QRReceiver qrReceiver) {
+        this.detector = new BarcodeDetector.Builder(context.getApplicationContext()).setBarcodeFormats(
+                Barcode.QR_CODE).build();
         this.frameReceiver = frameReceiver;
     }
 
@@ -28,13 +34,24 @@ public class SplitBarcodeDetector extends Detector<Barcode> {
     public SparseArray<Barcode> detect(Frame frame) {
         Bitmap bitmap = frame.getBitmap();
 
-
         int bytes = bitmap.getByteCount();
         ByteBuffer buffer = ByteBuffer.allocate(bytes);
         bitmap.copyPixelsToBuffer(buffer);
 
         frameReceiver.receiveFrame(buffer);
 
-        return detector.detect(frame);
+        SparseArray<Barcode> detectedItems = detector.detect(frame);
+
+        for(int i = 0; i < detectedItems.size(); ++i) {
+            Barcode barcode = detectedItems.valueAt(0);
+            communicator.qrRead(barcode.displayValue);
+        }
+
+        return detectedItems;
+    }
+
+    @Override
+    public void receiveFrame(Frame frame) {
+        detect(frame);
     }
 }
