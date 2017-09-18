@@ -5,7 +5,7 @@
       <configuration>
         <option name="GEN_FOLDER_RELATIVE_PATH_APT" value="/android/gen" />
         <option name="GEN_FOLDER_RELATIVE_PATH_AIDL" value="/android/gen" />
-        <option name="MANIFEST_FILE_RELATIVE_PATH" value="/android/AndroidManifest.xml" />
+        <option name="MANIFEST_FILE_RELATIVE_PATH" value="/android/src/main/AndroidManifest.xml" />
         <option name="RES_FOLDER_RELATIVE_PATH" value="/android/res" />
         <option name="ASSETS_FOLDER_RELATIVE_PATH" value="/android/assets" />
         <option name="LIBS_FOLDER_RELATIVE_PATH" value="/android/libs" />
