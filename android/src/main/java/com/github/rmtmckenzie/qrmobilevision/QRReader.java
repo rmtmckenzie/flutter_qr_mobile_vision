@@ -1,9 +1,18 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.ImageFormat;
+import android.hardware.Camera;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.params.StreamConfigurationMap;
+import android.provider.Settings;
+import android.util.Size;
 import android.util.SparseArray;
 
 import com.google.android.gms.vision.CameraSource;
@@ -12,7 +21,11 @@ import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.barcode.BarcodeDetector;
 
 import java.io.IOException;
+import java.lang.annotation.Target;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class QRReader {
     private final Context context;
@@ -113,6 +126,33 @@ public class QRReader {
         if (heartbeat != null) {
             heartbeat.beat();
         }
+    }
+
+
+    //Only works on api>=21
+    @TargetApi(21)
+    List<int[]> getSupportedSizes(){
+        CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+        try {
+            //Get List of Supported Sizes
+            String[] cameraId = manager.getCameraIdList();
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId[0]);
+            StreamConfigurationMap configs = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            Size[] sizeList = configs.getOutputSizes(ImageFormat.JPEG);
+
+            //Convert Size[] to List<int[]>
+            List<int[]> sizeOutput = new ArrayList<int[]>();
+            for(Size size: sizeList){
+                int[] wxh = {size.getWidth(),size.getHeight()};
+                sizeOutput.add(wxh);
+            }
+
+            return sizeOutput;
+        }
+        catch (CameraAccessException e){
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private boolean hasAutofocus(Context context) {

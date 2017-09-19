@@ -21,6 +21,9 @@ class QrMobileVision {
   static Future<Null> heartbeat(){
     return _channel.invokeMethod('heartbeat').catchError(print);
   }
+  static Future<List<List<int>>> getSupportedSizes(){
+    return _channel.invokeMethod('getSupportedSizes').catchError(print);
+  }
 
 }
 
@@ -31,7 +34,8 @@ enum FrameRotation {
   oneeighty,
   twoseventyCC
 }
-typedef void CameraFrameHandler(Uint8List data, FrameRotation rotation);
+
+typedef void CameraFrameHandler(Uint8List data, int rotation);
 
 typedef void QRCodeHandler(String qr);
 
@@ -44,9 +48,9 @@ class QrChannelReader {
             Uint8List frame = call.arguments[0];
             int rawRotation = call.arguments[1];
 
-            FrameRotation rotation = FrameRotation.values[rawRotation];
+            //FrameRotation rotation = FrameRotation.values[rawRotation];
 
-            cameraFrameHandler(frame, rotation);
+            cameraFrameHandler(frame, rawRotation);
           }
           break;
         case 'qrRead':

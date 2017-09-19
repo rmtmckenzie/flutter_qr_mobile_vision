@@ -3,11 +3,13 @@ import 'dart:typed_data';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_mobile_vision/qr_mobile_vision.dart';
 import 'dart:ui' as Ui;
 
 void main() {
+  debugPaintSizeEnabled = true;
   runApp(new MyApp());
 }
 
@@ -18,86 +20,91 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
 
-  Ui.Image image;
-  FrameRotation imageRotation;
 
   @override
   initState() {
     super.initState();
-    QrMobileVision.start(qrCodeHandler, cameraFrameHandler, 200, 100);
   }
-
-  void qrCodeHandler(String string){
-    print("QR CODE RECIEVED: $string");
-  }
-
-  Future cameraFrameHandler(Uint8List data, FrameRotation rotation) async {
-    Future<Ui.Image> convertBytes(Uint8List data) {
-      Completer<Ui.Image> completer = new Completer<Ui.Image>();
-      Ui.decodeImageFromList(data, completer.complete);
-      return completer.future;
-    }
-
-    Ui.Image image = await convertBytes(data);
-    setState((){
-      this.image = image;
-      this.imageRotation = rotation;
-    });
-
-  }
-
 
 
   @override
   Widget build(BuildContext context) {
     return new MaterialApp(
       home: new Scaffold(
-        appBar: new AppBar(
-          title: new Text('Plugin example app'),
-        ),
-        body: new Center(
-          child: new CustomPaint(
-            foregroundPainter: new ImagePainter(image, imageRotation),
-            size: Size.infinite,
+          appBar: new AppBar(
+            title: new Text('Plugin example app'),
           ),
-        ),
-      ),
+          body: new Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              new Center(
+                child: new Camera()
+              ),
+              new Text("sample"),
+            ],
+          )),
     );
   }
 }
+class Camera extends StatefulWidget{
+  Camera();
 
-
-class ImagePainter extends CustomPainter{
-  ImagePainter(this.image, this.rotation);
-
-  Ui.Image image;
-  FrameRotation rotation;
 
   @override
-  void paint(Canvas canvas,Size size){
+  CameraState createState() => new CameraState();
+}
 
-    switch (rotation) {
-      case FrameRotation.none:
-        break;
-      case FrameRotation.ninetyCC:
-        canvas.scale(2.0, 2.0);
-        canvas.translate(image.height.toDouble() - 1, 0.0);
-        canvas.rotate(.5 * PI);
-        break;
-      case FrameRotation.oneeighty:
-        canvas.rotate(PI);
-        break;
-      case FrameRotation.twoseventyCC:
-        canvas.rotate(-.5 * PI);
-        break;
-    }
+class CameraState extends State<Camera>{
+  CameraState();
 
-    if(image != null) {
-      canvas.drawImage(image, Offset.zero, new Paint());
-    }
+  Uint8List bytes;
+  int rotation;
+
+
+  void qrCodeHandler(String string) {
+    print("QR CODE RECIEVED: $string");
+  }
+
+  Future cameraFrameHandler(Uint8List data, int rotation) async {
+    setState(() {
+      if(rotation!=null){
+        this.rotation = rotation;
+      }
+      if (data != null) {
+        this.bytes = data;
+      }
+    });
   }
 
   @override
-  bool shouldRepaint(ImagePainter old)=>image!=old.image;
-}
+  initState(){
+    super.initState();
+    QrMobileVision.start(qrCodeHandler, cameraFrameHandler, 200, 100);
+  }
 
+  @override
+  Widget build(BuildContext context){
+
+    print("Break it up\n\n\n\n");
+
+    context.visitAncestorElements((visitor){
+      print(visitor.size);
+      return false;
+    });
+
+    if(bytes!=null){
+      return new Transform.rotate(
+        angle: rotation*PI/2,
+        child: new Image.memory(
+          bytes,
+          width: 300.0,
+          height: 300.0,
+          fit: BoxFit.cover,
+          gaplessPlayback: true,
+        ),
+      );
+    }
+    else return new Text("Loading...");
+
+  }
+}

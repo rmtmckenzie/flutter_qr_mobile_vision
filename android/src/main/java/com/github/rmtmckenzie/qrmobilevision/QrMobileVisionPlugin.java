@@ -72,6 +72,11 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
         result.success(null);
         break;
       }
+      case "getSupportedSizes":{
+        List<int[]> sizes = reader.getSupportedSizes();
+        result.success(sizes);
+        break;
+      }
       default:
         result.notImplemented();
     }
