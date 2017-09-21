@@ -1,6 +1,7 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.util.SparseArray;
 import android.content.Context;
 import android.graphics.YuvImage;
@@ -49,6 +50,14 @@ public class SplitBarcodeDetector extends Detector<Barcode> {
         yuvToRgbIntrinsic = ScriptIntrinsicYuvToRGB.create(rs, Element.U8_4(rs));
     }
 
+    Bitmap rotateBitmap(Bitmap source, int rotation){
+        Matrix matrix = new Matrix();
+        matrix.postRotate(rotation*90);
+        source = Bitmap.createBitmap(source,0,0,source.getWidth(),source.getHeight(),matrix,true);
+        return source;
+    }
+
+
     @Override
     public SparseArray<Barcode> detect(Frame frame) {
         Bitmap bitmap = frame.getBitmap();
@@ -58,7 +67,7 @@ public class SplitBarcodeDetector extends Detector<Barcode> {
             int width = metadata.getWidth();
             int height = metadata.getHeight();
             int format = metadata.getFormat();
-            int rotation = metadata.getRotation();
+            int rotation = metadata.getRotation(); // 0=0,1=90,2=180,3=270 : CC from upright orientation
 
             //TODO: allocate these arrays in a smarter way
             int yuvDatalength = width * height * 3/2;  // this is 12 bit per pixel
@@ -71,6 +80,9 @@ public class SplitBarcodeDetector extends Detector<Barcode> {
             aIn.copyFrom(imageData.array());
             yuvToRgbIntrinsic.forEach(aOut);
             aOut.copyTo(bmpout);
+
+            bmpout=rotateBitmap(bmpout,rotation);
+
 
             int bytes = bmpout.getByteCount();
             ByteBuffer buffer = ByteBuffer.allocate(bytes);

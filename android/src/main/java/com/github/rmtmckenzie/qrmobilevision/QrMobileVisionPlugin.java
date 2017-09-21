@@ -1,7 +1,8 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
 import android.content.Context;
-import android.os.Handler;
+import android.util.Size;
+
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
@@ -13,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.lang.Integer;
-import java.lang.Runnable;
 
 /**
  * QrMobileVisionPlugin
@@ -43,13 +43,16 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
       case "start": {
         Integer width = methodCall.argument("width");
         Integer height = methodCall.argument("height");
+        Boolean fill = methodCall.argument("fill");
         Integer heartbeatTimeout = methodCall.argument("heartbeatTimeout");
 
         try {
           reader.start(
                   width == null ? 500 : width,
                   height == null ? 700 : height,
+                  fill == null ? false:fill,
                   heartbeatTimeout == null ? 0 : heartbeatTimeout
+
           );
           result.success(null);
         } catch (IOException e) {
@@ -73,6 +76,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
         break;
       }
       case "getSupportedSizes":{
+
         List<int[]> sizes = reader.getSupportedSizes();
         result.success(sizes);
         break;
