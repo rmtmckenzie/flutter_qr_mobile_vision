@@ -251,7 +251,6 @@ public class QRReader {
         }
         catch (java.lang.Exception e){
             e.printStackTrace();
-            System.out.println("Couldnt open camera!?");
         }
         return sizeOutput;
     }
