@@ -3,33 +3,46 @@ import 'package:flutter/services.dart';
 import 'dart:typed_data';
 
 class QrMobileVision {
+  static int _textureId;
+  static num _orientation;
+
+  static get textureId{
+    return _textureId;
+  }
+
+  static get orientation{
+    return _orientation.toDouble();
+  }
+
+  
   static const MethodChannel _channel =
       const MethodChannel('com.github.rmtmckenzie/qr_mobile_vision');
   static QrChannelReader channelReader = new QrChannelReader(_channel);
 
   static Future<Null> start(QRCodeHandler qrCodeHandler,
-      CameraFrameHandler cameraFrameHandler, int height, int width, bool fill) {
+      CameraFrameHandler cameraFrameHandler, int height, int width, bool fill) async{
     channelReader.setCameraFrameHandler(cameraFrameHandler);
     channelReader.setQrCodeHandler(qrCodeHandler);
-    return _channel.invokeMethod('start', {
+    _textureId = await _channel.invokeMethod('start', {
       'width': width,
       'height': height,
       'fill': fill,
       'heartbeatTimeout': 0
     }).catchError(print);
+    _orientation = await _channel.invokeMethod('getOrientation',{}).catchError(print);
   }
 
-  static Future<Null> stop() {
+   static Future<Null> stop() {
     channelReader.setCameraFrameHandler(null);
     channelReader.setQrCodeHandler(null);
     return _channel.invokeMethod('stop').catchError(print);
   }
 
-  static Future<Null> heartbeat() {
+   static Future<Null> heartbeat() {
     return _channel.invokeMethod('heartbeat').catchError(print);
   }
 
-  static Future<List<List<int>>> getSupportedSizes() {
+   static Future<List<List<int>>> getSupportedSizes() {
     return _channel.invokeMethod('getSupportedSizes').catchError(print);
   }
 }

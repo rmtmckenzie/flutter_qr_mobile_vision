@@ -2,24 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:qr_mobile_vision/Camera.dart';
 
-
 void main() {
   debugPaintSizeEnabled = false;
   runApp(new HomePage());
 }
 
-class HomePage extends StatefulWidget{
+class HomePage extends StatefulWidget {
   @override
   HomeState createState() => new HomeState();
 }
 
-class HomeState extends State<HomePage>{
-
+class HomeState extends State<HomePage> {
   @override
-  Widget build(BuildContext){
-    return new MaterialApp(
-      home: new MyApp()
-    );
+  Widget build(BuildContext context) {
+    return new MaterialApp(home: new MyApp());
   }
 }
 
@@ -30,7 +26,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String qr;
-  bool camState=false;
+  bool camState = false;
 
   @override
   initState() {
@@ -40,41 +36,37 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-        appBar: new AppBar(
-          title: new Text('Plugin example app'),
+      appBar: new AppBar(
+        title: new Text('Plugin example app'),
+      ),
+      body: new Center(
+        child: new Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            camState
+                ? new Container(child: new Camera(
+              fill: false,
+              width: 300.0,
+              height: 300.0,
+              qrCodeCallback: (code) {
+                setState(() {
+                  qr = code;
+                });
+              },
+            ),constraints: new BoxConstraints.tight(new Size(300.0, 300.0)),)
+                : new Text("Camera inActive"),
+            new Text("QRCODE: $qr"),
+          ],
         ),
-        body: new Center(
-          child: new Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-
-              camState ? new LayoutBuilder(
-                  builder: (BuildContext context, BoxConstraints constraints) {
-                return new Camera(
-                  fill: false,
-                  width: 300.0,
-                  height: 300.0,
-                  qrCodeCallback: (code) {
-                    setState(() {
-                      qr = code;
-                    });
-                  },
-                );
-              }): new Text("Camera inActive"),
-              new Text("QRCODE: $qr"),
-            ],
-          ),
-        ),
+      ),
       floatingActionButton: new FloatingActionButton(
-          child: new Text("press me"),
+          child: new Text("press me",textAlign: TextAlign.center,),
           onPressed: () {
-            setState((){
-              camState=!camState;
+            setState(() {
+              camState = !camState;
             });
           }),
-
-      );
+    );
   }
 }
-

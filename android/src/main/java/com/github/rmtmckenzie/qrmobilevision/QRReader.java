@@ -5,13 +5,27 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
+import android.graphics.Matrix;
 import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CameraMetadata;
+import android.hardware.camera2.CaptureResult;
+import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.support.annotation.NonNull;
 import android.util.Size;
+import android.view.Surface;
+import android.graphics.SurfaceTexture;
+import android.hardware.camera2.CaptureRequest;
+
+import io.flutter.view.TextureRegistry;
+import io.flutter.plugin.common.MethodChannel.Result;
 
 import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.barcode.Barcode;
@@ -23,17 +37,31 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
 
+
+
 public class QRReader {
+    private Size size;
     private final Context context;
     private final QRReaderCallbacks communicator;
     private Heartbeat heartbeat;
     private SplitBarcodeDetector detector;
     private CameraSource camera;
+    private CaptureRequest.Builder previewBuilder;
+    private CameraCaptureSession previewSession;
+
+    private Result result;
+
+    int orientation;
+
+    private CameraDevice cameraDevice;
+    private final TextureRegistry.SurfaceTextureEntry textureEntry;
 
 
-    QRReader(Context context, final QRReaderCallbacks communicator) {
+    QRReader(Context context, final QRReaderCallbacks communicator, final TextureRegistry.SurfaceTextureEntry textureEntry,Result result) {
+        this.textureEntry = textureEntry;
         this.context = context;
         this.communicator = communicator;
+        this.result = result;
     }
 
     public static class Exception extends java.lang.Exception {
@@ -57,7 +85,7 @@ public class QRReader {
         SplitBarcodeDetector.FrameReceiver frameReceiver = new SplitBarcodeDetector.FrameReceiver() {
             @Override
             public void receiveFrame(byte[] frame, int rotation) {
-                communicator.cameraFrame(frame, rotation);
+                //communicator.cameraFrame(frame, rotation); //Baraka
             }
         };
 
@@ -70,6 +98,7 @@ public class QRReader {
 
         detector = new SplitBarcodeDetector(context, frameReceiver, qrReceiver);
     }
+
 
     void start(final int width, final int height, final boolean fill, final int heartBeatTimeout) throws IOException, Exception {
         if (!hasCameraHardware(context)) {
@@ -119,17 +148,14 @@ public class QRReader {
         }
 
 
-
         List<int[]> res; //wxh where [0]=w and [1]=h
 
-        if(android.os.Build.VERSION.SDK_INT>=21){
+        if (android.os.Build.VERSION.SDK_INT >= 21) {
             res = getSupportedSizes();
-        }
-        else{
+        } else {
             System.out.println("Old API(<21)");
-            res =getSupportedSizedDepreciated();
+            res = getSupportedSizedDepreciated();
         }
-
 
 
 //        System.out.println("Dimensions before: width-"+width+" height-"+height);
@@ -140,23 +166,23 @@ public class QRReader {
 
 
         ListIterator i = res.listIterator();
-        int[] pair=null;
+        int[] pair = null;
 
-        while(i.hasNext()){
-            pair =(int[]) i.next();
-            if(pair[0]<width || pair[1]<height){
+        while (i.hasNext()) {
+            pair = (int[]) i.next();
+            if (pair[0] < width || pair[1] < height) {
 
                 //Fill
-                if(fill && i.previousIndex()==1){
+                if (fill && i.previousIndex() == 1) {
                     //Iterator holds place in front of current element
                     i.previous();
-                    pair=(int[])i.previous();
+                    pair = (int[]) i.previous();
                     width = pair[0];
                     height = pair[1];
                     break;
                 }
                 //Fit
-                else if(pair[0]<=width && pair[1]<=height){
+                else if (pair[0] <= width && pair[1] <= height) {
                     width = pair[0];
                     height = pair[1];
                     break;
@@ -164,19 +190,134 @@ public class QRReader {
             }
         }
         //if given dimensions are smaller than the smallest available, return smallest available
-        if(!i.hasNext() && pair!=null){
+        if (!i.hasNext() && pair != null) {
             width = pair[0];
             height = pair[1];
         }
 
+        openCamera();
+
 //        System.out.println("\nDimensions after: width-"+width+" height-"+height);
 
-        camera = new CameraSource.Builder(context, detector)
-                .setAutoFocusEnabled(this.hasAutofocus(context))
-                .setRequestedPreviewSize(width, height)
-                .build();
+//        camera = new CameraSource.Builder(context, detector)
+//                .setAutoFocusEnabled(this.hasAutofocus(context))
+//                .setRequestedPreviewSize(width, height)
+//                .build();
+//
+//        //Surface surface = new Surface(textureEntry.surfaceTexture());
+//        try{
+//            camera.start();
+//        } catch(SecurityException e){
+//            e.printStackTrace();
+//        }
 
-        camera.start();
+        result.success(textureEntry.id());
+
+    }
+
+    @TargetApi(21)
+    private void startPreview(){
+        if(cameraDevice == null) return;
+
+        previewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+        try
+        {
+            previewSession.setRepeatingRequest(previewBuilder.build(), null, null);
+        }catch (java.lang.Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    // 0=0,1=90,2=180,3=270 : CC from upright orientation
+    private void getOrientation(SurfaceTexture texture){
+        float[] matrix = new float[16];
+        texture.getTransformMatrix(matrix);
+
+
+        System.out.println("MATRIX:");
+        for(float f : matrix){
+            System.out.println(f);
+        }
+    }
+
+    @TargetApi(21)
+    private void startCamera(){
+        List<Surface> list = new ArrayList<Surface>();
+        SurfaceTexture texture = textureEntry.surfaceTexture();
+
+        texture.setDefaultBufferSize(size.getWidth(),size.getHeight());
+
+        getOrientation(texture);
+
+        list.add(new Surface(texture));
+        try
+        {
+            previewBuilder=cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            previewBuilder.addTarget(list.get(0));
+        }catch (java.lang.Exception e)
+        {
+            e.printStackTrace();
+            return;
+        }
+        try {
+            cameraDevice.createCaptureSession(list,new CameraCaptureSession.StateCallback() {
+                @Override
+                public void onConfigured(CameraCaptureSession session) {
+                    previewSession = session;
+                    startPreview();
+                }
+                @Override
+                public void onConfigureFailed(CameraCaptureSession session) {
+                    System.out.println("### Configuration Fail ###");
+                }
+            },null);
+        } catch(Throwable t){
+            t.printStackTrace();
+
+        }
+
+    }
+
+    //@TargetApi(21)
+    private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
+        @Override
+        public void onOpened(CameraDevice device) {
+            cameraDevice = device;
+            startCamera();
+        }
+        @Override
+        public void onDisconnected(CameraDevice device) {
+        }
+        @Override
+        public void onError(CameraDevice device, int error) {
+        }
+    };
+
+    @TargetApi(21)
+    private void openCamera() { //REQUIRES API LEVEL 21
+        CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+        try {
+
+            String id = manager.getCameraIdList()[0];
+            CameraCharacteristics characteristics=manager.getCameraCharacteristics(id);
+            StreamConfigurationMap map=characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            try{
+                orientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+                size = map.getOutputSizes(SurfaceTexture.class)[0];
+            }catch(java.lang.NullPointerException e){
+                e.printStackTrace();
+            }
+
+
+            manager.openCamera(id, stateCallback,null);
+
+    }catch(SecurityException s){
+        System.out.println("### Security Exception ###");
+    }
+        catch (Throwable e) {
+        e.printStackTrace();
+    }
+
     }
 
     void stop() {
@@ -202,11 +343,9 @@ public class QRReader {
     }
 
 
-
-
     //Only works on api>=21
     @TargetApi(21)
-    List<int[]> getSupportedSizes(){
+    List<int[]> getSupportedSizes() {
 
         List<int[]> sizeOutput = new ArrayList<int[]>();
 
@@ -216,14 +355,13 @@ public class QRReader {
             String[] cameraId = manager.getCameraIdList();
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId[0]);
             StreamConfigurationMap configs = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            Size[] sizes= configs.getOutputSizes(ImageFormat.JPEG);
+            Size[] sizes = configs.getOutputSizes(ImageFormat.JPEG);
 
-            for(Size size: sizes){
-                int[] wxh = {size.getWidth(),size.getHeight()};
+            for (Size size : sizes) {
+                int[] wxh = {size.getWidth(), size.getHeight()};
                 sizeOutput.add(wxh);
             }
-        }
-        catch (CameraAccessException e){
+        } catch (CameraAccessException e) {
             e.printStackTrace();
         }
         return sizeOutput;
@@ -231,25 +369,24 @@ public class QRReader {
 
 
     //For API<21 i.e. Android 4.4 - KitKat
-    List<int[]> getSupportedSizedDepreciated(){
+    List<int[]> getSupportedSizedDepreciated() {
         Camera c;
         List<int[]> sizeOutput = new ArrayList<int[]>();
 
-        List<Camera.Size> sizes=null;
+        List<Camera.Size> sizes = null;
         try {
             c = Camera.open();
             Camera.Parameters parameters = c.getParameters();
             sizes = parameters.getSupportedPreviewSizes();
 
-            for(Camera.Size size: sizes){
-                int[] wxh = {size.width,size.height};
+            for (Camera.Size size : sizes) {
+                int[] wxh = {size.width, size.height};
                 sizeOutput.add(wxh);
             }
             c.release();
 
 
-        }
-        catch (java.lang.Exception e){
+        } catch (java.lang.Exception e) {
             e.printStackTrace();
         }
         return sizeOutput;
