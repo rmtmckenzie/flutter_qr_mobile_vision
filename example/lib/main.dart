@@ -45,23 +45,26 @@ class _MyAppState extends State<MyApp> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             camState
-                ? new Container(child: new Camera(
-              fill: false,
-              width: 300.0,
-              height: 300.0,
-              qrCodeCallback: (code) {
-                setState(() {
-                  qr = code;
-                });
-              },
-            ),constraints: new BoxConstraints.tight(new Size(300.0, 300.0)),)
+                ? new Camera(
+                    fill: false,
+                    width: 300.0,
+                    height: 300.0,
+                    qrCodeCallback: (code) {
+                      setState(() {
+                        qr = code;
+                      });
+                    },
+                  )
                 : new Text("Camera inActive"),
             new Text("QRCODE: $qr"),
           ],
         ),
       ),
       floatingActionButton: new FloatingActionButton(
-          child: new Text("press me",textAlign: TextAlign.center,),
+          child: new Text(
+            "press me",
+            textAlign: TextAlign.center,
+          ),
           onPressed: () {
             setState(() {
               camState = !camState;

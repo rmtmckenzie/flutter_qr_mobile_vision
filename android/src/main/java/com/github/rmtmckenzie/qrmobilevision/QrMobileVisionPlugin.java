@@ -45,9 +45,6 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
     public void onMethodCall(MethodCall methodCall, Result result) {
         switch (methodCall.method) {
             case "start": {
-                Integer width = methodCall.argument("width");
-                Integer height = methodCall.argument("height");
-                Boolean fill = methodCall.argument("fill");
                 Integer heartbeatTimeout = methodCall.argument("heartbeatTimeout");
 
                 TextureRegistry.SurfaceTextureEntry textureEntry = textures.createSurfaceTexture();
@@ -55,9 +52,6 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
 
                 try {
                     reader.start(
-                            width == null ? 500 : width,
-                            height == null ? 700 : height,
-                            fill == null ? false : fill,
                             heartbeatTimeout == null ? 0 : heartbeatTimeout
 
                     );

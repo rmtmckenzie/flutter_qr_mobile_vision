@@ -5,6 +5,7 @@ import 'dart:typed_data';
 class QrMobileVision {
   static int _textureId;
   static num _orientation;
+  static List _sizes;
 
   static get textureId{
     return _textureId;
@@ -13,6 +14,10 @@ class QrMobileVision {
   static get orientation{
     return _orientation.toDouble();
   }
+  
+  static get sizes{
+    return _sizes;
+  }
 
   
   static const MethodChannel _channel =
@@ -20,16 +25,13 @@ class QrMobileVision {
   static QrChannelReader channelReader = new QrChannelReader(_channel);
 
   static Future<Null> start(QRCodeHandler qrCodeHandler,
-      CameraFrameHandler cameraFrameHandler, int height, int width, bool fill) async{
-    channelReader.setCameraFrameHandler(cameraFrameHandler);
+      ) async{
     channelReader.setQrCodeHandler(qrCodeHandler);
     _textureId = await _channel.invokeMethod('start', {
-      'width': width,
-      'height': height,
-      'fill': fill,
       'heartbeatTimeout': 0
     }).catchError(print);
     _orientation = await _channel.invokeMethod('getOrientation',{}).catchError(print);
+    _sizes = await _channel.invokeMethod('getSupportedSizes',{}).catchError(print);
   }
 
    static Future<Null> stop() {

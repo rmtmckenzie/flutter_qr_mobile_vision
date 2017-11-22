@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.hardware.Camera;
@@ -18,8 +19,13 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.Image;
+import android.media.ImageReader;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.util.Size;
+import android.util.SparseIntArray;
 import android.view.Surface;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CaptureRequest;
@@ -28,19 +34,23 @@ import io.flutter.view.TextureRegistry;
 import io.flutter.plugin.common.MethodChannel.Result;
 
 import com.google.android.gms.vision.CameraSource;
+import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.barcode.Barcode;
 
 import java.io.IOException;
+import java.lang.annotation.Target;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
 
 
-
 public class QRReader {
     private Size size;
+    private Size jpegSizes[] = null;
     private final Context context;
     private final QRReaderCallbacks communicator;
     private Heartbeat heartbeat;
@@ -48,6 +58,16 @@ public class QRReader {
     private CameraSource camera;
     private CaptureRequest.Builder previewBuilder;
     private CameraCaptureSession previewSession;
+
+
+    private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
+
+    static {
+        ORIENTATIONS.append(Surface.ROTATION_0, 90);
+        ORIENTATIONS.append(Surface.ROTATION_90, 0);
+        ORIENTATIONS.append(Surface.ROTATION_180, 270);
+        ORIENTATIONS.append(Surface.ROTATION_270, 180);
+    }
 
     private Result result;
 
@@ -57,7 +77,7 @@ public class QRReader {
     private final TextureRegistry.SurfaceTextureEntry textureEntry;
 
 
-    QRReader(Context context, final QRReaderCallbacks communicator, final TextureRegistry.SurfaceTextureEntry textureEntry,Result result) {
+    QRReader(Context context, final QRReaderCallbacks communicator, final TextureRegistry.SurfaceTextureEntry textureEntry, Result result) {
         this.textureEntry = textureEntry;
         this.context = context;
         this.communicator = communicator;
@@ -100,7 +120,7 @@ public class QRReader {
     }
 
 
-    void start(final int width, final int height, final boolean fill, final int heartBeatTimeout) throws IOException, Exception {
+    void start(final int heartBeatTimeout) throws IOException, Exception {
         if (!hasCameraHardware(context)) {
             throw new Exception(Exception.Reason.noHardware);
         }
@@ -112,7 +132,7 @@ public class QRReader {
                     if (wereGranted) {
                         System.out.println("PERMISSIONS WERE GRANTED");
                         try {
-                            continueStarting(width, height, fill, heartBeatTimeout);
+                            continueStarting(heartBeatTimeout);
                         } catch (IOException e) {
                             //TODO: return properly
                             e.printStackTrace();
@@ -128,11 +148,11 @@ public class QRReader {
 
 //            throw new Exception(Exception.Reason.noPermissions);
         } else {
-            continueStarting(width, height, fill, heartBeatTimeout);
+            continueStarting(heartBeatTimeout);
         }
     }
 
-    private void continueStarting(int width, int height, boolean fill, int heartBeatTimeout) throws IOException {
+    private void continueStarting(int heartBeatTimeout) throws IOException {
         initializeDetector();
 
         if (heartBeatTimeout > 0) {
@@ -164,36 +184,36 @@ public class QRReader {
 //            System.out.print(" "+size[0]+"x"+size[1]+" ");
 //        }
 
-
-        ListIterator i = res.listIterator();
-        int[] pair = null;
-
-        while (i.hasNext()) {
-            pair = (int[]) i.next();
-            if (pair[0] < width || pair[1] < height) {
-
-                //Fill
-                if (fill && i.previousIndex() == 1) {
-                    //Iterator holds place in front of current element
-                    i.previous();
-                    pair = (int[]) i.previous();
-                    width = pair[0];
-                    height = pair[1];
-                    break;
-                }
-                //Fit
-                else if (pair[0] <= width && pair[1] <= height) {
-                    width = pair[0];
-                    height = pair[1];
-                    break;
-                }
-            }
-        }
-        //if given dimensions are smaller than the smallest available, return smallest available
-        if (!i.hasNext() && pair != null) {
-            width = pair[0];
-            height = pair[1];
-        }
+//
+//        ListIterator i = res.listIterator();
+//        int[] pair = null;
+//
+//        while (i.hasNext()) {
+//            pair = (int[]) i.next();
+//            if (pair[0] < width || pair[1] < height) {
+//
+//                //Fill
+//                if (fill && i.previousIndex() == 1) {
+//                    //Iterator holds place in front of current element
+//                    i.previous();
+//                    pair = (int[]) i.previous();
+//                    width = pair[0];
+//                    height = pair[1];
+//                    break;
+//                }
+//                //Fit
+//                else if (pair[0] <= width && pair[1] <= height) {
+//                    width = pair[0];
+//                    height = pair[1];
+//                    break;
+//                }
+//            }
+//        }
+//        //if given dimensions are smaller than the smallest available, return smallest available
+//        if (!i.hasNext() && pair != null) {
+//            width = pair[0];
+//            height = pair[1];
+//        }
 
         openCamera();
 
@@ -215,68 +235,186 @@ public class QRReader {
 
     }
 
+
+
     @TargetApi(21)
-    private void startPreview(){
-        if(cameraDevice == null) return;
+    private void startPreview() {
+        CameraCaptureSession.CaptureCallback listener = new CameraCaptureSession.CaptureCallback(){
+            @Override
+            public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+                super.onCaptureCompleted(session, request, result);
+                //startQr();
+            }
+        };
+
+        if (cameraDevice == null) return;
 
         previewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-        try
-        {
-            previewSession.setRepeatingRequest(previewBuilder.build(), null, null);
-        }catch (java.lang.Exception e){
+        try {
+            previewSession.setRepeatingRequest(previewBuilder.build(), listener, null);
+        } catch (java.lang.Exception e) {
             e.printStackTrace();
         }
     }
 
-    // 0=0,1=90,2=180,3=270 : CC from upright orientation
-    private void getOrientation(SurfaceTexture texture){
-        float[] matrix = new float[16];
-        texture.getTransformMatrix(matrix);
+
+    @TargetApi(21)
+    private void startQr(){
+
+        int width = jpegSizes[0].getWidth(), height = jpegSizes[0].getHeight();
+        ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
+        Surface surface = reader.getSurface();
+        final CaptureRequest.Builder captureBuilder;
+        try{
+            captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            captureBuilder.addTarget(reader.getSurface());
+            captureBuilder.set(CaptureRequest.CONTROL_MODE,CameraMetadata.CONTROL_MODE_AUTO);
+            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION,ORIENTATIONS.get(orientation));
 
 
-        System.out.println("MATRIX:");
-        for(float f : matrix){
-            System.out.println(f);
+        ImageReader.OnImageAvailableListener imageAvailableListener = new ImageReader.OnImageAvailableListener(){
+            @Override
+            public void onImageAvailable(ImageReader reader) {
+                Image image = null;
+                try {
+                    image = reader.acquireLatestImage();
+                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+
+                    Frame.Builder frameBuilder = new Frame.Builder();
+                    frameBuilder.setImageData(buffer, image.getWidth(), image.getHeight(), image.getFormat());
+                    Frame frame = frameBuilder.build();
+
+                    detector.receiveFrame(frame);
+
+                } catch (java.lang.Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    if (image != null) image.close();
+                }
+            }
+        };
+        HandlerThread handlerThread = new HandlerThread("qr_capture");
+        handlerThread.start();
+        final Handler handler = new Handler(handlerThread.getLooper());
+        reader.setOnImageAvailableListener(imageAvailableListener,handler);
+        try {
+            cameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
+                @Override
+                public void onConfigured(CameraCaptureSession session) {
+                    try {
+                        session.setRepeatingRequest(captureBuilder.build(),null,handler);
+
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void onConfigureFailed(CameraCaptureSession session) {
+
+                }
+            }, handler);
+        }catch(Throwable t){
+            t.printStackTrace();
         }
+        } catch(Throwable t){
+            t.printStackTrace();
+        }
+
     }
 
     @TargetApi(21)
-    private void startCamera(){
+    private void startCamera() {
         List<Surface> list = new ArrayList<Surface>();
+
+        Size jpegSize = getAppropriateSize(500,jpegSizes);
+        //Size jpegSize = jpegSizes[0];
+
+        int width = jpegSize.getWidth(), height = jpegSize.getHeight();
+
+        for(Size s : jpegSizes){
+            System.out.print(s.getWidth());
+            System.out.print("  ");
+            System.out.println(s.getHeight());
+        }
+
+        System.out.println("JPEG WIDTH: " + jpegSize.getWidth());
+        System.out.println("JPEG HEIGHT: " + jpegSize.getHeight());
+
+        ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 2);
+        list.add(reader.getSurface());
+
+        ImageReader.OnImageAvailableListener imageAvailableListener = new ImageReader.OnImageAvailableListener(){
+            @Override
+            public void onImageAvailable(ImageReader reader) {
+                Image image = null;
+                try {
+                    image = reader.acquireLatestImage();
+
+
+                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+
+                    int remaining = buffer.remaining();
+                    byte[] bytes = new byte[remaining];
+                    buffer.get(bytes);
+                    Bitmap bmp = BitmapFactory.decodeByteArray(bytes,0,bytes.length);
+
+//                    System.out.println("BUFFER SIZE: " + buffer.capacity());
+//                    System.out.println("IMAGE WIDTH: " + image.getWidth());
+//                    System.out.println("IMAGE HEIGHT: " + image.getHeight());
+
+                    Frame.Builder frameBuilder = new Frame.Builder();
+                    frameBuilder.setBitmap(bmp);
+                    Frame frame = frameBuilder.build();
+
+
+
+                    detector.receiveFrame(frame);
+
+                } catch (java.lang.Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    if (image != null) image.close();
+                }
+            }
+        };
+        reader.setOnImageAvailableListener(imageAvailableListener,null);
         SurfaceTexture texture = textureEntry.surfaceTexture();
-
-        texture.setDefaultBufferSize(size.getWidth(),size.getHeight());
-
-        getOrientation(texture);
-
+        texture.setDefaultBufferSize(size.getWidth(), size.getHeight());
         list.add(new Surface(texture));
-        try
-        {
-            previewBuilder=cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+        try {
+            previewBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             previewBuilder.addTarget(list.get(0));
-        }catch (java.lang.Exception e)
-        {
+            previewBuilder.addTarget(list.get(1));
+            previewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+            previewBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(orientation));
+        } catch (java.lang.Exception e) {
             e.printStackTrace();
             return;
         }
+
+
         try {
-            cameraDevice.createCaptureSession(list,new CameraCaptureSession.StateCallback() {
+            cameraDevice.createCaptureSession(list, new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(CameraCaptureSession session) {
                     previewSession = session;
                     startPreview();
+
                 }
+
                 @Override
                 public void onConfigureFailed(CameraCaptureSession session) {
                     System.out.println("### Configuration Fail ###");
                 }
-            },null);
-        } catch(Throwable t){
+            }, null);
+        } catch (Throwable t) {
             t.printStackTrace();
 
         }
 
     }
+
 
     //@TargetApi(21)
     private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
@@ -284,14 +422,29 @@ public class QRReader {
         public void onOpened(CameraDevice device) {
             cameraDevice = device;
             startCamera();
+            //startQr();
         }
+
         @Override
         public void onDisconnected(CameraDevice device) {
         }
+
         @Override
         public void onError(CameraDevice device, int error) {
         }
     };
+
+    @TargetApi(21)
+    private Size getAppropriateSize(int target,Size[] sizes){
+        Size s = sizes[0];
+        for(Size size : sizes){
+            if(size.getHeight() < target || size.getWidth() < target){
+                break;
+            }
+            s = size;
+        }
+        return s;
+    }
 
     @TargetApi(21)
     private void openCamera() { //REQUIRES API LEVEL 21
@@ -299,24 +452,25 @@ public class QRReader {
         try {
 
             String id = manager.getCameraIdList()[0];
-            CameraCharacteristics characteristics=manager.getCameraCharacteristics(id);
-            StreamConfigurationMap map=characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            try{
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(id);
+            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            try {
                 orientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-                size = map.getOutputSizes(SurfaceTexture.class)[0];
-            }catch(java.lang.NullPointerException e){
+                size = getAppropriateSize(500,map.getOutputSizes(SurfaceTexture.class));
+                //size = map.getOutputSizes(SurfaceTexture.class)[0];
+                jpegSizes = map.getOutputSizes(ImageFormat.JPEG);
+            } catch (java.lang.NullPointerException e) {
                 e.printStackTrace();
             }
 
 
-            manager.openCamera(id, stateCallback,null);
+            manager.openCamera(id, stateCallback, null);
 
-    }catch(SecurityException s){
-        System.out.println("### Security Exception ###");
-    }
-        catch (Throwable e) {
-        e.printStackTrace();
-    }
+        } catch (SecurityException s) {
+            System.out.println("### Security Exception ###");
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
 
     }
 
