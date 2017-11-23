@@ -174,60 +174,9 @@ public class QRReader {
             System.out.println("Old API(<21)");
             res = getSupportedSizedDepreciated();
         }
-
-
-//        System.out.println("Dimensions before: width-"+width+" height-"+height);
-//        System.out.print("Available Dimensions:  ");
-//        for(int[] size : res){
-//            System.out.print(" "+size[0]+"x"+size[1]+" ");
-//        }
-
-//
-//        ListIterator i = res.listIterator();
-//        int[] pair = null;
-//
-//        while (i.hasNext()) {
-//            pair = (int[]) i.next();
-//            if (pair[0] < width || pair[1] < height) {
-//
-//                //Fill
-//                if (fill && i.previousIndex() == 1) {
-//                    //Iterator holds place in front of current element
-//                    i.previous();
-//                    pair = (int[]) i.previous();
-//                    width = pair[0];
-//                    height = pair[1];
-//                    break;
-//                }
-//                //Fit
-//                else if (pair[0] <= width && pair[1] <= height) {
-//                    width = pair[0];
-//                    height = pair[1];
-//                    break;
-//                }
-//            }
-//        }
-//        //if given dimensions are smaller than the smallest available, return smallest available
-//        if (!i.hasNext() && pair != null) {
-//            width = pair[0];
-//            height = pair[1];
-//        }
+        
 
         openCamera();
-
-//        System.out.println("\nDimensions after: width-"+width+" height-"+height);
-
-//        camera = new CameraSource.Builder(context, detector)
-//                .setAutoFocusEnabled(this.hasAutofocus(context))
-//                .setRequestedPreviewSize(width, height)
-//                .build();
-//
-//        //Surface surface = new Surface(textureEntry.surfaceTexture());
-//        try{
-//            camera.start();
-//        } catch(SecurityException e){
-//            e.printStackTrace();
-//        }
 
         result.success(textureEntry.id());
 
@@ -255,79 +204,18 @@ public class QRReader {
     }
 
 
-    @TargetApi(21)
-    private void startQr() {
-
-        int width = jpegSizes[0].getWidth(), height = jpegSizes[0].getHeight();
-        ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
-        Surface surface = reader.getSurface();
-        final CaptureRequest.Builder captureBuilder;
-        try {
-            captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            captureBuilder.addTarget(reader.getSurface());
-            captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(orientation));
-
-
-            ImageReader.OnImageAvailableListener imageAvailableListener = new ImageReader.OnImageAvailableListener() {
-                @Override
-                public void onImageAvailable(ImageReader reader) {
-                    Image image = null;
-                    try {
-                        image = reader.acquireLatestImage();
-                        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-
-                        Frame.Builder frameBuilder = new Frame.Builder();
-                        frameBuilder.setImageData(buffer, image.getWidth(), image.getHeight(), image.getFormat());
-                        Frame frame = frameBuilder.build();
-
-                        detector.receiveFrame(frame);
-
-                    } catch (java.lang.Exception e) {
-                        e.printStackTrace();
-                    } finally {
-                        if (image != null) image.close();
-                    }
-                }
-            };
-            HandlerThread handlerThread = new HandlerThread("qr_capture");
-            handlerThread.start();
-            final Handler handler = new Handler(handlerThread.getLooper());
-            reader.setOnImageAvailableListener(imageAvailableListener, handler);
-            try {
-                cameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
-                    @Override
-                    public void onConfigured(CameraCaptureSession session) {
-                        try {
-                            session.setRepeatingRequest(captureBuilder.build(), null, handler);
-
-                        } catch (Throwable t) {
-                            t.printStackTrace();
-                        }
-                    }
-
-                    @Override
-                    public void onConfigureFailed(CameraCaptureSession session) {
-
-                    }
-                }, handler);
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
-
-    }
-
-
     private class ImageFrame {
-        ImageFrame(byte[] bytes, int count) {
+        ImageFrame(ByteBuffer bytes, int count,int width, int height) {
             this.bytes = bytes;
             this.count = count;
+            this.width = width;
+            this.height = height;
         }
-        final byte[] bytes;
+       // final byte[] bytes;
+        final ByteBuffer bytes;
         final int count;
+        final int width;
+        final int height;
     }
 
     private class qrTask extends AsyncTask<ImageFrame, Void, Void> {
@@ -340,20 +228,12 @@ public class QRReader {
 
 
 
-            Bitmap bmp = BitmapFactory.decodeByteArray(imageFrame.bytes, 0, imageFrame.bytes.length);
+//            Bitmap bmp = BitmapFactory.decodeByteArray(imageFrame.bytes, 0, imageFrame.bytes.length);
 
-//            ByteBuffer b1 = planes[0].getBuffer(),
-//                    b2 = planes[1].getBuffer(),
-//                    b3 = planes[2].getBuffer();
-//
-//            ByteBuffer bAll = ByteBuffer.allocateDirect(b1.remaining() + b2.remaining() + b3.remaining());
-//            bAll.put(b1);
-//            bAll.put(b2);
-//            bAll.put(b3);
 
             Frame.Builder frameBuilder = new Frame.Builder();
-//            frameBuilder.setImageData(bAll, image.getWidth(), image.getHeight(), ImageFormat.NV21);
-            frameBuilder.setBitmap(bmp);
+            frameBuilder.setImageData(imageFrame.bytes, imageFrame.width, imageFrame.height, ImageFormat.NV21);
+//            frameBuilder.setBitmap(bmp);
             Frame frame = frameBuilder.build();
 
             detector.receiveFrame(frame);
@@ -369,7 +249,6 @@ public class QRReader {
         List<Surface> list = new ArrayList<Surface>();
 
         Size jpegSize = getAppropriateSize(500, jpegSizes);
-        //Size jpegSize = jpegSizes[0];
 
         int width = jpegSize.getWidth(), height = jpegSize.getHeight();
 
@@ -382,7 +261,7 @@ public class QRReader {
         System.out.println("JPEG WIDTH: " + jpegSize.getWidth());
         System.out.println("JPEG HEIGHT: " + jpegSize.getHeight());
 
-        reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 2);
+        reader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, 2);
         list.add(reader.getSurface());
 
         ImageReader.OnImageAvailableListener imageAvailableListener = new ImageReader.OnImageAvailableListener() {
@@ -395,61 +274,20 @@ public class QRReader {
                 try(Image image = reader.acquireLatestImage()){
                     Image.Plane[] planes = image.getPlanes();
 
-                    ByteBuffer buffer = planes[0].getBuffer();
+                    ByteBuffer b1 = planes[0].getBuffer(),
+                            b2 = planes[1].getBuffer(),
+                            b3 = planes[2].getBuffer();
 
-                    int remaining = buffer.remaining();
-                    byte[] bytes = new byte[remaining];
-                    buffer.get(bytes);
+                    ByteBuffer bAll = ByteBuffer.allocateDirect(b1.remaining() + b2.remaining() + b3.remaining());
+                    bAll.put(b1);
+                    bAll.put(b2);
+                    bAll.put(b3);
 
-
-
-                    new qrTask().execute(new ImageFrame(bytes, count));
+                    new qrTask().execute(new ImageFrame(bAll, count,image.getWidth(),image.getHeight()));
                 }catch(Throwable t){
                     t.printStackTrace();
                 }
 
-
-
-//                try {
-//                    image = reader.acquireLatestImage();
-//
-//                    Date before = new Date();
-//
-//                    Image.Plane[] planes = image.getPlanes();
-//
-//                    ByteBuffer b1 = planes[0].getBuffer(),
-//                            b2 = planes[1].getBuffer(),
-//                            b3 = planes[2].getBuffer();
-//
-//                    ByteBuffer bAll = ByteBuffer.allocateDirect(b1.remaining() + b2.remaining() + b3.remaining());
-//                    bAll.put(b1);
-//                    bAll.put(b2);
-//                    bAll.put(b3);
-////                    int remaining = buffer.remaining();
-////                    byte[] bytes = new byte[remaining];
-////                    buffer.get(bytes);
-////                    Bitmap bmp = BitmapFactory.decodeByteArray(bytes,0,bytes.length);
-//
-////                    System.out.println("BUFFER SIZE: " + buffer.capacity());
-////                    System.out.println("IMAGE WIDTH: " + image.getWidth());
-////                    System.out.println("IMAGE HEIGHT: " + image.getHeight());
-//
-//                    Frame.Builder frameBuilder = new Frame.Builder();
-//                    frameBuilder.setImageData(bAll, image.getWidth(), image.getHeight(), ImageFormat.NV21);
-////                    frameBuilder.setBitmap(bmp);
-//                    Frame frame = frameBuilder.build();
-//
-//                    Date after = new Date();
-//
-//                    System.out.println("Elapsed" + (after.getTime() - before.getTime()));
-//
-//                    detector.receiveFrame(frame);
-//
-//                } catch (java.lang.Exception e) {
-//                    e.printStackTrace();
-//                } finally {
-//                    if (image != null) image.close();
-//                }
             }
         };
         reader.setOnImageAvailableListener(imageAvailableListener, null);
