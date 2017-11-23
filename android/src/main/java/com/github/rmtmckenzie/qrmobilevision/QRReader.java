@@ -8,7 +8,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
-import android.graphics.Matrix;
 import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -16,11 +15,11 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraMetadata;
-import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
@@ -38,14 +37,11 @@ import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.barcode.Barcode;
 
 import java.io.IOException;
-import java.lang.annotation.Target;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class QRReader {
@@ -58,6 +54,8 @@ public class QRReader {
     private CameraSource camera;
     private CaptureRequest.Builder previewBuilder;
     private CameraCaptureSession previewSession;
+    private AtomicInteger atomicCounter = new AtomicInteger(0);
+    private ImageReader reader;
 
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
@@ -236,10 +234,9 @@ public class QRReader {
     }
 
 
-
     @TargetApi(21)
     private void startPreview() {
-        CameraCaptureSession.CaptureCallback listener = new CameraCaptureSession.CaptureCallback(){
+        CameraCaptureSession.CaptureCallback listener = new CameraCaptureSession.CaptureCallback() {
             @Override
             public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
                 super.onCaptureCompleted(session, request, result);
@@ -259,80 +256,124 @@ public class QRReader {
 
 
     @TargetApi(21)
-    private void startQr(){
+    private void startQr() {
 
         int width = jpegSizes[0].getWidth(), height = jpegSizes[0].getHeight();
         ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
         Surface surface = reader.getSurface();
         final CaptureRequest.Builder captureBuilder;
-        try{
+        try {
             captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             captureBuilder.addTarget(reader.getSurface());
-            captureBuilder.set(CaptureRequest.CONTROL_MODE,CameraMetadata.CONTROL_MODE_AUTO);
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION,ORIENTATIONS.get(orientation));
+            captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(orientation));
 
 
-        ImageReader.OnImageAvailableListener imageAvailableListener = new ImageReader.OnImageAvailableListener(){
-            @Override
-            public void onImageAvailable(ImageReader reader) {
-                Image image = null;
-                try {
-                    image = reader.acquireLatestImage();
-                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-
-                    Frame.Builder frameBuilder = new Frame.Builder();
-                    frameBuilder.setImageData(buffer, image.getWidth(), image.getHeight(), image.getFormat());
-                    Frame frame = frameBuilder.build();
-
-                    detector.receiveFrame(frame);
-
-                } catch (java.lang.Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    if (image != null) image.close();
-                }
-            }
-        };
-        HandlerThread handlerThread = new HandlerThread("qr_capture");
-        handlerThread.start();
-        final Handler handler = new Handler(handlerThread.getLooper());
-        reader.setOnImageAvailableListener(imageAvailableListener,handler);
-        try {
-            cameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
+            ImageReader.OnImageAvailableListener imageAvailableListener = new ImageReader.OnImageAvailableListener() {
                 @Override
-                public void onConfigured(CameraCaptureSession session) {
+                public void onImageAvailable(ImageReader reader) {
+                    Image image = null;
                     try {
-                        session.setRepeatingRequest(captureBuilder.build(),null,handler);
+                        image = reader.acquireLatestImage();
+                        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
 
-                    } catch (Throwable t) {
-                        t.printStackTrace();
+                        Frame.Builder frameBuilder = new Frame.Builder();
+                        frameBuilder.setImageData(buffer, image.getWidth(), image.getHeight(), image.getFormat());
+                        Frame frame = frameBuilder.build();
+
+                        detector.receiveFrame(frame);
+
+                    } catch (java.lang.Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        if (image != null) image.close();
                     }
                 }
+            };
+            HandlerThread handlerThread = new HandlerThread("qr_capture");
+            handlerThread.start();
+            final Handler handler = new Handler(handlerThread.getLooper());
+            reader.setOnImageAvailableListener(imageAvailableListener, handler);
+            try {
+                cameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
+                    @Override
+                    public void onConfigured(CameraCaptureSession session) {
+                        try {
+                            session.setRepeatingRequest(captureBuilder.build(), null, handler);
 
-                @Override
-                public void onConfigureFailed(CameraCaptureSession session) {
+                        } catch (Throwable t) {
+                            t.printStackTrace();
+                        }
+                    }
 
-                }
-            }, handler);
-        }catch(Throwable t){
-            t.printStackTrace();
-        }
-        } catch(Throwable t){
+                    @Override
+                    public void onConfigureFailed(CameraCaptureSession session) {
+
+                    }
+                }, handler);
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        } catch (Throwable t) {
             t.printStackTrace();
         }
 
     }
 
+
+    private class ImageFrame {
+        ImageFrame(byte[] bytes, int count) {
+            this.bytes = bytes;
+            this.count = count;
+        }
+        final byte[] bytes;
+        final int count;
+    }
+
+    private class qrTask extends AsyncTask<ImageFrame, Void, Void> {
+        @TargetApi(19)
+        @Override
+        protected Void doInBackground(ImageFrame... imageFrames) {
+            ImageFrame imageFrame = imageFrames[0];
+
+            if (imageFrame.count < atomicCounter.get()) return null;
+
+
+
+            Bitmap bmp = BitmapFactory.decodeByteArray(imageFrame.bytes, 0, imageFrame.bytes.length);
+
+//            ByteBuffer b1 = planes[0].getBuffer(),
+//                    b2 = planes[1].getBuffer(),
+//                    b3 = planes[2].getBuffer();
+//
+//            ByteBuffer bAll = ByteBuffer.allocateDirect(b1.remaining() + b2.remaining() + b3.remaining());
+//            bAll.put(b1);
+//            bAll.put(b2);
+//            bAll.put(b3);
+
+            Frame.Builder frameBuilder = new Frame.Builder();
+//            frameBuilder.setImageData(bAll, image.getWidth(), image.getHeight(), ImageFormat.NV21);
+            frameBuilder.setBitmap(bmp);
+            Frame frame = frameBuilder.build();
+
+            detector.receiveFrame(frame);
+
+            return null;
+        }
+
+    }
+
+
     @TargetApi(21)
     private void startCamera() {
         List<Surface> list = new ArrayList<Surface>();
 
-        Size jpegSize = getAppropriateSize(500,jpegSizes);
+        Size jpegSize = getAppropriateSize(500, jpegSizes);
         //Size jpegSize = jpegSizes[0];
 
         int width = jpegSize.getWidth(), height = jpegSize.getHeight();
 
-        for(Size s : jpegSizes){
+        for (Size s : jpegSizes) {
             System.out.print(s.getWidth());
             System.out.print("  ");
             System.out.println(s.getHeight());
@@ -341,44 +382,77 @@ public class QRReader {
         System.out.println("JPEG WIDTH: " + jpegSize.getWidth());
         System.out.println("JPEG HEIGHT: " + jpegSize.getHeight());
 
-        ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 2);
+        reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 2);
         list.add(reader.getSurface());
 
-        ImageReader.OnImageAvailableListener imageAvailableListener = new ImageReader.OnImageAvailableListener(){
+        ImageReader.OnImageAvailableListener imageAvailableListener = new ImageReader.OnImageAvailableListener() {
+
             @Override
             public void onImageAvailable(ImageReader reader) {
-                Image image = null;
-                try {
-                    image = reader.acquireLatestImage();
 
+                int count = atomicCounter.incrementAndGet();
 
-                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                try(Image image = reader.acquireLatestImage()){
+                    Image.Plane[] planes = image.getPlanes();
+
+                    ByteBuffer buffer = planes[0].getBuffer();
 
                     int remaining = buffer.remaining();
                     byte[] bytes = new byte[remaining];
                     buffer.get(bytes);
-                    Bitmap bmp = BitmapFactory.decodeByteArray(bytes,0,bytes.length);
-
-//                    System.out.println("BUFFER SIZE: " + buffer.capacity());
-//                    System.out.println("IMAGE WIDTH: " + image.getWidth());
-//                    System.out.println("IMAGE HEIGHT: " + image.getHeight());
-
-                    Frame.Builder frameBuilder = new Frame.Builder();
-                    frameBuilder.setBitmap(bmp);
-                    Frame frame = frameBuilder.build();
 
 
 
-                    detector.receiveFrame(frame);
-
-                } catch (java.lang.Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    if (image != null) image.close();
+                    new qrTask().execute(new ImageFrame(bytes, count));
+                }catch(Throwable t){
+                    t.printStackTrace();
                 }
+
+
+
+//                try {
+//                    image = reader.acquireLatestImage();
+//
+//                    Date before = new Date();
+//
+//                    Image.Plane[] planes = image.getPlanes();
+//
+//                    ByteBuffer b1 = planes[0].getBuffer(),
+//                            b2 = planes[1].getBuffer(),
+//                            b3 = planes[2].getBuffer();
+//
+//                    ByteBuffer bAll = ByteBuffer.allocateDirect(b1.remaining() + b2.remaining() + b3.remaining());
+//                    bAll.put(b1);
+//                    bAll.put(b2);
+//                    bAll.put(b3);
+////                    int remaining = buffer.remaining();
+////                    byte[] bytes = new byte[remaining];
+////                    buffer.get(bytes);
+////                    Bitmap bmp = BitmapFactory.decodeByteArray(bytes,0,bytes.length);
+//
+////                    System.out.println("BUFFER SIZE: " + buffer.capacity());
+////                    System.out.println("IMAGE WIDTH: " + image.getWidth());
+////                    System.out.println("IMAGE HEIGHT: " + image.getHeight());
+//
+//                    Frame.Builder frameBuilder = new Frame.Builder();
+//                    frameBuilder.setImageData(bAll, image.getWidth(), image.getHeight(), ImageFormat.NV21);
+////                    frameBuilder.setBitmap(bmp);
+//                    Frame frame = frameBuilder.build();
+//
+//                    Date after = new Date();
+//
+//                    System.out.println("Elapsed" + (after.getTime() - before.getTime()));
+//
+//                    detector.receiveFrame(frame);
+//
+//                } catch (java.lang.Exception e) {
+//                    e.printStackTrace();
+//                } finally {
+//                    if (image != null) image.close();
+//                }
             }
         };
-        reader.setOnImageAvailableListener(imageAvailableListener,null);
+        reader.setOnImageAvailableListener(imageAvailableListener, null);
         SurfaceTexture texture = textureEntry.surfaceTexture();
         texture.setDefaultBufferSize(size.getWidth(), size.getHeight());
         list.add(new Surface(texture));
@@ -435,10 +509,10 @@ public class QRReader {
     };
 
     @TargetApi(21)
-    private Size getAppropriateSize(int target,Size[] sizes){
+    private Size getAppropriateSize(int target, Size[] sizes) {
         Size s = sizes[0];
-        for(Size size : sizes){
-            if(size.getHeight() < target || size.getWidth() < target){
+        for (Size size : sizes) {
+            if (size.getHeight() < target || size.getWidth() < target) {
                 break;
             }
             s = size;
@@ -456,7 +530,7 @@ public class QRReader {
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             try {
                 orientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-                size = getAppropriateSize(500,map.getOutputSizes(SurfaceTexture.class));
+                size = getAppropriateSize(500, map.getOutputSizes(SurfaceTexture.class));
                 //size = map.getOutputSizes(SurfaceTexture.class)[0];
                 jpegSizes = map.getOutputSizes(ImageFormat.JPEG);
             } catch (java.lang.NullPointerException e) {
