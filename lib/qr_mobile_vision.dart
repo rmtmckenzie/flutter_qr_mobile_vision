@@ -6,18 +6,14 @@ class QrMobileVision {
   static int _textureId;
   static num _orientation;
   static List _sizes;
+  static double _height;
+  static double _width;
 
-  static get textureId{
-    return _textureId;
-  }
-
-  static get orientation{
-    return _orientation.toDouble();
-  }
-  
-  static get sizes{
-    return _sizes;
-  }
+  static get textureId => _textureId;
+  static get orientation => _orientation;
+  static get sizes => _sizes;
+  static get height => _height;
+  static get width => _width;
 
   
   static const MethodChannel _channel =
@@ -30,8 +26,14 @@ class QrMobileVision {
     _textureId = await _channel.invokeMethod('start', {
       'heartbeatTimeout': 0
     }).catchError(print);
-    _orientation = await _channel.invokeMethod('getOrientation',{}).catchError(print);
-    _sizes = await _channel.invokeMethod('getSupportedSizes',{}).catchError(print);
+    _orientation = (await _channel.invokeMethod('getOrientation',{}).catchError(print)).toDouble();
+    List<num> size = (await _channel.invokeMethod('getSize',{}).catchError(print));
+    _width = size[0].toDouble();
+    _height = size[1].toDouble();
+  }
+
+  static Future<Null> setTarget(int target){
+    return _channel.invokeMethod('setTarget',{'target': target}).catchError(print);
   }
 
    static Future<Null> stop() {

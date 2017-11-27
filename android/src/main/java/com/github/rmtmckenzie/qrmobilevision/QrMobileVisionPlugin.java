@@ -38,7 +38,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
         this.context = context;
         //this.reader = new QRReader(context, this);
     }
-
+    private int target;
     private final TextureRegistry textures;
 
     @Override
@@ -49,6 +49,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
 
                 TextureRegistry.SurfaceTextureEntry textureEntry = textures.createSurfaceTexture();
                 this.reader = new QRReader(context,this,textureEntry,result);
+                reader.target = target;
 
                 try {
                     reader.start(
@@ -83,6 +84,15 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
 
                 List<int[]> sizes = reader.getSupportedSizes();
                 result.success(sizes);
+                break;
+            }
+            case "getSize":{
+                result.success(Arrays.asList(reader.size.getWidth(),reader.size.getHeight()));
+                break;
+            }
+            case "setTarget":{
+                target = methodCall.argument("target");
+                result.success(null);
                 break;
             }
             default:

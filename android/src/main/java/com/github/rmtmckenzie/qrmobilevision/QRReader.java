@@ -24,6 +24,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.util.Size;
+import android.util.SparseArray;
 import android.util.SparseIntArray;
 import android.view.Surface;
 import android.graphics.SurfaceTexture;
@@ -33,8 +34,10 @@ import io.flutter.view.TextureRegistry;
 import io.flutter.plugin.common.MethodChannel.Result;
 
 import com.google.android.gms.vision.CameraSource;
+import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.barcode.Barcode;
+import com.google.android.gms.vision.barcode.BarcodeDetector;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -45,12 +48,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class QRReader {
-    private Size size;
+    int target;
+    Size size;
     private Size jpegSizes[] = null;
     private final Context context;
     private final QRReaderCallbacks communicator;
     private Heartbeat heartbeat;
-    private SplitBarcodeDetector detector;
+    private Detector<Barcode> detector;
     private CameraSource camera;
     private CaptureRequest.Builder previewBuilder;
     private CameraCaptureSession previewSession;
@@ -100,21 +104,9 @@ public class QRReader {
     }
 
     void initializeDetector() {
-        SplitBarcodeDetector.FrameReceiver frameReceiver = new SplitBarcodeDetector.FrameReceiver() {
-            @Override
-            public void receiveFrame(byte[] frame, int rotation) {
-                //communicator.cameraFrame(frame, rotation); //Baraka
-            }
-        };
 
-        SplitBarcodeDetector.QRReceiver qrReceiver = new SplitBarcodeDetector.QRReceiver() {
-            @Override
-            public void receiveQr(Barcode barcode) {
-                communicator.qrRead(barcode.displayValue);
-            }
-        };
-
-        detector = new SplitBarcodeDetector(context, frameReceiver, qrReceiver);
+        detector = new BarcodeDetector.Builder(context.getApplicationContext()).setBarcodeFormats(
+                Barcode.QR_CODE).build();
     }
 
 
@@ -205,42 +197,46 @@ public class QRReader {
 
 
     private class ImageFrame {
-        ImageFrame(ByteBuffer bytes, int count,int width, int height) {
+        ImageFrame(byte[] bytes, int count,int width, int height) {
             this.bytes = bytes;
             this.count = count;
             this.width = width;
             this.height = height;
         }
-       // final byte[] bytes;
-        final ByteBuffer bytes;
+        final byte[] bytes;
+        //final ByteBuffer bytes;
         final int count;
         final int width;
         final int height;
     }
 
-    private class qrTask extends AsyncTask<ImageFrame, Void, Void> {
+    private class qrTask extends AsyncTask<ImageFrame, Void, SparseArray<Barcode>> {
         @TargetApi(19)
         @Override
-        protected Void doInBackground(ImageFrame... imageFrames) {
+        protected SparseArray<Barcode> doInBackground(ImageFrame... imageFrames) {
             ImageFrame imageFrame = imageFrames[0];
 
             if (imageFrame.count < atomicCounter.get()) return null;
 
 
-
-//            Bitmap bmp = BitmapFactory.decodeByteArray(imageFrame.bytes, 0, imageFrame.bytes.length);
+           Bitmap bmp = BitmapFactory.decodeByteArray(imageFrame.bytes, 0, imageFrame.bytes.length);
 
 
             Frame.Builder frameBuilder = new Frame.Builder();
-            frameBuilder.setImageData(imageFrame.bytes, imageFrame.width, imageFrame.height, ImageFormat.NV21);
-//            frameBuilder.setBitmap(bmp);
+//            frameBuilder.setImageData(imageFrame.bytes, imageFrame.width, imageFrame.height, ImageFormat.NV21);
+            frameBuilder.setBitmap(bmp);
             Frame frame = frameBuilder.build();
 
-            detector.receiveFrame(frame);
-
-            return null;
+            return detector.detect(frame);
         }
 
+        @Override
+        protected void onPostExecute(SparseArray<Barcode> detectedItems) {
+            if(detectedItems == null) return;
+            for(int i = 0; i < detectedItems.size(); ++i) {
+                communicator.qrRead(detectedItems.valueAt(i).displayValue);
+            }
+        }
     }
 
 
@@ -248,7 +244,7 @@ public class QRReader {
     private void startCamera() {
         List<Surface> list = new ArrayList<Surface>();
 
-        Size jpegSize = getAppropriateSize(500, jpegSizes);
+        Size jpegSize = getAppropriateSize(target, jpegSizes);
 
         int width = jpegSize.getWidth(), height = jpegSize.getHeight();
 
@@ -261,7 +257,7 @@ public class QRReader {
         System.out.println("JPEG WIDTH: " + jpegSize.getWidth());
         System.out.println("JPEG HEIGHT: " + jpegSize.getHeight());
 
-        reader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, 2);
+        reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 2);
         list.add(reader.getSurface());
 
         ImageReader.OnImageAvailableListener imageAvailableListener = new ImageReader.OnImageAvailableListener() {
@@ -269,21 +265,27 @@ public class QRReader {
             @Override
             public void onImageAvailable(ImageReader reader) {
 
+
                 int count = atomicCounter.incrementAndGet();
 
                 try(Image image = reader.acquireLatestImage()){
+                    if(image == null) return;
                     Image.Plane[] planes = image.getPlanes();
 
-                    ByteBuffer b1 = planes[0].getBuffer(),
-                            b2 = planes[1].getBuffer(),
-                            b3 = planes[2].getBuffer();
+//                    ByteBuffer b1 = planes[0].getBuffer(),
+//                            b2 = planes[1].getBuffer(),
+//                            b3 = planes[2].getBuffer();
 
-                    ByteBuffer bAll = ByteBuffer.allocateDirect(b1.remaining() + b2.remaining() + b3.remaining());
-                    bAll.put(b1);
-                    bAll.put(b2);
-                    bAll.put(b3);
+                    ByteBuffer buffer = planes[0].getBuffer();
+                    byte[] bytes  = new byte[buffer.remaining()];
+                    buffer.get(bytes);
 
-                    new qrTask().execute(new ImageFrame(bAll, count,image.getWidth(),image.getHeight()));
+//                    ByteBuffer bAll = ByteBuffer.allocateDirect(b1.remaining() + b2.remaining() + b3.remaining());
+//                    bAll.put(b1);
+//                    bAll.put(b3);
+//                    bAll.put(b2);
+
+                    new qrTask().execute(new ImageFrame(bytes, count,image.getWidth(),image.getHeight()));
                 }catch(Throwable t){
                     t.printStackTrace();
                 }
@@ -368,7 +370,7 @@ public class QRReader {
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             try {
                 orientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-                size = getAppropriateSize(500, map.getOutputSizes(SurfaceTexture.class));
+                size = getAppropriateSize(target, map.getOutputSizes(SurfaceTexture.class));
                 //size = map.getOutputSizes(SurfaceTexture.class)[0];
                 jpegSizes = map.getOutputSizes(ImageFormat.JPEG);
             } catch (java.lang.NullPointerException e) {

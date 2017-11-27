@@ -28,28 +28,13 @@ class Camera extends StatefulWidget {
 
 class CameraState extends State<Camera> {
   CameraState();
-  static const num target = 300;
+  static const num target = 350;
 
-  double _w, _h;
+  double _longSide, _shortSide;
 
   @override
   initState() {
     super.initState();
-  }
-
-  void _getSize(List<List<num>> sizes) {
-    List<num> size;
-    List<num> save;
-    for (List<num> s in sizes) {
-      if (s[0] < target || s[1] < target) {
-        size = save ?? s;
-        break;
-      }
-      save = s;
-    }
-
-    _w = size[0].toDouble();
-    _h = size[1].toDouble();
   }
 
   @override
@@ -62,53 +47,59 @@ class CameraState extends State<Camera> {
   Widget build(BuildContext context) {
     print('Texture Id: ${QrMobileVision.textureId}');
     return QrMobileVision.textureId != null
-        ? new Preview(_h, _w, target.toDouble())
+        ? new Preview(_shortSide, _longSide, target.toDouble())
         : () {
-            QrMobileVision.start(widget.qrCodeHandler).then((n) => setState(() {
-                  _getSize(QrMobileVision.sizes);
-                }));
+            QrMobileVision.setTarget(target).then((n) => QrMobileVision
+                .start(widget.qrCodeHandler)
+                .then((n) => setState(() {
+                      _longSide = QrMobileVision.width;
+                      _shortSide = QrMobileVision.height;
+                    })));
             return new Text("Camera Loading...");
           }();
   }
 }
 
 class Preview extends StatelessWidget {
-  final double height;
-  final double width;
+  final double shortSide;
+  final double longSide;
   final double target;
-  Preview(this.height, this.width, this.target);
+  Preview(this.shortSide, this.longSide, this.target);
+
   @override
   Widget build(BuildContext context) {
-    print("Width: $width, Height: $height, Target: $target");
-    return new Container(decoration: new BoxDecoration(border: new Border.all(color: Colors.red)) ,child: new Stack(
-      children: <Widget>[
-        new Positioned(
-          //top: 0.0,
-            //bottom: 0.0,
-            child: new Container(
-          child: new Transform.rotate(
-              angle: (QrMobileVision.orientation / (360)) * 2 * PI,
-              child: new SizedBox(child: new Texture(textureId: QrMobileVision.textureId),height: height, width: width,)),
-          //constraints: new BoxConstraints.tight(new Size(width, height)),
-        )),
-        new Center(
-          child: new Container(
+    double frameHeight;
+    double frameWidth;
+    if(QrMobileVision.orientation == 0 || QrMobileVision.orientation == 180){
+      frameHeight = longSide;
+      frameWidth = shortSide;
+    }
+    else{
+      frameHeight = shortSide;
+      frameWidth = longSide;
+    }
+
+    double height = target * frameHeight / frameWidth;
+    double width = target;
+
+    double scale = target/width;
+
+    print("Long: $longSide, Short: $shortSide, Target: $target");
+    return new Center(child: new Container(
+      //constraints: new BoxConstraints.tight(new Size(shortSide,longSide)),
+      child: new Transform(
+        alignment: FractionalOffset.center,
+        transform: new Matrix4.identity()..scale(scale,scale),
+        child: new Transform.rotate(
+            angle: (QrMobileVision.orientation / (360)) * 2 * PI,
+            child: new SizedBox(
+              child: new Texture(textureId: QrMobileVision.textureId),
               height: height,
               width: width,
-              decoration: new BoxDecoration(
-                border: new Border(
-                    top: new BorderSide(
-                        color: Colors.white, width: (width - target) / 2),
-                    bottom: new BorderSide(
-                        color: Colors.white, width: (width - target) / 2),
-                    right: new BorderSide(
-                        color: Colors.white, width: (height - target) / 2),
-                    left: new BorderSide(
-                        color: Colors.white, width: (height - target) / 2)),
-              ),
-              constraints: new BoxConstraints.tight(new Size(height, width))),
-        )
-      ],
+            )),
+      ),
     ));
+
+
   }
 }
