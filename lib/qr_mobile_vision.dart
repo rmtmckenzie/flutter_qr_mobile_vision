@@ -32,8 +32,8 @@ class QrMobileVision {
     _height = size[1].toDouble();
   }
 
-  static Future<Null> setTarget(int target){
-    return _channel.invokeMethod('setTarget',{'target': target}).catchError(print);
+  static Future<Null> setTarget(int width, int height){
+    return _channel.invokeMethod('setTarget',{'width': width,'height': height}).catchError(print);
   }
 
    static Future<Null> stop() {

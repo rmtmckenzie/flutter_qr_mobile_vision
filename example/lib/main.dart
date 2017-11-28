@@ -47,8 +47,8 @@ class _MyAppState extends State<MyApp> {
             camState
                 ? new Camera(
                     fill: false,
-                    width: 300.0,
-                    height: 300.0,
+                    width: 350.0,
+                    height: 700.0,
                     qrCodeCallback: (code) {
                       setState(() {
                         qr = code;

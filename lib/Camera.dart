@@ -15,7 +15,7 @@ class Camera extends StatefulWidget {
 
   final BoxConstraints constraints;
   final bool fill;
-  final double width, height;
+  final num width, height;
   final ValueChanged<String> qrCodeCallback;
 
   void qrCodeHandler(String string) {
@@ -23,12 +23,12 @@ class Camera extends StatefulWidget {
   }
 
   @override
-  CameraState createState() => new CameraState();
+  CameraState createState() => new CameraState(width,height);
 }
 
 class CameraState extends State<Camera> {
-  CameraState();
-  static const num target = 350;
+  CameraState(this._targetWidth,this._targetHeight);
+  final num _targetWidth , _targetHeight;
 
   double _longSide, _shortSide;
 
@@ -47,9 +47,9 @@ class CameraState extends State<Camera> {
   Widget build(BuildContext context) {
     print('Texture Id: ${QrMobileVision.textureId}');
     return QrMobileVision.textureId != null
-        ? new Preview(_shortSide, _longSide, target.toDouble())
+        ? new Preview(_shortSide, _longSide, _targetWidth.toDouble(),_targetHeight.toDouble())
         : () {
-            QrMobileVision.setTarget(target).then((n) => QrMobileVision
+            QrMobileVision.setTarget(_targetWidth.toInt(),_targetHeight.toInt()).then((n) => QrMobileVision
                 .start(widget.qrCodeHandler)
                 .then((n) => setState(() {
                       _longSide = QrMobileVision.width;
@@ -61,10 +61,9 @@ class CameraState extends State<Camera> {
 }
 
 class Preview extends StatelessWidget {
-  final double shortSide;
-  final double longSide;
-  final double target;
-  Preview(this.shortSide, this.longSide, this.target);
+  final double shortSide, longSide;
+  final double targetWidth,targetHeight;
+  Preview(this.shortSide, this.longSide, this.targetWidth, this.targetHeight);
 
   @override
   Widget build(BuildContext context) {
@@ -79,12 +78,12 @@ class Preview extends StatelessWidget {
       frameWidth = longSide;
     }
 
-    double height = target * frameHeight / frameWidth;
-    double width = target;
+    double height = targetWidth * frameHeight / frameWidth;
+    double width = targetWidth;
 
-    double scale = target/width;
+    double scale = targetWidth/width;
 
-    print("Long: $longSide, Short: $shortSide, Target: $target");
+    print("Long: $longSide, Short: $shortSide, Target Width: $targetWidth, Target Height: $targetHeight");
     return new Center(child: new Container(
       //constraints: new BoxConstraints.tight(new Size(shortSide,longSide)),
       child: new Transform(

@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class QRReader {
-    int target;
+    int targetHeight, targetWidth;
     Size size;
     private Size jpegSizes[] = null;
     private final Context context;
@@ -244,7 +244,7 @@ public class QRReader {
     private void startCamera() {
         List<Surface> list = new ArrayList<Surface>();
 
-        Size jpegSize = getAppropriateSize(target, jpegSizes);
+        Size jpegSize = getAppropriateSize(jpegSizes);
 
         int width = jpegSize.getWidth(), height = jpegSize.getHeight();
 
@@ -349,10 +349,10 @@ public class QRReader {
     };
 
     @TargetApi(21)
-    private Size getAppropriateSize(int target, Size[] sizes) {
+    private Size getAppropriateSize(Size[] sizes) {
         Size s = sizes[0];
         for (Size size : sizes) {
-            if (size.getHeight() < target || size.getWidth() < target) {
+            if (size.getHeight() < targetHeight || size.getWidth() < targetWidth) {
                 break;
             }
             s = size;
@@ -370,7 +370,7 @@ public class QRReader {
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             try {
                 orientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-                size = getAppropriateSize(target, map.getOutputSizes(SurfaceTexture.class));
+                size = getAppropriateSize( map.getOutputSizes(SurfaceTexture.class));
                 //size = map.getOutputSizes(SurfaceTexture.class)[0];
                 jpegSizes = map.getOutputSizes(ImageFormat.JPEG);
             } catch (java.lang.NullPointerException e) {
