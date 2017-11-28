@@ -351,11 +351,21 @@ public class QRReader {
     @TargetApi(21)
     private Size getAppropriateSize(Size[] sizes) {
         Size s = sizes[0];
-        for (Size size : sizes) {
-            if (size.getHeight() < targetHeight || size.getWidth() < targetWidth) {
-                break;
+        if(orientation % 180 == 0) {
+            for (Size size : sizes) {
+                if (size.getHeight() < targetHeight || size.getWidth() < targetWidth) {
+                    break;
+                }
+                s = size;
             }
-            s = size;
+        }
+        else{
+            for (Size size : sizes) {
+                if (size.getHeight() < targetWidth || size.getWidth() < targetHeight) {
+                    break;
+                }
+                s = size;
+            }
         }
         return s;
     }

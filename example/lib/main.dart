@@ -45,16 +45,16 @@ class _MyAppState extends State<MyApp> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             camState
-                ? new Camera(
+                ? new Center(child: new Camera(
                     fill: false,
-                    width: 350.0,
-                    height: 700.0,
+                    width: 320.0,
+                    height: 320.0,
                     qrCodeCallback: (code) {
                       setState(() {
                         qr = code;
                       });
                     },
-                  )
+                  ))
                 : new Text("Camera inActive"),
             new Text("QRCODE: $qr"),
           ],
