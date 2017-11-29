@@ -411,6 +411,10 @@ public class QRReader {
             camera = null;
             detector = null;
         }
+        if(cameraDevice != null){
+            cameraDevice.close();
+            reader.close();
+        }
 
     }
 

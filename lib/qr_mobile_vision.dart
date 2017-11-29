@@ -37,8 +37,8 @@ class QrMobileVision {
   }
 
    static Future<Null> stop() {
-    channelReader.setCameraFrameHandler(null);
     channelReader.setQrCodeHandler(null);
+    _textureId = null;
     return _channel.invokeMethod('stop').catchError(print);
   }
 
