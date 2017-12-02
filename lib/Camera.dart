@@ -52,7 +52,7 @@ class CameraState extends State<Camera> {
             _targetHeight.toDouble())
         : () {
             QrMobileVision
-                .setTarget(_targetWidth.toInt(), _targetHeight.toInt())
+                .setTargetSize(_targetWidth.toInt(), _targetHeight.toInt())
                 .then((n) => QrMobileVision
                     .start(widget.qrCodeHandler)
                     .then((n) => setState(() {

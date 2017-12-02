@@ -48,9 +48,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
                 Integer heartbeatTimeout = methodCall.argument("heartbeatTimeout");
 
                 TextureRegistry.SurfaceTextureEntry textureEntry = textures.createSurfaceTexture();
-                this.reader = new QRReader(context,this,textureEntry,result);
-                reader.targetHeight = targetHeight;
-                reader.targetWidth = targetWidth;
+                this.reader = new QRReader(targetWidth,targetHeight,context,this,textureEntry,result);
 
                 try {
                     reader.start(
@@ -68,7 +66,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
                 break;
             }
             case "getOrientation":{
-                result.success(reader.orientation);
+                result.success(reader.qrCamera.getOrientation());
                 break;
             }
             case "stop": {
@@ -88,7 +86,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
                 break;
             }
             case "getSize":{
-                result.success(Arrays.asList(reader.size.getWidth(),reader.size.getHeight()));
+                result.success(Arrays.asList(reader.qrCamera.getWidth(),reader.qrCamera.getHeight()));
                 break;
             }
             case "setTarget":{

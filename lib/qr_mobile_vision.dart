@@ -20,6 +20,8 @@ class QrMobileVision {
       const MethodChannel('com.github.rmtmckenzie/qr_mobile_vision');
   static QrChannelReader channelReader = new QrChannelReader(_channel);
 
+
+  //Set target size before starting
   static Future<Null> start(QRCodeHandler qrCodeHandler,
       ) async{
     channelReader.setQrCodeHandler(qrCodeHandler);
@@ -32,7 +34,7 @@ class QrMobileVision {
     _height = size[1].toDouble();
   }
 
-  static Future<Null> setTarget(int width, int height){
+  static Future<Null> setTargetSize(int width, int height){
     return _channel.invokeMethod('setTarget',{'width': width,'height': height}).catchError(print);
   }
 
