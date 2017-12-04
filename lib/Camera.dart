@@ -52,13 +52,12 @@ class CameraState extends State<Camera> {
             _targetHeight.toDouble())
         : () {
             QrMobileVision
-                .setTargetSize(_targetWidth.toInt(), _targetHeight.toInt())
-                .then((n) => QrMobileVision
-                    .start(widget.qrCodeHandler)
-                    .then((n) => setState(() {
-                          _longSide = QrMobileVision.width;
-                          _shortSide = QrMobileVision.height;
-                        })));
+                .start(_targetWidth.toInt(), _targetHeight.toInt(),
+                    widget.qrCodeHandler)
+                .then((n) => setState(() {
+                      _longSide = QrMobileVision.width;
+                      _shortSide = QrMobileVision.height;
+                    }));
             return new Text("Camera Loading...");
           }();
   }
@@ -111,21 +110,21 @@ class Preview extends StatelessWidget {
       width: targetWidth,
       height: targetHeight,
       child: new ClipRect(
-          child: new Transform(
-            alignment: FractionalOffset.center,
-            transform: new Matrix4.identity()..scale(scale, scale),
-            child: new Transform.rotate(
-              angle: (QrMobileVision.orientation / (360)) * 2 * PI,
-              child: new OverflowBox(
-                maxHeight: drawnTextureHeight,
-                maxWidth: drawnTextureWidth,
-                minHeight: drawnTextureHeight,
-                minWidth: drawnTextureWidth,
-                child: new Texture(textureId: QrMobileVision.textureId),
-              ),
+        child: new Transform(
+          alignment: FractionalOffset.center,
+          transform: new Matrix4.identity()..scale(scale, scale),
+          child: new Transform.rotate(
+            angle: (QrMobileVision.orientation / (360)) * 2 * PI,
+            child: new OverflowBox(
+              maxHeight: drawnTextureHeight,
+              maxWidth: drawnTextureWidth,
+              minHeight: drawnTextureHeight,
+              minWidth: drawnTextureWidth,
+              child: new Texture(textureId: QrMobileVision.textureId),
             ),
           ),
         ),
+      ),
     );
   }
 }

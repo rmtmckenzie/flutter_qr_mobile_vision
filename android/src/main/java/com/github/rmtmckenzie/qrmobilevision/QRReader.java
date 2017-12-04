@@ -45,7 +45,7 @@ class QRReader {
         qrCamera = android.os.Build.VERSION.SDK_INT >= 21 ?
                 new QrCameraC2(width,height,context,texture,new QrDetector(communicator,context)) :
                 new QrCameraC1(width,height,texture,new QrDetector(communicator,context));
-        //qrCamera = new QrCameraC1(width,height,texture,new QrDetector(communicator,context));
+//        qrCamera = new QrCameraC1(width,height,texture,new QrDetector(communicator,context));
     }
 
     public static class Exception extends java.lang.Exception {
