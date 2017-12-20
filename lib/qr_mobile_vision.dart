@@ -3,33 +3,53 @@ import 'package:flutter/services.dart';
 import 'dart:typed_data';
 
 class QrMobileVision {
+  static int _textureId;
+  static num _orientation;
+  static List _sizes;
+  static double _height;
+  static double _width;
+
+  static get textureId => _textureId;
+  static get orientation => _orientation;
+  static get sizes => _sizes;
+  static get height => _height;
+  static get width => _width;
+
+  
   static const MethodChannel _channel =
       const MethodChannel('com.github.rmtmckenzie/qr_mobile_vision');
   static QrChannelReader channelReader = new QrChannelReader(_channel);
 
-  static Future<Null> start(QRCodeHandler qrCodeHandler,
-      CameraFrameHandler cameraFrameHandler, int height, int width, bool fill) {
-    channelReader.setCameraFrameHandler(cameraFrameHandler);
+
+  //Set target size before starting
+  static Future<Null> start(int width, int height, QRCodeHandler qrCodeHandler,
+      ) async{
     channelReader.setQrCodeHandler(qrCodeHandler);
-    return _channel.invokeMethod('start', {
-      'width': width,
-      'height': height,
-      'fill': fill,
+    await _channel.invokeMethod('setTarget',{'width': width,'height': height}).catchError(print);
+    _textureId = await _channel.invokeMethod('start', {
       'heartbeatTimeout': 0
     }).catchError(print);
+    _orientation = (await _channel.invokeMethod('getOrientation',{}).catchError(print)).toDouble();
+    List<num> size = (await _channel.invokeMethod('getSize',{}).catchError(print));
+    _width = size[0].toDouble();
+    _height = size[1].toDouble();
   }
 
-  static Future<Null> stop() {
-    channelReader.setCameraFrameHandler(null);
+//  static Future<Null> setTargetSize(int width, int height){
+//    return _channel.invokeMethod('setTarget',{'width': width,'height': height}).catchError(print);
+//  }
+
+   static Future<Null> stop() {
     channelReader.setQrCodeHandler(null);
+    _textureId = null;
     return _channel.invokeMethod('stop').catchError(print);
   }
 
-  static Future<Null> heartbeat() {
+   static Future<Null> heartbeat() {
     return _channel.invokeMethod('heartbeat').catchError(print);
   }
 
-  static Future<List<List<int>>> getSupportedSizes() {
+   static Future<List<List<int>>> getSupportedSizes() {
     return _channel.invokeMethod('getSupportedSizes').catchError(print);
   }
 }
