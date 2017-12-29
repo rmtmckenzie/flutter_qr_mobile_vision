@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:qr_mobile_vision/Camera.dart';
+import 'package:qr_mobile_vision/QrCamera.dart';
 
 void main() {
   debugPaintSizeEnabled = false;
@@ -45,10 +45,8 @@ class _MyAppState extends State<MyApp> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             camState
-                ? new Center(child: new Camera(
+                ? new Center(child: new QrCamera(
                     fill: false,
-                    width: 350.0,
-                    height: 400.0,
                     qrCodeCallback: (code) {
                       setState(() {
                         qr = code;

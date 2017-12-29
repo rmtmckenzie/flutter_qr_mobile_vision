@@ -1,12 +1,11 @@
-import 'dart:async';
-import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:qr_mobile_vision/qr_mobile_vision.dart';
 import 'dart:math';
 
-class Camera extends StatefulWidget {
-  Camera(
+class QrCamera extends StatefulWidget {
+  QrCamera(
       {this.constraints,
       this.fill,
       this.width,
@@ -23,13 +22,13 @@ class Camera extends StatefulWidget {
   }
 
   @override
-  CameraState createState() => new CameraState(width, height);
+  QrCameraState createState() => new QrCameraState();
 }
 
-class CameraState extends State<Camera> {
-  CameraState(this._targetWidth, this._targetHeight);
+class QrCameraState extends State<QrCamera> {
+  QrCameraState();
 
-  final num _targetWidth, _targetHeight;
+  //final num _targetWidth, _targetHeight;
 
   double _longSide, _shortSide;
 
@@ -47,19 +46,25 @@ class CameraState extends State<Camera> {
   @override
   Widget build(BuildContext context) {
     print('Texture Id: ${QrMobileVision.textureId}');
-    return QrMobileVision.textureId != null
-        ? new Preview(_shortSide, _longSide, _targetWidth.toDouble(),
-            _targetHeight.toDouble())
-        : () {
-            QrMobileVision
-                .start(_targetWidth.toInt(), _targetHeight.toInt(),
-                    widget.qrCodeHandler)
-                .then((n) => setState(() {
-                      _longSide = QrMobileVision.width;
-                      _shortSide = QrMobileVision.height;
-                    }));
-            return new Text("Camera Loading...");
-          }();
+    return new LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        num _targetWidth = constraints.maxWidth,
+            _targetHeight = constraints.maxHeight;
+        return QrMobileVision.textureId != null
+            ? new Preview(_shortSide, _longSide, _targetWidth.toDouble(),
+                _targetHeight.toDouble())
+            : () {
+                QrMobileVision
+                    .start(_targetWidth.toInt(), _targetHeight.toInt(),
+                        widget.qrCodeHandler)
+                    .then((n) => setState(() {
+                          _longSide = QrMobileVision.width;
+                          _shortSide = QrMobileVision.height;
+                        }));
+                return new Text("Camera Loading...");
+              }();
+      },
+    );
   }
 }
 
