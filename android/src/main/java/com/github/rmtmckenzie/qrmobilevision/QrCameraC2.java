@@ -178,7 +178,7 @@ class QrCameraC2 implements QrCamera {
             previewBuilder.addTarget(list.get(0));
             previewBuilder.addTarget(list.get(1));
             previewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-            previewBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(orientation));
+//            previewBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(orientation));
         } catch (java.lang.Exception e) {
             e.printStackTrace();
             return;

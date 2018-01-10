@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:typed_data';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:qr_mobile_vision/qr_mobile_vision.dart';
-import 'dart:math';
 
 class Camera extends StatefulWidget {
   Camera(
@@ -36,6 +36,16 @@ class CameraState extends State<Camera> {
   @override
   initState() {
     super.initState();
+    asyncInit();
+  }
+
+  Future asyncInit() async {
+    await QrMobileVision.start(
+        _targetWidth.toInt(), _targetHeight.toInt(), widget.qrCodeHandler);
+    setState(() {
+      _longSide = QrMobileVision.width;
+      _shortSide = QrMobileVision.height;
+    });
   }
 
   @override
@@ -47,19 +57,14 @@ class CameraState extends State<Camera> {
   @override
   Widget build(BuildContext context) {
     print('Texture Id: ${QrMobileVision.textureId}');
-    return QrMobileVision.textureId != null
-        ? new Preview(_shortSide, _longSide, _targetWidth.toDouble(),
-            _targetHeight.toDouble())
-        : () {
-            QrMobileVision
-                .start(_targetWidth.toInt(), _targetHeight.toInt(),
-                    widget.qrCodeHandler)
-                .then((n) => setState(() {
-                      _longSide = QrMobileVision.width;
-                      _shortSide = QrMobileVision.height;
-                    }));
-            return new Text("Camera Loading...");
-          }();
+    return QrMobileVision.textureId == null
+        ? new Text("Camera Loading ...")
+        : new Preview(
+            _shortSide,
+            _longSide,
+            _targetWidth.toDouble(),
+            _targetHeight.toDouble(),
+          );
   }
 }
 
@@ -100,7 +105,7 @@ class Preview extends StatelessWidget {
       scale = (rotated ? targetHeight : targetWidth) / drawnTextureWidth;
     }
 
-    print("Rotated: $rotated\n" +
+    print("Rotated: $rotated orientatin: ${QrMobileVision.orientation}\n" +
         "Long: $longSide, Short: $shortSide\n" +
         "Target Width: $targetWidth, Target Height: $targetHeight Target Ratio: $targetRatio\n" +
         "Frame Width: $frameWidth, Frame Height: $frameHeight, Frame Ratio: $frameRatio\n" +
@@ -114,7 +119,7 @@ class Preview extends StatelessWidget {
           alignment: FractionalOffset.center,
           transform: new Matrix4.identity()..scale(scale, scale),
           child: new Transform.rotate(
-            angle: (QrMobileVision.orientation / (360)) * 2 * PI,
+            angle: 0.0, //(QrMobileVision.orientation / 180.0) * PI,
             child: new OverflowBox(
               maxHeight: drawnTextureHeight,
               maxWidth: drawnTextureWidth,
