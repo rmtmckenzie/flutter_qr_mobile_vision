@@ -1,8 +1,8 @@
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:qr_mobile_vision/qr_mobile_vision.dart';
-import 'dart:math';
 
 class QrCamera extends StatefulWidget {
   QrCamera(
@@ -28,13 +28,22 @@ class QrCamera extends StatefulWidget {
 class QrCameraState extends State<QrCamera> {
   QrCameraState();
 
-  //final num _targetWidth, _targetHeight;
-
   double _longSide, _shortSide;
 
   @override
   initState() {
     super.initState();
+    asyncInit();
+  }
+
+  Future asyncInit() async {
+
+    await QrMobileVision.start(
+        widget.width.toInt(), widget.height.toInt(), widget.qrCodeHandler);
+    setState(() {
+      _longSide = QrMobileVision.width;
+      _shortSide = QrMobileVision.height;
+    });
   }
 
   @override
@@ -46,25 +55,20 @@ class QrCameraState extends State<QrCamera> {
   @override
   Widget build(BuildContext context) {
     print('Texture Id: ${QrMobileVision.textureId}');
+
     return new LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        num _targetWidth = constraints.maxWidth,
-            _targetHeight = constraints.maxHeight;
-        return QrMobileVision.textureId != null
-            ? new Preview(_shortSide, _longSide, _targetWidth.toDouble(),
-                _targetHeight.toDouble())
-            : () {
-                QrMobileVision
-                    .start(_targetWidth.toInt(), _targetHeight.toInt(),
-                        widget.qrCodeHandler)
-                    .then((n) => setState(() {
-                          _longSide = QrMobileVision.width;
-                          _shortSide = QrMobileVision.height;
-                        }));
-                return new Text("Camera Loading...");
-              }();
-      },
-    );
+        builder: (BuildContext context, BoxConstraints constraints) {
+      num _targetWidth = constraints.maxWidth,
+          _targetHeight = constraints.maxHeight;
+      return QrMobileVision.textureId == null
+          ? new Text("Camera Loading ...")
+          : new Preview(
+              _shortSide,
+              _longSide,
+              _targetWidth.toDouble(),
+              _targetHeight.toDouble(),
+            );
+    });
   }
 }
 
@@ -105,7 +109,7 @@ class Preview extends StatelessWidget {
       scale = (rotated ? targetHeight : targetWidth) / drawnTextureWidth;
     }
 
-    print("Rotated: $rotated\n" +
+    print("Rotated: $rotated orientatin: ${QrMobileVision.orientation}\n" +
         "Long: $longSide, Short: $shortSide\n" +
         "Target Width: $targetWidth, Target Height: $targetHeight Target Ratio: $targetRatio\n" +
         "Frame Width: $frameWidth, Frame Height: $frameHeight, Frame Ratio: $frameRatio\n" +
@@ -119,7 +123,7 @@ class Preview extends StatelessWidget {
           alignment: FractionalOffset.center,
           transform: new Matrix4.identity()..scale(scale, scale),
           child: new Transform.rotate(
-            angle: (QrMobileVision.orientation / (360)) * 2 * PI,
+            angle: 0.0, //(QrMobileVision.orientation / 180.0) * PI,
             child: new OverflowBox(
               maxHeight: drawnTextureHeight,
               maxWidth: drawnTextureWidth,

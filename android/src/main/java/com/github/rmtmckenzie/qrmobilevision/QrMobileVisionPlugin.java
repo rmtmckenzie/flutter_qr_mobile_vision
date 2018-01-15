@@ -43,6 +43,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
 
     @Override
     public void onMethodCall(MethodCall methodCall, Result result) {
+        System.out.println("QRMobileVisionPlugin: Method call received: " + methodCall.method);
         switch (methodCall.method) {
             case "start": {
                 Integer heartbeatTimeout = methodCall.argument("heartbeatTimeout");

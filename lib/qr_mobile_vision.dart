@@ -9,11 +9,11 @@ class QrMobileVision {
   static double _height;
   static double _width;
 
-  static get textureId => _textureId;
-  static get orientation => _orientation;
-  static get sizes => _sizes;
-  static get height => _height;
-  static get width => _width;
+  static int get textureId => _textureId;
+  static num get orientation => _orientation;
+  static List get sizes => _sizes;
+  static double get height => _height;
+  static double get width => _width;
 
   
   static const MethodChannel _channel =
