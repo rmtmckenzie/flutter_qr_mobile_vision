@@ -29,23 +29,23 @@ class QRReader {
     private Heartbeat heartbeat;
     private CameraSource camera;
     QrCamera qrCamera;
-    private long textureId;
+
+    interface QRReaderStartedCallback {
+        void started();
+        void startingFailed(Throwable t);
+    }
+
+    private QRReaderStartedCallback startedCallback;
 
 
-    private Result result;
-
-
-    QRReader(int width, int height, Context context, final QRReaderCallbacks communicator,
-             final TextureRegistry.SurfaceTextureEntry textureEntry, Result result) {
+    QRReader(int width, int height, Context context, final QRReaderStartedCallback startedCallback, final QRReaderCallbacks communicator,
+             final SurfaceTexture texture) {
         this.context = context;
-        this.result = result;
+        this.startedCallback = startedCallback;
 
-        SurfaceTexture texture = textureEntry.surfaceTexture();
-        this.textureId = textureEntry.id();
         qrCamera = android.os.Build.VERSION.SDK_INT >= 21 ?
                 new QrCameraC2(width,height,context,texture,new QrDetector(communicator,context)) :
                 new QrCameraC1(width,height,texture,new QrDetector(communicator,context));
-//        qrCamera = new QrCameraC1(width,height,texture,new QrDetector(communicator,context));
     }
 
     public static class Exception extends java.lang.Exception {
@@ -60,12 +60,10 @@ class QRReader {
             this.reason = reason;
         }
 
-        public Reason reason() {
+        Reason reason() {
             return reason;
         }
     }
-
-
 
 
     void start(final int heartBeatTimeout) throws IOException, Exception {
@@ -82,42 +80,40 @@ class QRReader {
                         try {
                             continueStarting(heartBeatTimeout);
                         } catch (IOException e) {
-                            //TODO: return properly
-                            e.printStackTrace();
+                            startedCallback.startingFailed(e);
                         }
                     } else {
-                        System.out.print("PERMISSIONS WERE NOT GRANTED");
+                        startedCallback.startingFailed(new Exception(Exception.Reason.noPermissions));
                     }
                 }
             });
 
             Intent intent = new Intent(context, PermissionsActivity.class);
             context.startActivity(intent);
-
-//            throw new Exception(Exception.Reason.noPermissions);
         } else {
             continueStarting(heartBeatTimeout);
         }
     }
 
     private void continueStarting(int heartBeatTimeout) throws IOException {
-
-        if (heartBeatTimeout > 0) {
-            if (heartbeat != null) {
-                heartbeat.stop();
-            }
-            heartbeat = new Heartbeat(heartBeatTimeout, new Runnable() {
-                @Override
-                public void run() {
-                    stop();
+        try {
+            if (heartBeatTimeout > 0) {
+                if (heartbeat != null) {
+                    heartbeat.stop();
                 }
-            });
+                heartbeat = new Heartbeat(heartBeatTimeout, new Runnable() {
+                    @Override
+                    public void run() {
+                        stop();
+                    }
+                });
+            }
+
+            qrCamera.start();
+            startedCallback.started();
+        } catch (Throwable t) {
+            startedCallback.startingFailed(t);
         }
-
-        qrCamera.start();
-
-        result.success(textureId);
-
     }
 
     void stop() {
@@ -140,7 +136,6 @@ class QRReader {
             heartbeat.beat();
         }
     }
-
 
     //Only works on api>=21
     @TargetApi(21)

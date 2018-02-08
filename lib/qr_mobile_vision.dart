@@ -23,12 +23,14 @@ class QrMobileVision {
 
   //Set target size before starting
   static Future<Null> start(int width, int height, QRCodeHandler qrCodeHandler,
-      ) async{
+      ) async {
     channelReader.setQrCodeHandler(qrCodeHandler);
-    await _channel.invokeMethod('setTarget',{'width': width,'height': height}).catchError(print);
     _textureId = await _channel.invokeMethod('start', {
+      'targetWidth': width,
+      'targetHeight': height,
       'heartbeatTimeout': 0
-    }).catchError(print);
+    });
+
     _orientation = (await _channel.invokeMethod('getOrientation',{}).catchError(print)).toDouble();
     List<num> size = (await _channel.invokeMethod('getSize',{}).catchError(print));
     _width = size[0].toDouble();

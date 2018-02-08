@@ -4,19 +4,19 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
-  - Flutter (from `/Users/baraka/flutter/bin/cache/artifacts/engine/ios`)
-  - qr_mobile_vision (from `/Users/baraka/Source/flutter_qr_mobile_vision/ios`)
+  - Flutter (from `/Users/morgan/flutter/bin/cache/artifacts/engine/ios`)
+  - qr_mobile_vision (from `/Users/morgan/Programming/flutter/flutter_qr_mobile_vision/ios`)
 
 EXTERNAL SOURCES:
   Flutter:
-    :path: /Users/baraka/flutter/bin/cache/artifacts/engine/ios
+    :path: /Users/morgan/flutter/bin/cache/artifacts/engine/ios
   qr_mobile_vision:
-    :path: /Users/baraka/Source/flutter_qr_mobile_vision/ios
+    :path: /Users/morgan/Programming/flutter/flutter_qr_mobile_vision/ios
 
 SPEC CHECKSUMS:
-  Flutter: d674e78c937094a75ac71dd77e921e840bea3dbf
-  qr_mobile_vision: 7b158b65f3879fa54035b6390345fa126a063c65
+  Flutter: 7eb41cd1fd524b90d7f22bceb20da2c39338b089
+  qr_mobile_vision: 7375da30d49ff5196ff4ab30ebb2b6d6fa60c50b
 
 PODFILE CHECKSUM: cc70c01bca487bebd110b87397f017f3b76a89f1
 
-COCOAPODS: 1.1.1
+COCOAPODS: 1.4.0

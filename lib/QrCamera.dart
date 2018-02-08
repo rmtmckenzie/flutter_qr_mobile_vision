@@ -54,6 +54,7 @@ class QrCameraState extends State<QrCamera> {
 
   @override
   Widget build(BuildContext context) {
+
     print('Texture Id: ${QrMobileVision.textureId}');
 
     return new LayoutBuilder(
