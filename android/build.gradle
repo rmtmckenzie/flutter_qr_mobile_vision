@@ -3,10 +3,8 @@ version '1.0-SNAPSHOT'
 
 buildscript {
     repositories {
+        google()
         jcenter()
-        maven {
-            url "https://maven.google.com"
-        }
     }
 
     dependencies {
@@ -16,23 +14,18 @@ buildscript {
 
 rootProject.allprojects {
     repositories {
+        google()
         jcenter()
-        maven {
-            url "https://maven.google.com"
-        }
     }
 }
 
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 27
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 25
-        versionCode 1
-        versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     lintOptions {
@@ -42,5 +35,14 @@ android {
 
 dependencies {
     implementation 'com.google.android.gms:play-services-vision:11.2.2'
-    implementation files('/Users/morgan/flutter/bin/cache/artifacts/engine/android-arm/flutter.jar')
+}
+
+
+// if flutter.dir has been defined, use this to add dependency to flutter. This allows the android studio to provide
+// auto-complete & not show errors for flutter stuff =)
+if(project.hasProperty('flutter.dir')) {
+    print("Adding flutter dependency for development purposes.")
+    dependencies {
+        implementation files("${flutter.dir}/bin/cache/artifacts/engine/android-arm/flutter.jar")
+    }
 }

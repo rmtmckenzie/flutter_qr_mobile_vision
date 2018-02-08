@@ -1,7 +1,30 @@
 PODS:
   - Flutter (1.0.0)
+  - GoogleInterchangeUtilities (1.2.2):
+    - GoogleSymbolUtilities (~> 1.1)
+  - GoogleMobileVision (1.1.0):
+    - GoogleMobileVision/BarcodeDetector (= 1.1.0)
+    - GoogleMobileVision/Detector (= 1.1.0)
+    - GoogleMobileVision/FaceDetector (= 1.1.0)
+    - GoogleMobileVision/MVDataOutput (= 1.1.0)
+  - GoogleMobileVision/BarcodeDetector (1.1.0):
+    - GoogleMobileVision/Detector
+  - GoogleMobileVision/Detector (1.1.0):
+    - GoogleInterchangeUtilities (~> 1.2)
+    - GoogleNetworkingUtilities (~> 1.2)
+    - GoogleUtilities (~> 1.3)
+  - GoogleMobileVision/FaceDetector (1.1.0):
+    - GoogleMobileVision/Detector
+  - GoogleMobileVision/MVDataOutput (1.1.0):
+    - GoogleMobileVision/Detector
+  - GoogleNetworkingUtilities (1.2.2):
+    - GoogleSymbolUtilities (~> 1.1)
+  - GoogleSymbolUtilities (1.1.2)
+  - GoogleUtilities (1.3.2):
+    - GoogleSymbolUtilities (~> 1.1)
   - qr_mobile_vision (0.0.1):
     - Flutter
+    - GoogleMobileVision
 
 DEPENDENCIES:
   - Flutter (from `/Users/morgan/flutter/bin/cache/artifacts/engine/ios`)
@@ -15,8 +38,13 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: 7eb41cd1fd524b90d7f22bceb20da2c39338b089
-  qr_mobile_vision: 7375da30d49ff5196ff4ab30ebb2b6d6fa60c50b
+  GoogleInterchangeUtilities: d5bc4d88d5b661ab72f9d70c58d02ca8c27ad1f7
+  GoogleMobileVision: d344d69c8987ee239c8a47257e2039084682d181
+  GoogleNetworkingUtilities: 3edd3a8161347494f2da60ea0deddc8a472d94cb
+  GoogleSymbolUtilities: 631ee17048aa5e9ab133470d768ea997a5ef9b96
+  GoogleUtilities: 8bbc733218aad26306f9d4a253823986110e3358
+  qr_mobile_vision: 226297efb4603a45a939748c5404fc320a7b665c
 
-PODFILE CHECKSUM: cc70c01bca487bebd110b87397f017f3b76a89f1
+PODFILE CHECKSUM: c6c865faff84807a5d35de69eb2cdbdc36b99e15
 
 COCOAPODS: 1.4.0
