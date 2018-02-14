@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:meta/meta.dart';
 import 'package:qr_mobile_vision/qr_mobile_vision.dart';
 
 class QrCamera extends StatefulWidget {
@@ -29,45 +30,57 @@ class QrCameraState extends State<QrCamera> {
   QrCameraState();
 
   double _longSide, _shortSide;
+  int _textureId;
+  int _orientation;
+  bool isStarted = false;
 
   @override
   initState() {
     super.initState();
-    asyncInit();
   }
 
-  Future asyncInit() async {
+  Future asyncInitOnce(num width, num height) async {
+    if (isStarted) return;
+    isStarted = true;
 
-    await QrMobileVision.start(
-        widget.width.toInt(), widget.height.toInt(), widget.qrCodeHandler);
+    print("Camera starting, width: $width, height: $height");
+    var previewDetails = await QrMobileVision.start(
+        width.toInt(), height.toInt(), widget.qrCodeHandler);
+    print("Camera started, width: ${previewDetails.width}, height: ${previewDetails.height}, textureid: ${previewDetails.textureId}, orientation: ${previewDetails.orientation}");
     setState(() {
-      _longSide = QrMobileVision.width;
-      _shortSide = QrMobileVision.height;
+      _longSide = previewDetails.width.toDouble();
+      _shortSide = previewDetails.height.toDouble();
+      _textureId = previewDetails.textureId;
+      _orientation = previewDetails.orientation.toInt();
     });
   }
 
   @override
   deactivate() {
     super.deactivate();
+    print("Stopping");
     QrMobileVision.stop();
   }
 
   @override
   Widget build(BuildContext context) {
-
-    print('Texture Id: ${QrMobileVision.textureId}');
+    print('Texture Id: $_textureId');
 
     return new LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
+      asyncInitOnce(constraints.maxWidth, constraints.maxHeight);
+
       num _targetWidth = constraints.maxWidth,
           _targetHeight = constraints.maxHeight;
-      return QrMobileVision.textureId == null
+      return _textureId == null
           ? new Text("Camera Loading ...")
           : new Preview(
-              _shortSide,
-              _longSide,
-              _targetWidth.toDouble(),
-              _targetHeight.toDouble(),
+              textureId: _textureId,
+              orientation: _orientation,
+              shortSide: _shortSide,
+              longSide: _longSide,
+              targetWidth: _targetWidth.toDouble(),
+              targetHeight: _targetHeight.toDouble(),
             );
     });
   }
@@ -76,8 +89,17 @@ class QrCameraState extends State<QrCamera> {
 class Preview extends StatelessWidget {
   final double shortSide, longSide;
   final double targetWidth, targetHeight;
+  final int textureId;
+  final int orientation;
 
-  Preview(this.shortSide, this.longSide, this.targetWidth, this.targetHeight);
+  Preview({
+    @required this.textureId,
+    @required this.orientation,
+    @required this.shortSide,
+    @required this.longSide,
+    @required this.targetWidth,
+    @required this.targetHeight,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +109,7 @@ class Preview extends StatelessWidget {
     double drawnTextureHeight;
     double scale;
     bool rotated =
-        (QrMobileVision.orientation == 90 || QrMobileVision.orientation == 270);
+        (orientation == 90 || orientation == 270);
     //We are assuming that the sensor is oriented lengthways same as phone
     if (!rotated) {
       frameHeight = longSide;
@@ -110,7 +132,7 @@ class Preview extends StatelessWidget {
       scale = (rotated ? targetHeight : targetWidth) / drawnTextureWidth;
     }
 
-    print("Rotated: $rotated orientatin: ${QrMobileVision.orientation}\n" +
+    print("Rotated: $rotated orientation: $orientation\n" +
         "Long: $longSide, Short: $shortSide\n" +
         "Target Width: $targetWidth, Target Height: $targetHeight Target Ratio: $targetRatio\n" +
         "Frame Width: $frameWidth, Frame Height: $frameHeight, Frame Ratio: $frameRatio\n" +
@@ -119,6 +141,7 @@ class Preview extends StatelessWidget {
     return new Container(
       width: targetWidth,
       height: targetHeight,
+//      child: new Texture(textureId: textureId,)
       child: new ClipRect(
         child: new Transform(
           alignment: FractionalOffset.center,
@@ -130,7 +153,7 @@ class Preview extends StatelessWidget {
               maxWidth: drawnTextureWidth,
               minHeight: drawnTextureHeight,
               minWidth: drawnTextureWidth,
-              child: new Texture(textureId: QrMobileVision.textureId),
+              child: new Texture(textureId: textureId),
             ),
           ),
         ),

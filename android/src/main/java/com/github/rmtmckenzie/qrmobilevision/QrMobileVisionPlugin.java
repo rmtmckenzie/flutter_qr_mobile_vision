@@ -115,8 +115,9 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
      */
     @Override
     public void cameraFrame(byte[] frame, int rotation) {
-        List<Object> arguments = new ArrayList<Object>(Arrays.asList(frame, rotation));
-        channel.invokeMethod("cameraFrame", arguments);
+        //TODO: remove completely if sure it's not being used any more
+//        List<Object> arguments = new ArrayList<Object>(Arrays.asList(frame, rotation));
+//        channel.invokeMethod("cameraFrame", arguments);
     }
 
     @Override

@@ -1,3 +1,5 @@
+@import GoogleMobileVision;
+
 #include "AppDelegate.h"
 #include "GeneratedPluginRegistrant.h"
 
