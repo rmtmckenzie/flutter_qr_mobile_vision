@@ -9,13 +9,10 @@ class QrCamera extends StatefulWidget {
   QrCamera(
       {this.constraints,
       this.fill,
-      this.width,
-      this.height,
       this.qrCodeCallback});
 
   final BoxConstraints constraints;
   final bool fill;
-  final num width, height;
   final ValueChanged<String> qrCodeCallback;
 
   void qrCodeHandler(String string) {
