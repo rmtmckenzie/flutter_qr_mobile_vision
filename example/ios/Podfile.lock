@@ -29,13 +29,13 @@ EXTERNAL SOURCES:
     :path: /Users/morgan/Programming/flutter/flutter_qr_mobile_vision/ios
 
 SPEC CHECKSUMS:
-  Flutter: 7eb41cd1fd524b90d7f22bceb20da2c39338b089
+  Flutter: 9d0fac939486c9aba2809b7982dfdbb47a7b0296
   GoogleInterchangeUtilities: d5bc4d88d5b661ab72f9d70c58d02ca8c27ad1f7
   GoogleMobileVision: d344d69c8987ee239c8a47257e2039084682d181
   GoogleNetworkingUtilities: 3edd3a8161347494f2da60ea0deddc8a472d94cb
   GoogleSymbolUtilities: 631ee17048aa5e9ab133470d768ea997a5ef9b96
   GoogleUtilities: 8bbc733218aad26306f9d4a253823986110e3358
-  qr_mobile_vision: 4b23b3db444eee57997038bbf6092179279933b2
+  qr_mobile_vision: 4b0312a6658b81713a938126e82d08015d5dc0cd
 
 PODFILE CHECKSUM: bcde638fe0be3b106a6554da432ae9e073ad0465
 
