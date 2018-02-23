@@ -16,7 +16,6 @@ Plugin for reading QR codes using Google&#x27;s Mobile Vision API.
   s.ios.deployment_target = '8.0'
   
   s.dependency 'GoogleMobileVision/BarcodeDetector'
-  # hack needed because cocoapods SUCK
-  s.xcconfig = { 'FRAMEWORK_SEARCH_PATHS' => '"${PODS_ROOT}/GoogleMobileVision/Detector/Frameworks/frameworks"' }
+  
+  s.static_framework = true
 end
-
