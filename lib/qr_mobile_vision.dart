@@ -2,6 +2,15 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'dart:typed_data';
 
+class PreviewDetails {
+  num width;
+  num height;
+  num orientation;
+  int textureId;
+
+  PreviewDetails(this.width, this.height, this.orientation, this.textureId);
+}
+
 class QrMobileVision {
   static int _textureId;
   static num _orientation;
@@ -22,17 +31,24 @@ class QrMobileVision {
 
 
   //Set target size before starting
-  static Future<Null> start(int width, int height, QRCodeHandler qrCodeHandler,
-      ) async{
+  static Future<PreviewDetails> start(int width, int height, QRCodeHandler qrCodeHandler,
+      ) async {
     channelReader.setQrCodeHandler(qrCodeHandler);
-    await _channel.invokeMethod('setTarget',{'width': width,'height': height}).catchError(print);
-    _textureId = await _channel.invokeMethod('start', {
+    var details = await _channel.invokeMethod('start', {
+      'targetWidth': width,
+      'targetHeight': height,
       'heartbeatTimeout': 0
-    }).catchError(print);
-    _orientation = (await _channel.invokeMethod('getOrientation',{}).catchError(print)).toDouble();
-    List<num> size = (await _channel.invokeMethod('getSize',{}).catchError(print));
-    _width = size[0].toDouble();
-    _height = size[1].toDouble();
+    });
+
+    assert(details is Map<String, dynamic>);
+    print("Start response: $details");
+
+    int textureId = details["textureId"];
+    num orientation = details["surfaceOrientation"];
+    num surfaceHeight = details["surfaceHeight"];
+    num surfaceWidth = details["surfaceWidth"];
+
+    return new PreviewDetails(surfaceWidth, surfaceHeight, orientation, textureId);
   }
 
 //  static Future<Null> setTargetSize(int width, int height){
