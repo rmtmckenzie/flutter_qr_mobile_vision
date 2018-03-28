@@ -109,17 +109,6 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
         }
     }
 
-    /**
-     * @param frame
-     * @param rotation - rotation of the camera frame; 0=none, 1=90 degress cc, 2=180, 3=270 degrees cc
-     */
-    @Override
-    public void cameraFrame(byte[] frame, int rotation) {
-        //TODO: remove completely if sure it's not being used any more
-//        List<Object> arguments = new ArrayList<Object>(Arrays.asList(frame, rotation));
-//        channel.invokeMethod("cameraFrame", arguments);
-    }
-
     @Override
     public void qrRead(String data) {
         System.out.println("Invoking qrRead");
