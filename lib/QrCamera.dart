@@ -41,7 +41,7 @@ class QrCameraState extends State<QrCamera> {
 
     print("Camera starting, width: $width, height: $height");
     var previewDetails = await QrMobileVision.start(
-        width.toInt(), height.toInt(), widget.qrCodeHandler);
+        width: width.toInt(), height: height.toInt(), qrCodeHandler: widget.qrCodeHandler);
     print("Camera started, width: ${previewDetails
         .width}, height: ${previewDetails.height}, textureid: ${previewDetails
         .textureId}, orientation: ${previewDetails.orientation}");

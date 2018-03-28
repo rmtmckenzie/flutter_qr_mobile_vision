@@ -26,10 +26,10 @@ class QrDetector {
     private int width = 0, height = 0;
     boolean NV21 = false;
 
-    QrDetector(QRReaderCallbacks communicator,Context context){
+    QrDetector(QRReaderCallbacks communicator,Context context, int formats){
+        System.out.println("Making detector for formats: " + formats);
         this.communicator = communicator;
-        this.detector = new BarcodeDetector.Builder(context.getApplicationContext()).setBarcodeFormats(
-                Barcode.QR_CODE).build();
+        this.detector = new BarcodeDetector.Builder(context.getApplicationContext()).setBarcodeFormats(formats).build();
     }
 
     void useNV21(int width,int height){
@@ -87,6 +87,7 @@ class QrDetector {
         protected void onPostExecute(SparseArray<Barcode> detectedItems) {
             if (detectedItems == null) return;
             for (int i = 0; i < detectedItems.size(); ++i) {
+                System.out.println("Item read!: " + detectedItems.valueAt(i).rawValue);
                 communicator.qrRead(detectedItems.valueAt(i).displayValue);
             }
         }

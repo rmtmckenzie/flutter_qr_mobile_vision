@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class PreviewDetails {
@@ -11,20 +12,50 @@ class PreviewDetails {
   PreviewDetails(this.width, this.height, this.orientation, this.textureId);
 }
 
+enum BarcodeFormats {
+  ALL_FORMATS,
+  AZTEC,
+  CODE_128,
+  CODE_39,
+  CODE_93,
+  CODABAR,
+  DATA_MATRIX,
+  EAN_13,
+  EAN_8,
+  ITF,
+  PDF417,
+  QR_CODE,
+  UPC_A,
+  UPC_E,
+}
+
 class QrMobileVision {
   static const MethodChannel _channel =
       const MethodChannel('com.github.rmtmckenzie/qr_mobile_vision');
   static QrChannelReader channelReader = new QrChannelReader(_channel);
 
   //Set target size before starting
-  static Future<PreviewDetails> start(
-    int width,
-    int height,
-    QRCodeHandler qrCodeHandler,
-  ) async {
+  static Future<PreviewDetails> start({
+    @required int width,
+    @required int height,
+    @required QRCodeHandler qrCodeHandler,
+    List<BarcodeFormats> formats = const [
+      BarcodeFormats.ALL_FORMATS,
+    ],
+  }) async {
+    assert(formats != null);
+    assert(formats.length > 0);
+
     channelReader.setQrCodeHandler(qrCodeHandler);
-    var details = await _channel.invokeMethod('start',
-        {'targetWidth': width, 'targetHeight': height, 'heartbeatTimeout': 0});
+
+    List<String> formatStrings = formats.map((format) => format.toString().split('.')[1]).toList(growable: false);
+
+    var details = await _channel.invokeMethod('start', {
+      'targetWidth': width,
+      'targetHeight': height,
+      'heartbeatTimeout': 0,
+      'formats': formatStrings
+    });
 
     // invokeMethod returns Map<dynamic,...> in dart 2.0
     assert(details is Map<dynamic, dynamic>);

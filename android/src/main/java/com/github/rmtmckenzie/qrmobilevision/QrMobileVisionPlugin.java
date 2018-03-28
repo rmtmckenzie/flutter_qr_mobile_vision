@@ -66,13 +66,25 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
                     Integer heartbeatTimeout = methodCall.argument("heartbeatTimeout");
                     Integer targetWidth = methodCall.argument("targetWidth");
                     Integer targetHeight = methodCall.argument("targetHeight");
+                    List<String> formatStrings = methodCall.argument("formats");
+
                     if (targetWidth == null || targetHeight == null) {
                         result.error("INVALID_ARGUMENT", "Missing a required argument", "Expecting targetWidth, targetHeight, and optionally heartbeatTimeout");
                         break;
                     }
 
+                    System.out.print("Reading barcodes from formats:");
+                    for(String formatString: formatStrings) {
+                        System.out.print(" ");
+                        System.out.print(formatString);
+                    }
+                    System.out.println(".");
+
+                    int format = BarcodeFormats.intFromStringList(formatStrings);
+
                     TextureRegistry.SurfaceTextureEntry textureEntry = textures.createSurfaceTexture();
-                    QRReader reader = new QRReader(targetWidth, targetHeight, context, this, this, textureEntry.surfaceTexture());
+                    QRReader reader = new QRReader(targetWidth, targetHeight, context, format,
+                            this, this, textureEntry.surfaceTexture());
 
                     readingInstance = new ReadingInstance(reader, textureEntry, result);
                     try {
