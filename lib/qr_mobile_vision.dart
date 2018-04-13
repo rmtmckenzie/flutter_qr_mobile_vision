@@ -45,7 +45,6 @@ class QrMobileVision {
   }) async {
     assert(formats != null);
     assert(formats.length > 0);
-
     channelReader.setQrCodeHandler(qrCodeHandler);
 
     List<String> formatStrings = formats.map((format) => format.toString().split('.')[1]).toList(growable: false);

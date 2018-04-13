@@ -150,7 +150,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     // TODO: implement
 }
 
-- (nonnull CVPixelBufferRef)copyPixelBuffer {
+- (CVPixelBufferRef)copyPixelBuffer {
     CVPixelBufferRef pixelBuffer = _latestPixelBuffer;
     while (!OSAtomicCompareAndSwapPtrBarrier(pixelBuffer, nil, (void **)&_latestPixelBuffer)) {
         pixelBuffer = _latestPixelBuffer;
