@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:qr_mobile_vision/QrCamera.dart';
+import 'package:qr_mobile_vision/qr_camera.dart';
 
 void main() {
   debugPaintSizeEnabled = false;
