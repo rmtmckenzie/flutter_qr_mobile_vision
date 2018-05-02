@@ -14,9 +14,6 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.util.Size;
 
-import io.flutter.view.TextureRegistry;
-import io.flutter.plugin.common.MethodChannel.Result;
-
 import com.google.android.gms.vision.CameraSource;
 
 import java.io.IOException;
@@ -38,14 +35,14 @@ class QRReader {
     private QRReaderStartedCallback startedCallback;
 
 
-    QRReader(int width, int height, Context context, final QRReaderStartedCallback startedCallback, final QRReaderCallbacks communicator,
+    QRReader(int width, int height, Context context, int formats, final QRReaderStartedCallback startedCallback, final QRReaderCallbacks communicator,
              final SurfaceTexture texture) {
         this.context = context;
         this.startedCallback = startedCallback;
 
         qrCamera = android.os.Build.VERSION.SDK_INT >= 21 ?
-                new QrCameraC2(width,height,context,texture,new QrDetector(communicator,context)) :
-                new QrCameraC1(width,height,texture,new QrDetector(communicator,context));
+                new QrCameraC2(width,height,context,texture,new QrDetector(communicator,context, formats)) :
+                new QrCameraC1(width,height,texture,new QrDetector(communicator,context, formats));
     }
 
     public static class Exception extends java.lang.Exception {

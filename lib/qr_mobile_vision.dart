@@ -1,6 +1,7 @@
 import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'dart:typed_data';
 
 class PreviewDetails {
   num width;
@@ -11,36 +12,52 @@ class PreviewDetails {
   PreviewDetails(this.width, this.height, this.orientation, this.textureId);
 }
 
+enum BarcodeFormats {
+  ALL_FORMATS,
+  AZTEC,
+  CODE_128,
+  CODE_39,
+  CODE_93,
+  CODABAR,
+  DATA_MATRIX,
+  EAN_13,
+  EAN_8,
+  ITF,
+  PDF417,
+  QR_CODE,
+  UPC_A,
+  UPC_E,
+}
+
 class QrMobileVision {
-  static int _textureId;
-  static num _orientation;
-  static List _sizes;
-  static double _height;
-  static double _width;
-
-  static int get textureId => _textureId;
-  static num get orientation => _orientation;
-  static List get sizes => _sizes;
-  static double get height => _height;
-  static double get width => _width;
-
-  
   static const MethodChannel _channel =
       const MethodChannel('com.github.rmtmckenzie/qr_mobile_vision');
   static QrChannelReader channelReader = new QrChannelReader(_channel);
 
-
   //Set target size before starting
-  static Future<PreviewDetails> start(int width, int height, QRCodeHandler qrCodeHandler,
-      ) async {
+  static Future<PreviewDetails> start({
+    @required int width,
+    @required int height,
+    @required QRCodeHandler qrCodeHandler,
+    List<BarcodeFormats> formats = const [
+      BarcodeFormats.ALL_FORMATS,
+    ],
+  }) async {
+    assert(formats != null);
+    assert(formats.length > 0);
     channelReader.setQrCodeHandler(qrCodeHandler);
+
+    List<String> formatStrings = formats.map((format) => format.toString().split('.')[1]).toList(growable: false);
+
     var details = await _channel.invokeMethod('start', {
       'targetWidth': width,
       'targetHeight': height,
-      'heartbeatTimeout': 0
+      'heartbeatTimeout': 0,
+      'formats': formatStrings
     });
 
-    assert(details is Map<String, dynamic>);
+    // invokeMethod returns Map<dynamic,...> in dart 2.0
+    assert(details is Map<dynamic, dynamic>);
     print("Start response: $details");
 
     int textureId = details["textureId"];
@@ -48,31 +65,25 @@ class QrMobileVision {
     num surfaceHeight = details["surfaceHeight"];
     num surfaceWidth = details["surfaceWidth"];
 
-    return new PreviewDetails(surfaceWidth, surfaceHeight, orientation, textureId);
+    return new PreviewDetails(
+        surfaceWidth, surfaceHeight, orientation, textureId);
   }
 
-//  static Future<Null> setTargetSize(int width, int height){
-//    return _channel.invokeMethod('setTarget',{'width': width,'height': height}).catchError(print);
-//  }
-
-   static Future<Null> stop() {
+  static Future stop() {
     channelReader.setQrCodeHandler(null);
-    _textureId = null;
     return _channel.invokeMethod('stop').catchError(print);
   }
 
-   static Future<Null> heartbeat() {
+  static Future heartbeat() {
     return _channel.invokeMethod('heartbeat').catchError(print);
   }
 
-   static Future<List<List<int>>> getSupportedSizes() {
+  static Future<List<List<int>>> getSupportedSizes() {
     return _channel.invokeMethod('getSupportedSizes').catchError(print);
   }
 }
 
 enum FrameRotation { none, ninetyCC, oneeighty, twoseventyCC }
-
-typedef void CameraFrameHandler(Uint8List data, int rotation);
 
 typedef void QRCodeHandler(String qr);
 
@@ -80,26 +91,17 @@ class QrChannelReader {
   QrChannelReader(this.channel) {
     channel.setMethodCallHandler((MethodCall call) async {
       switch (call.method) {
-        case 'cameraFrame':
-          if (cameraFrameHandler != null) {
-            Uint8List frame = call.arguments[0];
-            int rawRotation = call.arguments[1];
-
-            cameraFrameHandler(frame, rawRotation);
-          }
-          break;
         case 'qrRead':
           if (qrCodeHandler != null) {
             String code = call.arguments;
             qrCodeHandler(code);
           }
           break;
+        default:
+          print("QrChannelHandler: unknown method call received at ${call
+              .method}");
       }
     });
-  }
-
-  void setCameraFrameHandler(CameraFrameHandler cfh) {
-    this.cameraFrameHandler = cfh;
   }
 
   void setQrCodeHandler(QRCodeHandler qrch) {
@@ -107,6 +109,5 @@ class QrChannelReader {
   }
 
   MethodChannel channel;
-  CameraFrameHandler cameraFrameHandler;
   QRCodeHandler qrCodeHandler;
 }

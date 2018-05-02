@@ -6,10 +6,9 @@ import 'package:meta/meta.dart';
 import 'package:qr_mobile_vision/qr_mobile_vision.dart';
 
 class QrCamera extends StatefulWidget {
-  QrCamera(
-      {this.constraints,
-      this.fill,
-      this.qrCodeCallback});
+  QrCamera({this.constraints,
+    this.fill,
+    this.qrCodeCallback});
 
   final BoxConstraints constraints;
   final bool fill;
@@ -42,8 +41,10 @@ class QrCameraState extends State<QrCamera> {
 
     print("Camera starting, width: $width, height: $height");
     var previewDetails = await QrMobileVision.start(
-        width.toInt(), height.toInt(), widget.qrCodeHandler);
-    print("Camera started, width: ${previewDetails.width}, height: ${previewDetails.height}, textureid: ${previewDetails.textureId}, orientation: ${previewDetails.orientation}");
+        width: width.toInt(), height: height.toInt(), qrCodeHandler: widget.qrCodeHandler);
+    print("Camera started, width: ${previewDetails
+        .width}, height: ${previewDetails.height}, textureid: ${previewDetails
+        .textureId}, orientation: ${previewDetails.orientation}");
     setState(() {
       _longSide = previewDetails.width.toDouble();
       _shortSide = previewDetails.height.toDouble();
@@ -65,21 +66,21 @@ class QrCameraState extends State<QrCamera> {
 
     return new LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-      asyncInitOnce(constraints.maxWidth, constraints.maxHeight);
+          asyncInitOnce(constraints.maxWidth, constraints.maxHeight);
 
-      num _targetWidth = constraints.maxWidth,
-          _targetHeight = constraints.maxHeight;
-      return _textureId == null
-          ? new Text("Camera Loading ...")
-          : new Preview(
-              textureId: _textureId,
-              orientation: _orientation,
-              shortSide: _shortSide,
-              longSide: _longSide,
-              targetWidth: _targetWidth.toDouble(),
-              targetHeight: _targetHeight.toDouble(),
-            );
-    });
+          num _targetWidth = constraints.maxWidth,
+              _targetHeight = constraints.maxHeight;
+          return _textureId == null
+              ? new Text("Camera Loading ...")
+              : new Preview(
+            textureId: _textureId,
+            orientation: _orientation,
+            shortSide: _shortSide,
+            longSide: _longSide,
+            targetWidth: _targetWidth.toDouble(),
+            targetHeight: _targetHeight.toDouble(),
+          );
+        });
   }
 }
 
@@ -105,8 +106,8 @@ class Preview extends StatelessWidget {
     double drawnTextureWidth;
     double drawnTextureHeight;
     double scale;
-    bool rotated =
-        (orientation == 90 || orientation == 270);
+
+    bool rotated = (orientation == 90 || orientation == 270);
     //We are assuming that the sensor is oriented lengthways same as phone
     if (!rotated) {
       frameHeight = longSide;
@@ -135,6 +136,27 @@ class Preview extends StatelessWidget {
         "Frame Width: $frameWidth, Frame Height: $frameHeight, Frame Ratio: $frameRatio\n" +
         "Drawn Width: $drawnTextureWidth, Drawn Height: $drawnTextureHeight, Scale: $scale");
 
+//    // in progress - android
+//    return new Container(
+//      width: targetWidth,
+//      height: targetHeight,
+//      child: new ClipRect(
+//          child: new Transform(
+//              alignment: FractionalOffset.center,
+//              transform: new Matrix4.identity()
+//                ..scale(scale, scale),
+//              child: new OverflowBox(
+//                maxHeight: drawnTextureWidth,
+//                maxWidth: drawnTextureHeight,
+//                minHeight: drawnTextureWidth,
+//                minWidth: drawnTextureHeight,
+//                child: new Texture(textureId: textureId),
+//              )
+//
+//          )
+//      ),
+//    );
+
     return new Container(
       width: targetWidth,
       height: targetHeight,
@@ -144,6 +166,7 @@ class Preview extends StatelessWidget {
           alignment: FractionalOffset.center,
           transform: new Matrix4.identity()..scale(scale, scale),
           child: new Transform.rotate(
+            // TODO: implement; orientation disabled for now
             angle: 0.0, //(QrMobileVision.orientation / 180.0) * PI,
             child: new OverflowBox(
               maxHeight: drawnTextureHeight,
