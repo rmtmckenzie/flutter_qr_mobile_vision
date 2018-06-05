@@ -29,20 +29,21 @@ class QRReader {
 
     interface QRReaderStartedCallback {
         void started();
+
         void startingFailed(Throwable t);
     }
 
     private QRReaderStartedCallback startedCallback;
 
 
-    QRReader(int width, int height, Context context, int formats, final QRReaderStartedCallback startedCallback, final QRReaderCallbacks communicator,
+    QRReader(int width, int height, Context context, int barcodeFormats, final QRReaderStartedCallback startedCallback, final QRReaderCallbacks communicator,
              final SurfaceTexture texture) {
         this.context = context;
         this.startedCallback = startedCallback;
 
         qrCamera = android.os.Build.VERSION.SDK_INT >= 21 ?
-                new QrCameraC2(width,height,context,texture,new QrDetector(communicator,context, formats)) :
-                new QrCameraC1(width,height,texture,new QrDetector(communicator,context, formats));
+                new QrCameraC2(width, height, context, texture, new QrDetector(communicator, context, barcodeFormats)) :
+                new QrCameraC1(width, height, texture, new QrDetector(communicator, context, barcodeFormats));
     }
 
     public static class Exception extends java.lang.Exception {
@@ -133,32 +134,6 @@ class QRReader {
             heartbeat.beat();
         }
     }
-
-    //Only works on api>=21
-    @TargetApi(21)
-    List<int[]> getSupportedSizes() {
-
-        List<int[]> sizeOutput = new ArrayList<int[]>();
-
-        try {
-            CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-            //Get List of Supported Sizes
-            String[] cameraId = manager.getCameraIdList();
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId[0]);
-            StreamConfigurationMap configs = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            Size[] sizes = configs.getOutputSizes(ImageFormat.JPEG);
-
-            for (Size size : sizes) {
-                int[] wxh = {size.getWidth(), size.getHeight()};
-                sizeOutput.add(wxh);
-            }
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-        return sizeOutput;
-    }
-
-
 
     private boolean hasAutofocus(Context context) {
         return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS);

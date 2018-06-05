@@ -24,28 +24,28 @@ class QrDetector {
     private final QRReaderCallbacks communicator;
     private final Detector<Barcode> detector;
     private int width = 0, height = 0;
-    boolean NV21 = false;
+    boolean isNV21 = false;
 
-    QrDetector(QRReaderCallbacks communicator,Context context, int formats){
+    QrDetector(QRReaderCallbacks communicator, Context context, int formats) {
         System.out.println("Making detector for formats: " + formats);
         this.communicator = communicator;
         this.detector = new BarcodeDetector.Builder(context.getApplicationContext()).setBarcodeFormats(formats).build();
     }
 
-    void useNV21(int width,int height){
-        NV21 = true;
+    void useNV21(int width, int height) {
+        isNV21 = true;
         this.width = width;
         this.height = height;
     }
 
-    void useJPEG(){
-        NV21 = false;
+    void useJPEG() {
+        isNV21 = false;
         this.width = 0;
         this.height = 0;
     }
 
-    void detect(byte[] bytes){
-        new qrTask().execute(new ImageFrame(bytes, atomicCounter.incrementAndGet()));
+    void detect(byte[] bytes) {
+        new qrTask(bytes, atomicCounter.incrementAndGet(), atomicCounter).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     private class ImageFrame {
@@ -59,22 +59,35 @@ class QrDetector {
         final int count;
     }
 
-    private class qrTask extends AsyncTask<ImageFrame, Void, SparseArray<Barcode>> {
-        @Override
-        protected SparseArray<Barcode> doInBackground(ImageFrame... imageFrames) {
-            ImageFrame imageFrame = imageFrames[0];
+    private class qrTask extends AsyncTask<Void, Void, SparseArray<Barcode>> {
 
-            if (imageFrame.count < atomicCounter.get()) return null;
+        public qrTask(byte[] bytes, int count, AtomicInteger counter) {
+            this.bytes = bytes;
+            this.count = count;
+            this.counter = counter;
+        }
+
+        final byte[] bytes;
+        final int count;
+        final AtomicInteger counter;
+
+        @Override
+        protected SparseArray<Barcode> doInBackground(Void... voids) {
+            if (count < atomicCounter.get()) {
+                System.out.println("Dropping frame");
+                return null;
+            }
 
 //            System.out.println("About to detect...");
 
             Frame.Builder frameBuilder = new Frame.Builder();
 
             Bitmap bmp;
-            if(NV21) frameBuilder.setImageData(ByteBuffer.wrap(imageFrame.bytes), width, height, ImageFormat.NV21);
-            else{
-                bmp = BitmapFactory.decodeByteArray(imageFrame.bytes, 0, imageFrame.bytes.length);
-                if(bmp == null) return null;
+            if (isNV21) {
+                frameBuilder.setImageData(ByteBuffer.wrap(bytes), width, height, ImageFormat.NV21);
+            } else {
+                bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                if (bmp == null) return null;
                 frameBuilder.setBitmap(bmp);
             }
 

@@ -1,18 +1,20 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:meta/meta.dart';
+import 'package:native_device_orientation/native_device_orientation.dart';
 import 'package:qr_mobile_vision/qr_mobile_vision.dart';
 
 class QrCamera extends StatefulWidget {
-  QrCamera({this.constraints,
-    this.fill,
-    this.qrCodeCallback});
+  QrCamera(
+      {this.fit = BoxFit.cover, this.qrCodeCallback, this.notStartedBuilder})
+      : assert(fit != null);
 
-  final BoxConstraints constraints;
-  final bool fill;
+  final BoxFit fit;
   final ValueChanged<String> qrCodeCallback;
+  final WidgetBuilder notStartedBuilder;
 
   void qrCodeHandler(String string) {
     qrCodeCallback(string);
@@ -25,32 +27,21 @@ class QrCamera extends StatefulWidget {
 class QrCameraState extends State<QrCamera> {
   QrCameraState();
 
-  double _longSide, _shortSide;
-  int _textureId;
-  int _orientation;
-  bool isStarted = false;
+  PreviewDetails _details;
 
-  @override
-  initState() {
-    super.initState();
-  }
+  Future<PreviewDetails> asyncInitOnce(num width, num height) async {
+    if (_details != null) {
+      return _details;
+    }
 
-  Future asyncInitOnce(num width, num height) async {
-    if (isStarted) return;
-    isStarted = true;
-
-    print("Camera starting, width: $width, height: $height");
     var previewDetails = await QrMobileVision.start(
-        width: width.toInt(), height: height.toInt(), qrCodeHandler: widget.qrCodeHandler);
-    print("Camera started, width: ${previewDetails
-        .width}, height: ${previewDetails.height}, textureid: ${previewDetails
-        .textureId}, orientation: ${previewDetails.orientation}");
-    setState(() {
-      _longSide = previewDetails.width.toDouble();
-      _shortSide = previewDetails.height.toDouble();
-      _textureId = previewDetails.textureId;
-      _orientation = previewDetails.orientation.toInt();
-    });
+      width: width.toInt(),
+      height: height.toInt(),
+      qrCodeHandler: widget.qrCodeHandler,
+    );
+
+    this._details = previewDetails;
+    return previewDetails;
   }
 
   @override
@@ -62,122 +53,125 @@ class QrCameraState extends State<QrCamera> {
 
   @override
   Widget build(BuildContext context) {
-    print('Texture Id: $_textureId');
-
-    return new LayoutBuilder(
+    print("QR Camera");
+    return new Container(
+      decoration: new BoxDecoration(border: new Border.all()),
+      child: new LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-          asyncInitOnce(constraints.maxWidth, constraints.maxHeight);
+          print("Layout builder!");
 
-          num _targetWidth = constraints.maxWidth,
-              _targetHeight = constraints.maxHeight;
-          return _textureId == null
-              ? new Text("Camera Loading ...")
-              : new Preview(
-            textureId: _textureId,
-            orientation: _orientation,
-            shortSide: _shortSide,
-            longSide: _longSide,
-            targetWidth: _targetWidth.toDouble(),
-            targetHeight: _targetHeight.toDouble(),
-          );
-        });
+          if (_details == null) {
+            return new SizedBox(
+              width: constraints.maxWidth,
+              height: constraints.maxHeight,
+              child: new FutureBuilder(
+                future:
+                    asyncInitOnce(constraints.maxWidth, constraints.maxHeight),
+                builder: (BuildContext context,
+                    AsyncSnapshot<PreviewDetails> details) {
+                  switch (details.connectionState) {
+                    case ConnectionState.none:
+                    case ConnectionState.waiting:
+                      var notStartedBuilder = widget.notStartedBuilder;
+                      return notStartedBuilder == null
+                          ? new Text("Camera Loading ...")
+                          : notStartedBuilder(context);
+                    case ConnectionState.done:
+                      return new Preview(
+                          previewDetails: details.data,
+                          targetWidth: constraints.maxWidth,
+                          targetHeight: constraints.maxHeight,
+                          fit: widget.fit);
+                    default:
+                      throw new AssertionError(
+                          "${details.connectionState} not supported.");
+                  }
+                },
+              ),
+            );
+          } else {
+            return SizedBox(
+              width: constraints.maxWidth,
+              height: constraints.maxHeight,
+              child: new Preview(
+                previewDetails: _details,
+                targetWidth: constraints.maxWidth,
+                targetHeight: constraints.maxHeight,
+                fit: widget.fit,
+              ),
+            );
+          }
+        },
+      ),
+    );
   }
 }
 
 class Preview extends StatelessWidget {
-  final double shortSide, longSide;
+  final double width, height;
   final double targetWidth, targetHeight;
   final int textureId;
   final int orientation;
+  final BoxFit fit;
 
   Preview({
-    @required this.textureId,
-    @required this.orientation,
-    @required this.shortSide,
-    @required this.longSide,
+    @required PreviewDetails previewDetails,
     @required this.targetWidth,
     @required this.targetHeight,
-  });
+    @required this.fit,
+  })  : assert(previewDetails != null),
+        textureId = previewDetails.textureId,
+        width = previewDetails.width.toDouble(),
+        height = previewDetails.height.toDouble(),
+        orientation = previewDetails.orientation;
 
   @override
   Widget build(BuildContext context) {
-    double frameHeight;
-    double frameWidth;
-    double drawnTextureWidth;
-    double drawnTextureHeight;
-    double scale;
+    double frameHeight, frameWidth;
 
-    bool rotated = (orientation == 90 || orientation == 270);
-    //We are assuming that the sensor is oriented lengthways same as phone
-    if (!rotated) {
-      frameHeight = longSide;
-      frameWidth = shortSide;
-    } else {
-      frameHeight = shortSide;
-      frameWidth = longSide;
-    }
+    return new NativeDeviceOrientationReader(
+      builder: (context) {
+        var nativeOrientation =
+            NativeDeviceOrientationReader.orientation(context);
 
-    double targetRatio = targetWidth / targetHeight;
-    double frameRatio = frameWidth / frameHeight;
+        int baseOrientation = 0;
+        if (orientation != 0 && (width > height)) {
+          baseOrientation = orientation ~/ 90;
+          frameWidth = width;
+          frameHeight = height;
+        } else {
+          frameHeight = width;
+          frameWidth = height;
+        }
 
-    if (targetRatio < frameRatio) {
-      drawnTextureWidth = targetWidth;
-      drawnTextureHeight = targetWidth / frameRatio;
-      scale = (rotated ? targetWidth : targetHeight) / drawnTextureHeight;
-    } else {
-      drawnTextureHeight = targetHeight;
-      drawnTextureWidth = targetHeight * frameRatio;
-      scale = (rotated ? targetHeight : targetWidth) / drawnTextureWidth;
-    }
+        int nativeOrientationInt;
+        switch (nativeOrientation) {
+          case NativeDeviceOrientation.landscapeLeft:
+            nativeOrientationInt = Platform.isAndroid ? 3 : 1;
+            break;
+          case NativeDeviceOrientation.landscapeRight:
+            nativeOrientationInt = Platform.isAndroid ? 1 : 3;
+            break;
+          case NativeDeviceOrientation.portraitDown:
+            nativeOrientationInt = 2;
+            break;
+          case NativeDeviceOrientation.portraitUp:
+          case NativeDeviceOrientation.unknown:
+            nativeOrientationInt = 0;
+        }
 
-    print("Rotated: $rotated orientation: $orientation\n" +
-        "Long: $longSide, Short: $shortSide\n" +
-        "Target Width: $targetWidth, Target Height: $targetHeight Target Ratio: $targetRatio\n" +
-        "Frame Width: $frameWidth, Frame Height: $frameHeight, Frame Ratio: $frameRatio\n" +
-        "Drawn Width: $drawnTextureWidth, Drawn Height: $drawnTextureHeight, Scale: $scale");
-
-//    // in progress - android
-//    return new Container(
-//      width: targetWidth,
-//      height: targetHeight,
-//      child: new ClipRect(
-//          child: new Transform(
-//              alignment: FractionalOffset.center,
-//              transform: new Matrix4.identity()
-//                ..scale(scale, scale),
-//              child: new OverflowBox(
-//                maxHeight: drawnTextureWidth,
-//                maxWidth: drawnTextureHeight,
-//                minHeight: drawnTextureWidth,
-//                minWidth: drawnTextureHeight,
-//                child: new Texture(textureId: textureId),
-//              )
-//
-//          )
-//      ),
-//    );
-
-    return new Container(
-      width: targetWidth,
-      height: targetHeight,
-//      child: new Texture(textureId: textureId,)
-      child: new ClipRect(
-        child: new Transform(
-          alignment: FractionalOffset.center,
-          transform: new Matrix4.identity()..scale(scale, scale),
-          child: new Transform.rotate(
-            // TODO: implement; orientation disabled for now
-            angle: 0.0, //(QrMobileVision.orientation / 180.0) * PI,
-            child: new OverflowBox(
-              maxHeight: drawnTextureHeight,
-              maxWidth: drawnTextureWidth,
-              minHeight: drawnTextureHeight,
-              minWidth: drawnTextureWidth,
+        return new FittedBox(
+          fit: fit,
+          child: new RotatedBox(
+            quarterTurns: baseOrientation + nativeOrientationInt,
+            child: new SizedBox(
+              width: frameWidth,
+              height: frameHeight,
               child: new Texture(textureId: textureId),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
