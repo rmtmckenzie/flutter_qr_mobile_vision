@@ -1,3 +1,6 @@
-## [0.0.1] - TODO: Add release date.
+## [0.0.1] - June 5, 2018
 
-* TODO: Describe initial release.
+* Initial release that supports scanning all types of barcodes
+  that the QR Mobile Vision library supports.
+  
+

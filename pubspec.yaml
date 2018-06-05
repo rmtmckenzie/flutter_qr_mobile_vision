@@ -1,8 +1,12 @@
 name: qr_mobile_vision
 description: Plugin for reading QR codes using Google&#x27;s Mobile Vision API.
 version: 0.0.1
-author:
-homepage:
+author: Morgan McKenzie <rmtmckenzie@gmail.com>
+homepage: https://github.com/rmtmckenzie/flutter_qr_mobile_vision
+
+environment:
+  sdk: ">=2.0.0-dev.28.0 <3.0.0"
+  flutter: ">=0.1.4 <2.0.0"
 
 flutter:
   plugin:
@@ -13,4 +17,4 @@ dependencies:
   flutter:
     sdk: flutter
   native_device_orientation:
-    version: 0.0.2
+    version: ^0.0.2

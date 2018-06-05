@@ -47,62 +47,55 @@ class QrCameraState extends State<QrCamera> {
   @override
   deactivate() {
     super.deactivate();
-    print("Stopping");
     QrMobileVision.stop();
   }
 
   @override
   Widget build(BuildContext context) {
-    print("QR Camera");
-    return new Container(
-      decoration: new BoxDecoration(border: new Border.all()),
-      child: new LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          print("Layout builder!");
-
-          if (_details == null) {
-            return new SizedBox(
-              width: constraints.maxWidth,
-              height: constraints.maxHeight,
-              child: new FutureBuilder(
-                future:
-                    asyncInitOnce(constraints.maxWidth, constraints.maxHeight),
-                builder: (BuildContext context,
-                    AsyncSnapshot<PreviewDetails> details) {
-                  switch (details.connectionState) {
-                    case ConnectionState.none:
-                    case ConnectionState.waiting:
-                      var notStartedBuilder = widget.notStartedBuilder;
-                      return notStartedBuilder == null
-                          ? new Text("Camera Loading ...")
-                          : notStartedBuilder(context);
-                    case ConnectionState.done:
-                      return new Preview(
-                          previewDetails: details.data,
-                          targetWidth: constraints.maxWidth,
-                          targetHeight: constraints.maxHeight,
-                          fit: widget.fit);
-                    default:
-                      throw new AssertionError(
-                          "${details.connectionState} not supported.");
-                  }
-                },
-              ),
-            );
-          } else {
-            return SizedBox(
-              width: constraints.maxWidth,
-              height: constraints.maxHeight,
-              child: new Preview(
-                previewDetails: _details,
-                targetWidth: constraints.maxWidth,
-                targetHeight: constraints.maxHeight,
-                fit: widget.fit,
-              ),
-            );
-          }
-        },
-      ),
+    return new LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        if (_details == null) {
+          return new SizedBox(
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
+            child: new FutureBuilder(
+              future:
+                  asyncInitOnce(constraints.maxWidth, constraints.maxHeight),
+              builder: (BuildContext context,
+                  AsyncSnapshot<PreviewDetails> details) {
+                switch (details.connectionState) {
+                  case ConnectionState.none:
+                  case ConnectionState.waiting:
+                    var notStartedBuilder = widget.notStartedBuilder;
+                    return notStartedBuilder == null
+                        ? new Text("Camera Loading ...")
+                        : notStartedBuilder(context);
+                  case ConnectionState.done:
+                    return new Preview(
+                        previewDetails: details.data,
+                        targetWidth: constraints.maxWidth,
+                        targetHeight: constraints.maxHeight,
+                        fit: widget.fit);
+                  default:
+                    throw new AssertionError(
+                        "${details.connectionState} not supported.");
+                }
+              },
+            ),
+          );
+        } else {
+          return SizedBox(
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
+            child: new Preview(
+              previewDetails: _details,
+              targetWidth: constraints.maxWidth,
+              targetHeight: constraints.maxHeight,
+              fit: widget.fit,
+            ),
+          );
+        }
+      },
     );
   }
 }
