@@ -12,3 +12,5 @@ flutter:
 dependencies:
   flutter:
     sdk: flutter
+  native_device_orientation:
+    version: 0.0.2

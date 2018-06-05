@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:qr_mobile_vision/QrCamera.dart';
+import 'package:qr_mobile_vision/qr_camera.dart';
 
 void main() {
   debugPaintSizeEnabled = false;
@@ -46,14 +46,19 @@ class _MyAppState extends State<MyApp> {
           children: <Widget>[
             new Expanded(
                 child: camState
-                    ? new QrCamera(
-                        fill: true,
-                        qrCodeCallback: (code) {
-                          setState(() {
-                            qr = code;
-                          });
-                        },
-                      )
+                    ? new Center(
+                      child: new SizedBox(
+                        width: 300.0,
+                        height: 600.0,
+                        child: new QrCamera(
+                            qrCodeCallback: (code) {
+                              setState(() {
+                                qr = code;
+                              });
+                            },
+                          ),
+                      ),
+                    )
                     : new Center(child: new Text("Camera inactive"))),
             new Text("QRCODE: $qr"),
           ],

@@ -1,6 +1,7 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
 import android.annotation.TargetApi;
+import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -43,7 +44,7 @@ class QrCameraC2 implements QrCamera {
     private final Context context;
     private final SurfaceTexture texture;
 
-    QrCameraC2(int width, int height, Context context,SurfaceTexture texture, QrDetector detector) {
+    QrCameraC2(int width, int height, Context context, SurfaceTexture texture, QrDetector detector) {
         this.targetWidth = width;
         this.targetHeight = height;
         this.context = context;
@@ -88,7 +89,9 @@ class QrCameraC2 implements QrCamera {
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(id);
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             try {
-                orientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+                // it seems as though the orientation is already corrected, so setting to 0
+                orientation = 0;
+                // orientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
                 size = getAppropriateSize( map.getOutputSizes(SurfaceTexture.class));
                 //size = map.getOutputSizes(SurfaceTexture.class)[0];
                 jpegSizes = map.getOutputSizes(ImageFormat.JPEG);
@@ -128,15 +131,6 @@ class QrCameraC2 implements QrCamera {
         Size jpegSize = getAppropriateSize(jpegSizes);
 
         int width = jpegSize.getWidth(), height = jpegSize.getHeight();
-
-        for (Size s : jpegSizes) {
-            System.out.print(s.getWidth());
-            System.out.print("  ");
-            System.out.println(s.getHeight());
-        }
-
-        System.out.println("JPEG WIDTH: " + jpegSize.getWidth());
-        System.out.println("JPEG HEIGHT: " + jpegSize.getHeight());
 
         reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 2);
         list.add(reader.getSurface());
@@ -233,27 +227,52 @@ class QrCameraC2 implements QrCamera {
         }
     }
 
-
     private Size getAppropriateSize(Size[] sizes) {
+        // assume sizes is never 0
+        if (sizes.length == 1) {
+            return sizes[0];
+        }
+
         Size s = sizes[0];
-        if (orientation % 180 == 0) {
-            for (Size size : sizes) {
-                if (size.getHeight() < targetHeight || size.getWidth() < targetWidth) {
-                    break;
+        Size s1 = sizes[1];
+
+        if (s1.getWidth() > s.getWidth() || s1.getHeight() > s.getHeight()) {
+            // ascending
+            if (orientation % 180 == 0) {
+                for(Size size: sizes) {
+                    s = size;
+                    if (size.getHeight() > targetHeight && size.getWidth() > targetWidth) {
+                        break;
+                    }
                 }
-                s = size;
+            } else {
+                for(Size size: sizes) {
+                    s = size;
+                    if (size.getHeight() > targetWidth && size.getWidth() > targetHeight) {
+                        break;
+                    }
+                }
             }
         } else {
-            for (Size size : sizes) {
-                if (size.getHeight() < targetWidth || size.getWidth() < targetHeight) {
-                    break;
+            // descending
+            if (orientation % 180 == 0) {
+                for (Size size : sizes) {
+                    if (size.getHeight() < targetHeight || size.getWidth() < targetWidth) {
+                        break;
+                    }
+                    s = size;
                 }
-                s = size;
+            } else {
+                for (Size size : sizes) {
+                    if (size.getHeight() < targetWidth || size.getWidth() < targetHeight) {
+                        break;
+                    }
+                    s = size;
+                }
             }
         }
         return s;
     }
-
 
 
 }

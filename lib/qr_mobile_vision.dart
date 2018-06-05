@@ -58,7 +58,6 @@ class QrMobileVision {
 
     // invokeMethod returns Map<dynamic,...> in dart 2.0
     assert(details is Map<dynamic, dynamic>);
-    print("Start response: $details");
 
     int textureId = details["textureId"];
     num orientation = details["surfaceOrientation"];
@@ -93,8 +92,8 @@ class QrChannelReader {
       switch (call.method) {
         case 'qrRead':
           if (qrCodeHandler != null) {
-            String code = call.arguments;
-            qrCodeHandler(code);
+            assert(call.arguments is String);
+            qrCodeHandler(call.arguments);
           }
           break;
         default:
@@ -110,4 +109,5 @@ class QrChannelReader {
 
   MethodChannel channel;
   QRCodeHandler qrCodeHandler;
+
 }

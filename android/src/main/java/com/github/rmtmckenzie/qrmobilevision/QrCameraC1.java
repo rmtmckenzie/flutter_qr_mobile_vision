@@ -35,14 +35,16 @@ class QrCameraC1 implements QrCamera {
         camera = Camera.open();
         Camera.getCameraInfo(0, info);
         Camera.Parameters parameters = camera.getParameters();
-        Size size = getAppropriateSize(parameters.getSupportedPreviewSizes());
+
+        List<Size> supportedSizes = parameters.getSupportedPreviewSizes();
+        Size size = getAppropriateSize(supportedSizes);
+
         parameters.setPreviewSize(size.width,size.height);
         parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
         camera.setParameters(parameters);
         texture.setDefaultBufferSize(size.width, size.height);
 
         detector.useNV21(size.width,size.height);
-
 
         try {
 
@@ -90,20 +92,47 @@ class QrCameraC1 implements QrCamera {
 
     //Size here is Camera.Size, not android.util.Size as in the QrCameraC2 version of this method
     private Size getAppropriateSize(List<Size> sizes) {
+        // assume sizes is never 0
+        if (sizes.size() == 1) {
+            return sizes.get(0);
+        }
+
         Size s = sizes.get(0);
-        if (info.orientation % 180 == 0) {
-            for (Size size : sizes) {
-                if (size.height < targetHeight || size.width < targetWidth) {
-                    break;
+        Size s1 = sizes.get(1);
+
+        if (s1.width > s.width || s1.height > s.height) {
+            // ascending
+            if (info.orientation % 180 == 0) {
+                for(Size size: sizes) {
+                    s = size;
+                    if (size.height > targetHeight && size.width > targetWidth) {
+                        break;
+                    }
                 }
-                s = size;
+            } else {
+                for(Size size: sizes) {
+                    s = size;
+                    if (size.height > targetWidth && size.width > targetHeight) {
+                        break;
+                    }
+                }
             }
         } else {
-            for (Size size : sizes) {
-                if (size.height < targetWidth || size.width < targetHeight) {
-                    break;
+            // descending
+            if (info.orientation % 180 == 0) {
+                for (Size size : sizes) {
+                    if (size.height < targetHeight || size.width < targetWidth) {
+                        break;
+                    }
+                    s = size;
                 }
-                s = size;
+            } else {
+                for (Size size : sizes) {
+                    if (size.height < targetWidth || size.width < targetHeight) {
+                        break;
+                    }
+                    s = size;
+                }
             }
         }
         return s;

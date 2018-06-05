@@ -1,6 +1,7 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
 import android.content.Context;
+import android.view.OrientationEventListener;
 
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -57,7 +58,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
 
     @Override
     public void onMethodCall(MethodCall methodCall, Result result) {
-        System.out.println("QRMobileVisionPlugin: Method call received: " + methodCall.method);
+//        System.out.println("QRMobileVisionPlugin: Method call received: " + methodCall.method);
         switch (methodCall.method) {
             case "start": {
                 if (readingInstance != null) {
@@ -73,17 +74,17 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
                         break;
                     }
 
-                    System.out.print("Reading barcodes from formats:");
-                    for(String formatString: formatStrings) {
-                        System.out.print(" ");
-                        System.out.print(formatString);
-                    }
-                    System.out.println(".");
+//                    System.out.print("Reading barcodes from formats:");
+//                    for(String formatString: formatStrings) {
+//                        System.out.print(" ");
+//                        System.out.print(formatString);
+//                    }
+//                    System.out.println(".");
 
-                    int format = BarcodeFormats.intFromStringList(formatStrings);
+                    int barcodeFormats = BarcodeFormats.intFromStringList(formatStrings);
 
                     TextureRegistry.SurfaceTextureEntry textureEntry = textures.createSurfaceTexture();
-                    QRReader reader = new QRReader(targetWidth, targetHeight, context, format,
+                    QRReader reader = new QRReader(targetWidth, targetHeight, context, barcodeFormats,
                             this, this, textureEntry.surfaceTexture());
 
                     readingInstance = new ReadingInstance(reader, textureEntry, result);
@@ -123,7 +124,6 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
 
     @Override
     public void qrRead(String data) {
-        System.out.println("Invoking qrRead");
         channel.invokeMethod("qrRead", data);
     }
 
