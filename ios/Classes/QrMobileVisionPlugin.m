@@ -16,7 +16,6 @@
 }
 @end
 
-NS_AVAILABLE_IOS(10_0)
 @interface QrReader: NSObject<FlutterTexture, AVCaptureVideoDataOutputSampleBufferDelegate>
 @property(readonly, nonatomic) int64_t textureId;
 @property(nonatomic, copy) void (^onFrameAvailable)(void);
@@ -24,7 +23,6 @@ NS_AVAILABLE_IOS(10_0)
 @property(nonatomic) FlutterEventSink eventSink;
 @property(readonly, nonatomic) AVCaptureSession *captureSession;
 @property(readonly, nonatomic) AVCaptureDevice *captureDevice;
-@property(readonly, nonatomic) AVCapturePhotoOutput *capturePhotoOutput;
 @property(readonly) CVPixelBufferRef volatile latestPixelBuffer;
 @property(readonly, nonatomic) CMVideoDimensions previewSize;
 @property(readonly, nonatomic) dispatch_queue_t mainQueue;
@@ -33,8 +31,6 @@ NS_AVAILABLE_IOS(10_0)
 @property(nonatomic, copy) void (^onCodeAvailable)(NSString *);
 
 - (instancetype)initWithErrorRef:(NSError **)error;
-//                    andString:(NSString *)str;
-
 @end
 
 @implementation QrReader
@@ -44,7 +40,20 @@ NS_AVAILABLE_IOS(10_0)
     NSAssert(self, @"super init cannot be nil");
     _captureSession = [[AVCaptureSession alloc] init];
     
-    _captureDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
+    if (@available(iOS 10.0, *)) {
+        _captureDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
+    } else {
+        for(AVCaptureDevice* device in [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]) {
+            if (device.position == AVCaptureDevicePositionBack) {
+                _captureDevice = device;
+                break;
+            }
+        }
+
+        if (_captureDevice == nil) {
+            _captureDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+        }
+    }
     
     _mainQueue = dispatch_get_main_queue();
     
@@ -117,7 +126,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     }
     
     dispatch_sync(_mainQueue, ^{
-        _onFrameAvailable();
+        self.onFrameAvailable();
     });
     
     ///////// TODO: dispatch this to a background thread (or at least later on main thread?)!
@@ -128,7 +137,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     GMVImageOrientation orientation = [GMVUtility imageOrientationFromOrientation:deviceOrientation withCaptureDevicePosition:devicePosition defaultDeviceOrientation:UIDeviceOrientationPortrait];
     
     NSDictionary *options = @{
-                              GMVDetectorImageOrientation: @(orientation)
+        GMVDetectorImageOrientation: @(orientation)
     };
     
     UIImage *image = [UIImage imageWithCGImage:cgImageRef];
@@ -141,7 +150,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         NSString * value = [barcode0 rawValue];
         NSLog(@"Detected barcode: %@", value);
         dispatch_async(_mainQueue, ^{
-            _onCodeAvailable(value);
+            self->_onCodeAvailable(value);
         });
     }
 }
@@ -185,7 +194,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 }
 
 - (instancetype)initWithRegistry:(NSObject<FlutterTextureRegistry> *)registry
-                       channel:(FlutterMethodChannel *)channel {
+                         channel:(FlutterMethodChannel *)channel {
     self = [super init];
     NSAssert(self, @"super init cannot be nil");
     _registry = registry;
@@ -197,14 +206,14 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
     
     if ([@"start" isEqualToString:call.method]) {
-//        NSNumber *heartbeatTimeout = call.arguments[@"heartbeatTimeout"];
+        // NSNumber *heartbeatTimeout = call.arguments[@"heartbeatTimeout"];
         NSNumber *targetWidth = call.arguments[@"targetWidth"];
         NSNumber *targetHeight = call.arguments[@"targetHeight"];
         
         if (targetWidth == nil || targetHeight == nil) {
             result([FlutterError errorWithCode:@"INVALID_ARGS"
-                                message: @"Missing a required argument"
-                                details: @"Expecting targetWidth, targetHeight, and optionally heartbeatTimeout"]);
+                                       message: @"Missing a required argument"
+                                       details: @"Expecting targetWidth, targetHeight, and optionally heartbeatTimeout"]);
             return;
         }
         [self startWithCallback:^(int width, int height, int orientation, int64_t textureId) {
@@ -234,36 +243,30 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         failureCallback([NSError errorWithDomain:@"qr_mobile_vision" code:1 userInfo:@{NSLocalizedDescriptionKey:NSLocalizedString(@"Reader already running.", nil)}]);
         return;
     }
-    
-    if (@available(iOS 10_0, *)) {
-        NSError* localError = nil;
-        _reader = [[QrReader alloc] initWithErrorRef: &localError];
-        
-        if (localError) {
-            failureCallback(localError);
-            return;
-        }
-        
-        NSObject<FlutterTextureRegistry> * __weak registry = _registry;
-        int64_t textureId = [_registry registerTexture:_reader];
-        _reader.onFrameAvailable = ^{
-            [registry textureFrameAvailable:textureId];
-        };
-        
-        FlutterMethodChannel * __weak channel = _channel;
-        _reader.onCodeAvailable = ^(NSString *value) {
-            [channel invokeMethod:@"qrRead" arguments: value];
-        };
-        
-        [_reader start];
 
-        ///////// texture, width, height
-        completedCallback(_reader.previewSize.width, _reader.previewSize.height, 0, textureId);
-        
-    } else {
-        // Fallback on earlier versions
-        failureCallback([NSError errorWithDomain:@"qr_mobile_vision" code:2 userInfo:@{NSLocalizedDescriptionKey:NSLocalizedString(@"iOS Versions before 10 not supported.", nil)}]);
+    NSError* localError = nil;
+    _reader = [[QrReader alloc] initWithErrorRef: &localError];
+
+    if (localError) {
+        failureCallback(localError);
+        return;
     }
+
+    NSObject<FlutterTextureRegistry> * __weak registry = _registry;
+    int64_t textureId = [_registry registerTexture:_reader];
+    _reader.onFrameAvailable = ^{
+        [registry textureFrameAvailable:textureId];
+    };
+
+    FlutterMethodChannel * __weak channel = _channel;
+    _reader.onCodeAvailable = ^(NSString *value) {
+        [channel invokeMethod:@"qrRead" arguments: value];
+    };
+
+    [_reader start];
+
+    ///////// texture, width, height
+    completedCallback(_reader.previewSize.width, _reader.previewSize.height, 0, textureId);
 }
 
 - (void)stop {
