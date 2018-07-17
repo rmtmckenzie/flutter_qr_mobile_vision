@@ -49,8 +49,8 @@ SPEC CHECKSUMS:
   GoogleSymbolUtilities: 631ee17048aa5e9ab133470d768ea997a5ef9b96
   GoogleUtilities: 8bbc733218aad26306f9d4a253823986110e3358
   native_device_orientation: 1126735962ee926c7067a26ee9b0be020d3f5890
-  qr_mobile_vision: 4b0312a6658b81713a938126e82d08015d5dc0cd
+  qr_mobile_vision: 8611faee1dfa5581ede7b7dfcf740b01ebee970b
 
-PODFILE CHECKSUM: bcde638fe0be3b106a6554da432ae9e073ad0465
+PODFILE CHECKSUM: f7ea81b8ea6ff333387d1e924f8c2e073394c24b
 
 COCOAPODS: 1.5.3
