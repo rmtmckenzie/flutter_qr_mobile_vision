@@ -1,28 +1,28 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
 import android.content.Context;
-import android.view.OrientationEventListener;
+import android.util.Log;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
-import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
 import io.flutter.view.TextureRegistry;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.lang.Integer;
-import java.util.Map;
 
 
 /**
  * QrMobileVisionPlugin
  */
 public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallbacks, QRReader.QRReaderStartedCallback {
+
+    private static final String TAG = "c.g.r.QrMobVisPlugin";
+
     /**
      * Plugin registration.
      */
@@ -139,10 +139,18 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
 
     @Override
     public void startingFailed(Throwable t) {
+        Log.w(TAG, "Starting QR Mobile Vision failed", t);
+        StackTraceElement[] stackTrace = t.getStackTrace();
+        String[] stackTraceStrings = new String[stackTrace.length];
+        for(int i = 0; i < stackTrace.length; ++i) {
+            stackTraceStrings[i] = stackTrace[i].toString();
+        }
+
         if (t instanceof QRReader.Exception) {
-            readingInstance.startResult.error("QRREADER_ERROR", t.getMessage(), t.getStackTrace());
+            QRReader.Exception qrException = (QRReader.Exception)t;
+            readingInstance.startResult.error("QRREADER_ERROR", qrException.reason().name(), stackTraceStrings);
         } else {
-            readingInstance.startResult.error("UNKNOWN_ERROR", t.getMessage(), t.getStackTrace());
+            readingInstance.startResult.error("UNKNOWN_ERROR", t.getMessage(), stackTraceStrings);
         }
     }
 }

@@ -65,3 +65,4 @@ This has been tested on:
 - Nexus 4
 - Alcatel Idol X Plus
 - Essential Phone
+- iPhone 6

@@ -1,24 +1,14 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
 import android.Manifest;
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
-import android.hardware.Camera;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraCharacteristics;
-import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.params.StreamConfigurationMap;
-import android.util.Size;
 
 import com.google.android.gms.vision.CameraSource;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 
 class QRReader {
@@ -55,6 +45,7 @@ class QRReader {
         }
 
         public Exception(Reason reason) {
+            super("QR reader failed because " + reason.toString());
             this.reason = reason;
         }
 
