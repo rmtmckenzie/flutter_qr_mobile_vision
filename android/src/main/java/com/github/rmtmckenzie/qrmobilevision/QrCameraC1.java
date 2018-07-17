@@ -1,11 +1,9 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
 import android.annotation.TargetApi;
-import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.Size;
-
 
 import java.io.IOException;
 import java.util.List;
@@ -13,7 +11,7 @@ import java.util.List;
 /**
  * Implements QrCamera using Deprecated Camera API
  */
-@TargetApi(19)
+@TargetApi(16)
 @SuppressWarnings("deprecation")
 class QrCameraC1 implements QrCamera {
 
