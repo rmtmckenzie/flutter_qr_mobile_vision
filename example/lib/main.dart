@@ -47,18 +47,24 @@ class _MyAppState extends State<MyApp> {
             new Expanded(
                 child: camState
                     ? new Center(
-                      child: new SizedBox(
-                        width: 300.0,
-                        height: 600.0,
-                        child: new QrCamera(
+                        child: new SizedBox(
+                          width: 300.0,
+                          height: 600.0,
+                          child: new QrCamera(
                             qrCodeCallback: (code) {
                               setState(() {
                                 qr = code;
                               });
                             },
+                            child: new Container(
+                              decoration: new BoxDecoration(
+                                color: Colors.transparent,
+                                border: Border.all(color: Colors.orange, width: 10.0, style: BorderStyle.solid),
+                              ),
+                            ),
                           ),
-                      ),
-                    )
+                        ),
+                      )
                     : new Center(child: new Text("Camera inactive"))),
             new Text("QRCODE: $qr"),
           ],

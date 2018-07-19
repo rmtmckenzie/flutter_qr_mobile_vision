@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -141,9 +142,9 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
     public void startingFailed(Throwable t) {
         Log.w(TAG, "Starting QR Mobile Vision failed", t);
         StackTraceElement[] stackTrace = t.getStackTrace();
-        String[] stackTraceStrings = new String[stackTrace.length];
-        for(int i = 0; i < stackTrace.length; ++i) {
-            stackTraceStrings[i] = stackTrace[i].toString();
+        List<String> stackTraceStrings = new ArrayList<>(stackTrace.length);
+        for (StackTraceElement el : stackTrace) {
+            stackTraceStrings.add(el.toString());
         }
 
         if (t instanceof QRReader.Exception) {

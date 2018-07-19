@@ -35,7 +35,7 @@ public class PermissionsActivity extends Activity {
 
         super.onCreate(savedInstanceState);
 
-        System.out.println("REQUYESTING PERMISSIONS");
+        System.out.println("REQUESTING PERMISSIONS");
 
         this.requestPermissions(new String[] {Manifest.permission.CAMERA}, CAMERA_PERMISSIONS_REQUEST);
     }
@@ -49,14 +49,14 @@ public class PermissionsActivity extends Activity {
                 System.out.println("CAMERA_PERMISSIONS_REQUEST");
 
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    System.out.println("GRanted");
+                    System.out.println("Granted");
 
                     // granted
                     if (PermissionsActivity.callback != null) {
                         PermissionsActivity.callback.permissionsGranted(true);
                     }
                 } else {
-                    System.out.println("dENIED");
+                    System.out.println("Denied");
 
                     // denied
                     if (PermissionsActivity.callback != null) {

@@ -29,9 +29,12 @@ enum BarcodeFormats {
   UPC_E,
 }
 
+const _defaultBarcodeFormats = const [
+  BarcodeFormats.ALL_FORMATS,
+];
+
 class QrMobileVision {
-  static const MethodChannel _channel =
-      const MethodChannel('com.github.rmtmckenzie/qr_mobile_vision');
+  static const MethodChannel _channel = const MethodChannel('com.github.rmtmckenzie/qr_mobile_vision');
   static QrChannelReader channelReader = new QrChannelReader(_channel);
 
   //Set target size before starting
@@ -39,22 +42,19 @@ class QrMobileVision {
     @required int width,
     @required int height,
     @required QRCodeHandler qrCodeHandler,
-    List<BarcodeFormats> formats = const [
-      BarcodeFormats.ALL_FORMATS,
-    ],
+    List<BarcodeFormats> formats,
   }) async {
-    assert(formats != null);
+    if (formats == null) {
+      formats = _defaultBarcodeFormats;
+    }
+
     assert(formats.length > 0);
     channelReader.setQrCodeHandler(qrCodeHandler);
 
     List<String> formatStrings = formats.map((format) => format.toString().split('.')[1]).toList(growable: false);
 
-    var details = await _channel.invokeMethod('start', {
-      'targetWidth': width,
-      'targetHeight': height,
-      'heartbeatTimeout': 0,
-      'formats': formatStrings
-    });
+    var details = await _channel.invokeMethod(
+        'start', {'targetWidth': width, 'targetHeight': height, 'heartbeatTimeout': 0, 'formats': formatStrings});
 
     // invokeMethod returns Map<dynamic,...> in dart 2.0
     assert(details is Map<dynamic, dynamic>);
@@ -64,8 +64,7 @@ class QrMobileVision {
     num surfaceHeight = details["surfaceHeight"];
     num surfaceWidth = details["surfaceWidth"];
 
-    return new PreviewDetails(
-        surfaceWidth, surfaceHeight, orientation, textureId);
+    return new PreviewDetails(surfaceWidth, surfaceHeight, orientation, textureId);
   }
 
   static Future stop() {
@@ -97,8 +96,8 @@ class QrChannelReader {
           }
           break;
         default:
-          print("QrChannelHandler: unknown method call received at ${call
-              .method}");
+          print("QrChannelHandler: unknown method call received at "
+              "${call.method}");
       }
     });
   }
@@ -109,5 +108,4 @@ class QrChannelReader {
 
   MethodChannel channel;
   QRCodeHandler qrCodeHandler;
-
 }
