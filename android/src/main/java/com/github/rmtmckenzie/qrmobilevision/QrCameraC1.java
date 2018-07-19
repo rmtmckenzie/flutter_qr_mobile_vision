@@ -37,9 +37,17 @@ class QrCameraC1 implements QrCamera {
         List<Size> supportedSizes = parameters.getSupportedPreviewSizes();
         Size size = getAppropriateSize(supportedSizes);
 
-        parameters.setPreviewSize(size.width,size.height);
+        parameters.setPreviewSize(size.width, size.height);
         parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-        camera.setParameters(parameters);
+        try {
+            camera.setParameters(parameters);
+        } catch (RuntimeException ex) {
+            // if setting parameters failed, try without focus mode auto
+            parameters = camera.getParameters();
+            parameters.setPreviewSize(size.width, size.height);
+            camera.setParameters(parameters);
+        }
+
         texture.setDefaultBufferSize(size.width, size.height);
 
         detector.useNV21(size.width,size.height);
