@@ -57,7 +57,6 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    print("did change state to $state");
     if (state == AppLifecycleState.resumed) {
       setState(() => onScreen = true);
     } else {

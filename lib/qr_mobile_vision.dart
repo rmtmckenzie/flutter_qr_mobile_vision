@@ -42,10 +42,10 @@ class QrMobileVision {
     @required int width,
     @required int height,
     @required QRCodeHandler qrCodeHandler,
-    List<BarcodeFormats> formats = _defaultBarcodeFormats,
+    List<BarcodeFormats> formats,
   }) async {
     if (formats == null) {
-      formats == _defaultBarcodeFormats;
+      formats = _defaultBarcodeFormats;
     }
 
     assert(formats.length > 0);
