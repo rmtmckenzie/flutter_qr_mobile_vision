@@ -3,9 +3,6 @@
     package="com.github.rmtmckenzie.qrmobilevision">
 
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera.autofocus" />
-    <application>
-        <activity android:name=".PermissionsActivity"></activity>
-    </application>
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
 
 </manifest>
