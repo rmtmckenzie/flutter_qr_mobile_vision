@@ -1,8 +1,8 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
 
@@ -12,7 +12,7 @@ import java.io.IOException;
 
 
 class QRReader {
-    private final Context context;
+    private final Activity context;
     private Heartbeat heartbeat;
     private CameraSource camera;
     QrCamera qrCamera;
@@ -26,7 +26,8 @@ class QRReader {
     private QRReaderStartedCallback startedCallback;
 
 
-    QRReader(int width, int height, Context context, int barcodeFormats, final QRReaderStartedCallback startedCallback, final QRReaderCallbacks communicator,
+    QRReader(int width, int height, Activity context, int barcodeFormats,
+			 final QRReaderStartedCallback startedCallback, final QRReaderCallbacks communicator,
              final SurfaceTexture texture) {
         this.context = context;
         this.startedCallback = startedCallback;
@@ -54,37 +55,19 @@ class QRReader {
         }
     }
 
-
-    void start(final int heartBeatTimeout) throws IOException, Exception {
+    void start(final int heartBeatTimeout) throws IOException, NoPermissionException, Exception {
         if (!hasCameraHardware(context)) {
             throw new Exception(Exception.Reason.noHardware);
         }
 
         if (!checkCameraPermission(context)) {
-            PermissionsActivity.setCallback(new PermissionsActivity.PermissionsCallback() {
-                @Override
-                public void permissionsGranted(boolean wereGranted) {
-                    if (wereGranted) {
-                        System.out.println("PERMISSIONS WERE GRANTED");
-                        try {
-                            continueStarting(heartBeatTimeout);
-                        } catch (IOException e) {
-                            startedCallback.startingFailed(e);
-                        }
-                    } else {
-                        startedCallback.startingFailed(new Exception(Exception.Reason.noPermissions));
-                    }
-                }
-            });
-
-            Intent intent = new Intent(context, PermissionsActivity.class);
-            context.startActivity(intent);
+            throw new NoPermissionException();
         } else {
             continueStarting(heartBeatTimeout);
         }
     }
 
-    private void continueStarting(int heartBeatTimeout) throws IOException {
+    void continueStarting(int heartBeatTimeout) throws IOException {
         try {
             if (heartBeatTimeout > 0) {
                 if (heartbeat != null) {
