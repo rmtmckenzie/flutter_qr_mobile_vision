@@ -5,29 +5,19 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
-
 import com.google.android.gms.vision.CameraSource;
 
 import java.io.IOException;
 
-
 class QRReader {
     private final Activity context;
+    QrCamera qrCamera;
     private Heartbeat heartbeat;
     private CameraSource camera;
-    QrCamera qrCamera;
-
-    interface QRReaderStartedCallback {
-        void started();
-
-        void startingFailed(Throwable t);
-    }
-
     private QRReaderStartedCallback startedCallback;
 
-
     QRReader(int width, int height, Activity context, int barcodeFormats,
-			 final QRReaderStartedCallback startedCallback, final QRReaderCallbacks communicator,
+             final QRReaderStartedCallback startedCallback, final QRReaderCallbacks communicator,
              final SurfaceTexture texture) {
         this.context = context;
         this.startedCallback = startedCallback;
@@ -35,24 +25,6 @@ class QRReader {
         qrCamera = android.os.Build.VERSION.SDK_INT >= 21 ?
                 new QrCameraC2(width, height, context, texture, new QrDetector(communicator, context, barcodeFormats)) :
                 new QrCameraC1(width, height, texture, new QrDetector(communicator, context, barcodeFormats));
-    }
-
-    public static class Exception extends java.lang.Exception {
-        private Reason reason;
-
-        enum Reason {
-            noHardware,
-            noPermissions
-        }
-
-        public Exception(Reason reason) {
-            super("QR reader failed because " + reason.toString());
-            this.reason = reason;
-        }
-
-        Reason reason() {
-            return reason;
-        }
     }
 
     void start(final int heartBeatTimeout) throws IOException, NoPermissionException, Exception {
@@ -122,5 +94,29 @@ class QRReader {
 
         int res = context.checkCallingOrSelfPermission(permissions[0]);
         return res == PackageManager.PERMISSION_GRANTED;
+    }
+
+    interface QRReaderStartedCallback {
+        void started();
+
+        void startingFailed(Throwable t);
+    }
+
+    public static class Exception extends java.lang.Exception {
+        private Reason reason;
+
+        public Exception(Reason reason) {
+            super("QR reader failed because " + reason.toString());
+            this.reason = reason;
+        }
+
+        Reason reason() {
+            return reason;
+        }
+
+        enum Reason {
+            noHardware,
+            noPermissions
+        }
     }
 }

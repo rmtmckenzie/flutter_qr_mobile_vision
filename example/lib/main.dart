@@ -63,10 +63,7 @@ class _MyAppState extends State<MyApp> {
                             child: new Container(
                               decoration: new BoxDecoration(
                                 color: Colors.transparent,
-                                border: Border.all(
-                                    color: Colors.orange,
-                                    width: 10.0,
-                                    style: BorderStyle.solid),
+                                border: Border.all(color: Colors.orange, width: 10.0, style: BorderStyle.solid),
                               ),
                             ),
                           ),
