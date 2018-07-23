@@ -23,7 +23,7 @@ import java.util.Map;
 /**
  * QrMobileVisionPlugin
  */
-public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallbacks, QRReader.QRReaderStartedCallback, PluginRegistry.RequestPermissionsResultListener {
+public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallbacks, QrReader.QRReaderStartedCallback, PluginRegistry.RequestPermissionsResultListener {
 
     private static final String TAG = "c.g.r.QrMobVisPlugin";
     private static final int REQUEST_PERMISSION = 1;
@@ -56,12 +56,12 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
         if (requestCode == REQUEST_PERMISSION) {
             waitingForPermissionResult = false;
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                System.out.println("Granted");
+                Log.i(TAG, "Permissions request granted.");
                 stopReader();
             } else {
-                System.out.println("Denied");
+                Log.i(TAG, "Permissions request denied.");
                 permissionDenied = true;
-                startingFailed(new QRReader.Exception(QRReader.Exception.Reason.noPermissions));
+                startingFailed(new QrReader.Exception(QrReader.Exception.Reason.noPermissions));
                 stopReader();
             }
             return true;
@@ -77,7 +77,6 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
 
     @Override
     public void onMethodCall(MethodCall methodCall, Result result) {
-//        System.out.println("QRMobileVisionPlugin: Method call received: " + methodCall.method);
         switch (methodCall.method) {
             case "start": {
                 if (permissionDenied) {
@@ -96,34 +95,27 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
                         break;
                     }
 
-//                    System.out.print("Reading barcodes from formats:");
-//                    for(String formatString: formatStrings) {
-//                        System.out.print(" ");
-//                        System.out.print(formatString);
-//                    }
-//                    System.out.println(".");
-
                     int barcodeFormats = BarcodeFormats.intFromStringList(formatStrings);
 
                     TextureRegistry.SurfaceTextureEntry textureEntry = textures.createSurfaceTexture();
-                    QRReader reader = new QRReader(targetWidth, targetHeight, context, barcodeFormats,
-                            this, this, textureEntry.surfaceTexture());
+                    QrReader reader = new QrReader(targetWidth, targetHeight, context, barcodeFormats,
+                        this, this, textureEntry.surfaceTexture());
 
                     readingInstance = new ReadingInstance(reader, textureEntry, result);
                     try {
                         reader.start(
-                                lastHeartbeatTimeout == null ? 0 : lastHeartbeatTimeout
+                            lastHeartbeatTimeout == null ? 0 : lastHeartbeatTimeout
                         );
                     } catch (IOException e) {
                         e.printStackTrace();
                         result.error("IOException", "Error starting camera because of IOException: " + e.getLocalizedMessage(), null);
-                    } catch (QRReader.Exception e) {
+                    } catch (QrReader.Exception e) {
                         e.printStackTrace();
                         result.error(e.reason().name(), "Error starting camera for reason: " + e.reason().name(), null);
                     } catch (NoPermissionException e) {
                         waitingForPermissionResult = true;
                         ActivityCompat.requestPermissions(context,
-                                new String[]{Manifest.permission.CAMERA}, REQUEST_PERMISSION);
+                            new String[]{Manifest.permission.CAMERA}, REQUEST_PERMISSION);
                     }
                 }
                 break;
@@ -162,17 +154,25 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
         readingInstance.startResult.success(response);
     }
 
-    @Override
-    public void startingFailed(Throwable t) {
-        Log.w(TAG, "Starting QR Mobile Vision failed", t);
-        StackTraceElement[] stackTrace = t.getStackTrace();
+    private List<String> stackTraceAsString(StackTraceElement[] stackTrace) {
+        if (stackTrace == null) {
+            return null;
+        }
+
         List<String> stackTraceStrings = new ArrayList<>(stackTrace.length);
         for (StackTraceElement el : stackTrace) {
             stackTraceStrings.add(el.toString());
         }
+        return stackTraceStrings;
+    }
 
-        if (t instanceof QRReader.Exception) {
-            QRReader.Exception qrException = (QRReader.Exception) t;
+    @Override
+    public void startingFailed(Throwable t) {
+        Log.w(TAG, "Starting QR Mobile Vision failed", t);
+        List<String> stackTraceStrings = stackTraceAsString(t.getStackTrace());
+
+        if (t instanceof QrReader.Exception) {
+            QrReader.Exception qrException = (QrReader.Exception) t;
             readingInstance.startResult.error("QRREADER_ERROR", qrException.reason().name(), stackTraceStrings);
         } else {
             readingInstance.startResult.error("UNKNOWN_ERROR", t.getMessage(), stackTraceStrings);
@@ -180,11 +180,11 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
     }
 
     private class ReadingInstance {
-        final QRReader reader;
+        final QrReader reader;
         final TextureRegistry.SurfaceTextureEntry textureEntry;
         final Result startResult;
 
-        private ReadingInstance(QRReader reader, TextureRegistry.SurfaceTextureEntry textureEntry, Result startResult) {
+        private ReadingInstance(QrReader reader, TextureRegistry.SurfaceTextureEntry textureEntry, Result startResult) {
             this.reader = reader;
             this.textureEntry = textureEntry;
             this.startResult = startResult;

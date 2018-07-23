@@ -5,26 +5,32 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
+import android.util.Log;
 import com.google.android.gms.vision.CameraSource;
 
 import java.io.IOException;
 
-class QRReader {
+class QrReader {
+    private static final String TAG = "c.g.r.QrReader";
+    final QrCamera qrCamera;
     private final Activity context;
-    QrCamera qrCamera;
+    private final QRReaderStartedCallback startedCallback;
     private Heartbeat heartbeat;
     private CameraSource camera;
-    private QRReaderStartedCallback startedCallback;
 
-    QRReader(int width, int height, Activity context, int barcodeFormats,
-             final QRReaderStartedCallback startedCallback, final QRReaderCallbacks communicator,
+    QrReader(int width, int height, Activity context, int barcodeFormats,
+             final QRReaderStartedCallback startedCallback, final QrReaderCallbacks communicator,
              final SurfaceTexture texture) {
         this.context = context;
         this.startedCallback = startedCallback;
 
-        qrCamera = android.os.Build.VERSION.SDK_INT >= 21 ?
-                new QrCameraC2(width, height, context, texture, new QrDetector(communicator, context, barcodeFormats)) :
-                new QrCameraC1(width, height, texture, new QrDetector(communicator, context, barcodeFormats));
+        if (android.os.Build.VERSION.SDK_INT >= 21) {
+            Log.i(TAG, "Using new camera API.");
+            qrCamera = new QrCameraC2(width, height, context, texture, new QrDetector(communicator, context, barcodeFormats));
+        } else {
+            Log.i(TAG, "Using old camera API.");
+            qrCamera = new QrCameraC1(width, height, texture, new QrDetector(communicator, context, barcodeFormats));
+        }
     }
 
     void start(final int heartBeatTimeout) throws IOException, NoPermissionException, Exception {
@@ -39,7 +45,7 @@ class QRReader {
         }
     }
 
-    void continueStarting(int heartBeatTimeout) throws IOException {
+    private void continueStarting(int heartBeatTimeout) throws IOException {
         try {
             if (heartBeatTimeout > 0) {
                 if (heartbeat != null) {
@@ -81,10 +87,6 @@ class QRReader {
         }
     }
 
-    private boolean hasAutofocus(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS);
-    }
-
     private boolean hasCameraHardware(Context context) {
         return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA);
     }
@@ -105,7 +107,7 @@ class QRReader {
     public static class Exception extends java.lang.Exception {
         private Reason reason;
 
-        public Exception(Reason reason) {
+        Exception(Reason reason) {
             super("QR reader failed because " + reason.toString());
             this.reason = reason;
         }
@@ -116,7 +118,8 @@ class QRReader {
 
         enum Reason {
             noHardware,
-            noPermissions
+            noPermissions,
+            noBackCamera
         }
     }
 }
