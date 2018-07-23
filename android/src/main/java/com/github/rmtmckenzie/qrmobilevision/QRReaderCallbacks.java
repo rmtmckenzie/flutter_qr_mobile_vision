@@ -1,5 +1,5 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
-public interface QRReaderCallbacks {
+public interface QrReaderCallbacks {
     void qrRead(String data);
 }

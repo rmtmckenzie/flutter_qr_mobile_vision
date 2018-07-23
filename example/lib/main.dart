@@ -51,6 +51,10 @@ class _MyAppState extends State<MyApp> {
                           width: 300.0,
                           height: 600.0,
                           child: new QrCamera(
+                            onError: (context, error) => Text(
+                                  error.toString(),
+                                  style: TextStyle(color: Colors.red),
+                                ),
                             qrCodeCallback: (code) {
                               setState(() {
                                 qr = code;

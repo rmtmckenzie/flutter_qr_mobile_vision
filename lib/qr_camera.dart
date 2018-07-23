@@ -18,6 +18,7 @@ typedef Widget ErrorCallback(BuildContext context, Object error);
 
 class QrCamera extends StatefulWidget {
   QrCamera({
+    Key key,
     @required this.qrCodeCallback,
     this.child,
     this.fit = BoxFit.cover,
@@ -28,7 +29,8 @@ class QrCamera extends StatefulWidget {
   })  : notStartedBuilder = notStartedBuilder ?? _defaultNotStartedBuilder,
         offscreenBuilder = offscreenBuilder ?? notStartedBuilder ?? _defaultOffscreenBuilder,
         onError = onError ?? _defaultOnError,
-        assert(fit != null);
+        assert(fit != null),
+        super(key: key);
 
   final BoxFit fit;
   final ValueChanged<String> qrCodeCallback;
@@ -73,7 +75,7 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
   bool onScreen = true;
   Future<PreviewDetails> _asyncInitOnce;
 
-  Future<PreviewDetails> asyncInitOnce(num width, num height) async {
+  Future<PreviewDetails> _asyncInit(num width, num height) async {
     var previewDetails = await QrMobileVision.start(
       width: width.toInt(),
       height: height.toInt(),
@@ -81,6 +83,17 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
       formats: widget.formats,
     );
     return previewDetails;
+  }
+
+  /// This method can be used to restart scanning
+  ///  the event that it was paused.
+  void restart() {
+    (() async {
+      await QrMobileVision.stop();
+      setState(() {
+        _asyncInitOnce = null;
+      });
+    })();
   }
 
   @override
@@ -93,7 +106,7 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return new LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
       if (_asyncInitOnce == null && onScreen) {
-        _asyncInitOnce = asyncInitOnce(constraints.maxWidth, constraints.maxHeight);
+        _asyncInitOnce = _asyncInit(constraints.maxWidth, constraints.maxHeight);
       } else if (!onScreen) {
         return widget.offscreenBuilder(context);
       }
@@ -107,6 +120,7 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
               return widget.notStartedBuilder(context);
             case ConnectionState.done:
               if (details.hasError) {
+                debugPrint(details.error.toString());
                 return widget.onError(context, details.error);
               }
               Widget preview = new SizedBox(

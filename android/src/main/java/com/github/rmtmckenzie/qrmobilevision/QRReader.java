@@ -1,84 +1,45 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
-
+import android.util.Log;
 import com.google.android.gms.vision.CameraSource;
 
 import java.io.IOException;
 
-
-class QRReader {
-    private final Context context;
+class QrReader {
+    private static final String TAG = "c.g.r.QrReader";
+    final QrCamera qrCamera;
+    private final Activity context;
+    private final QRReaderStartedCallback startedCallback;
     private Heartbeat heartbeat;
     private CameraSource camera;
-    QrCamera qrCamera;
 
-    interface QRReaderStartedCallback {
-        void started();
-
-        void startingFailed(Throwable t);
-    }
-
-    private QRReaderStartedCallback startedCallback;
-
-
-    QRReader(int width, int height, Context context, int barcodeFormats, final QRReaderStartedCallback startedCallback, final QRReaderCallbacks communicator,
+    QrReader(int width, int height, Activity context, int barcodeFormats,
+             final QRReaderStartedCallback startedCallback, final QrReaderCallbacks communicator,
              final SurfaceTexture texture) {
         this.context = context;
         this.startedCallback = startedCallback;
 
-        qrCamera = android.os.Build.VERSION.SDK_INT >= 21 ?
-                new QrCameraC2(width, height, context, texture, new QrDetector(communicator, context, barcodeFormats)) :
-                new QrCameraC1(width, height, texture, new QrDetector(communicator, context, barcodeFormats));
-    }
-
-    public static class Exception extends java.lang.Exception {
-        private Reason reason;
-
-        enum Reason {
-            noHardware,
-            noPermissions
-        }
-
-        public Exception(Reason reason) {
-            super("QR reader failed because " + reason.toString());
-            this.reason = reason;
-        }
-
-        Reason reason() {
-            return reason;
+        if (android.os.Build.VERSION.SDK_INT >= 21) {
+            Log.i(TAG, "Using new camera API.");
+            qrCamera = new QrCameraC2(width, height, context, texture, new QrDetector(communicator, context, barcodeFormats));
+        } else {
+            Log.i(TAG, "Using old camera API.");
+            qrCamera = new QrCameraC1(width, height, texture, new QrDetector(communicator, context, barcodeFormats));
         }
     }
 
-
-    void start(final int heartBeatTimeout) throws IOException, Exception {
+    void start(final int heartBeatTimeout) throws IOException, NoPermissionException, Exception {
         if (!hasCameraHardware(context)) {
             throw new Exception(Exception.Reason.noHardware);
         }
 
         if (!checkCameraPermission(context)) {
-            PermissionsActivity.setCallback(new PermissionsActivity.PermissionsCallback() {
-                @Override
-                public void permissionsGranted(boolean wereGranted) {
-                    if (wereGranted) {
-                        System.out.println("PERMISSIONS WERE GRANTED");
-                        try {
-                            continueStarting(heartBeatTimeout);
-                        } catch (IOException e) {
-                            startedCallback.startingFailed(e);
-                        }
-                    } else {
-                        startedCallback.startingFailed(new Exception(Exception.Reason.noPermissions));
-                    }
-                }
-            });
-
-            Intent intent = new Intent(context, PermissionsActivity.class);
-            context.startActivity(intent);
+            throw new NoPermissionException();
         } else {
             continueStarting(heartBeatTimeout);
         }
@@ -126,10 +87,6 @@ class QRReader {
         }
     }
 
-    private boolean hasAutofocus(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS);
-    }
-
     private boolean hasCameraHardware(Context context) {
         return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA);
     }
@@ -139,5 +96,30 @@ class QRReader {
 
         int res = context.checkCallingOrSelfPermission(permissions[0]);
         return res == PackageManager.PERMISSION_GRANTED;
+    }
+
+    interface QRReaderStartedCallback {
+        void started();
+
+        void startingFailed(Throwable t);
+    }
+
+    public static class Exception extends java.lang.Exception {
+        private Reason reason;
+
+        Exception(Reason reason) {
+            super("QR reader failed because " + reason.toString());
+            this.reason = reason;
+        }
+
+        Reason reason() {
+            return reason;
+        }
+
+        enum Reason {
+            noHardware,
+            noPermissions,
+            noBackCamera
+        }
     }
 }

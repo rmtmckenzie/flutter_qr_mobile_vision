@@ -21,12 +21,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 class QrDetector {
     private AtomicInteger atomicCounter = new AtomicInteger();
-    private final QRReaderCallbacks communicator;
+    private final QrReaderCallbacks communicator;
     private final Detector<Barcode> detector;
     private int width = 0, height = 0;
     boolean isNV21 = false;
 
-    QrDetector(QRReaderCallbacks communicator, Context context, int formats) {
+    QrDetector(QrReaderCallbacks communicator, Context context, int formats) {
         System.out.println("Making detector for formats: " + formats);
         this.communicator = communicator;
         this.detector = new BarcodeDetector.Builder(context.getApplicationContext()).setBarcodeFormats(formats).build();
@@ -77,8 +77,6 @@ class QrDetector {
                 System.out.println("Dropping frame");
                 return null;
             }
-
-//            System.out.println("About to detect...");
 
             Frame.Builder frameBuilder = new Frame.Builder();
 
