@@ -1,11 +1,7 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
 import android.annotation.TargetApi;
-import android.os.AsyncTask;
-import android.support.annotation.NonNull;
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraCaptureSession;
@@ -18,6 +14,7 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
+import android.support.annotation.NonNull;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Surface;
@@ -32,26 +29,6 @@ import java.util.List;
 @TargetApi(21)
 class QrCameraC2 implements QrCamera {
 
-    private Size size;
-    private ImageReader reader;
-    private CaptureRequest.Builder previewBuilder;
-    private CameraCaptureSession previewSession;
-    private Size jpegSizes[] = null;
-    private QrDetector detector;
-
-    private final int targetWidth;
-    private final int targetHeight;
-    private final Context context;
-    private final SurfaceTexture texture;
-
-    QrCameraC2(int width, int height, Context context, SurfaceTexture texture, QrDetector detector) {
-        this.targetWidth = width;
-        this.targetHeight = height;
-        this.context = context;
-        this.texture = texture;
-        this.detector = detector;
-    }
-
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
 
     static {
@@ -61,9 +38,41 @@ class QrCameraC2 implements QrCamera {
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
 
+    private final int targetWidth;
+    private final int targetHeight;
+    private final Context context;
+    private final SurfaceTexture texture;
+    private Size size;
+    private ImageReader reader;
+    private CaptureRequest.Builder previewBuilder;
+    private CameraCaptureSession previewSession;
+    private Size jpegSizes[] = null;
+    private QrDetector detector;
     private int orientation;
-
     private CameraDevice cameraDevice;
+    private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
+        @Override
+        public void onOpened(CameraDevice device) {
+            cameraDevice = device;
+            startCamera();
+        }
+
+        @Override
+        public void onDisconnected(CameraDevice device) {
+        }
+
+        @Override
+        public void onError(CameraDevice device, int error) {
+        }
+    };
+
+    QrCameraC2(int width, int height, Context context, SurfaceTexture texture, QrDetector detector) {
+        this.targetWidth = width;
+        this.targetHeight = height;
+        this.context = context;
+        this.texture = texture;
+        this.detector = detector;
+    }
 
     @Override
     public int getWidth() {
@@ -92,13 +101,12 @@ class QrCameraC2 implements QrCamera {
                 // it seems as though the orientation is already corrected, so setting to 0
                 orientation = 0;
                 // orientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-                size = getAppropriateSize( map.getOutputSizes(SurfaceTexture.class));
+                size = getAppropriateSize(map.getOutputSizes(SurfaceTexture.class));
                 //size = map.getOutputSizes(SurfaceTexture.class)[0];
                 jpegSizes = map.getOutputSizes(ImageFormat.JPEG);
             } catch (java.lang.NullPointerException e) {
                 e.printStackTrace();
             }
-
 
             manager.openCamera(id, stateCallback, null);
 
@@ -108,22 +116,6 @@ class QrCameraC2 implements QrCamera {
             e.printStackTrace();
         }
     }
-
-    private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
-        @Override
-        public void onOpened(CameraDevice device) {
-            cameraDevice = device;
-            startCamera();
-        }
-
-        @Override
-        public void onDisconnected(CameraDevice device) {
-        }
-
-        @Override
-        public void onError(CameraDevice device, int error) {
-        }
-    };
 
     private void startCamera() {
         List<Surface> list = new ArrayList<>();
@@ -219,10 +211,10 @@ class QrCameraC2 implements QrCamera {
 
     @Override
     public void stop() {
-        if(cameraDevice != null){
+        if (cameraDevice != null) {
             cameraDevice.close();
         }
-        if(reader != null){
+        if (reader != null) {
             reader.close();
         }
     }
@@ -239,14 +231,14 @@ class QrCameraC2 implements QrCamera {
         if (s1.getWidth() > s.getWidth() || s1.getHeight() > s.getHeight()) {
             // ascending
             if (orientation % 180 == 0) {
-                for(Size size: sizes) {
+                for (Size size : sizes) {
                     s = size;
                     if (size.getHeight() > targetHeight && size.getWidth() > targetWidth) {
                         break;
                     }
                 }
             } else {
-                for(Size size: sizes) {
+                for (Size size : sizes) {
                     s = size;
                     if (size.getHeight() > targetWidth && size.getWidth() > targetHeight) {
                         break;

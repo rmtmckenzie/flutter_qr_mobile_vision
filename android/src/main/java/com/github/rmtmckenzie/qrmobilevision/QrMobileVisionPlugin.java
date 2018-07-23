@@ -23,6 +23,16 @@ import io.flutter.view.TextureRegistry;
 public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallbacks, QRReader.QRReaderStartedCallback {
 
     private static final String TAG = "c.g.r.QrMobVisPlugin";
+    private final MethodChannel channel;
+    private final Context context;
+    private final TextureRegistry textures;
+    private ReadingInstance readingInstance;
+
+    public QrMobileVisionPlugin(MethodChannel channel, Context context, TextureRegistry textures) {
+        this.textures = textures;
+        this.channel = channel;
+        this.context = context;
+    }
 
     /**
      * Plugin registration.
@@ -31,31 +41,6 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
         final MethodChannel channel = new MethodChannel(registrar.messenger(), "com.github.rmtmckenzie/qr_mobile_vision");
         channel.setMethodCallHandler(new QrMobileVisionPlugin(channel, registrar.activity(), registrar.textures()));
     }
-
-    private final MethodChannel channel;
-    private final Context context;
-    private final TextureRegistry textures;
-
-    public QrMobileVisionPlugin(MethodChannel channel, Context context, TextureRegistry textures) {
-        this.textures = textures;
-        this.channel = channel;
-        this.context = context;
-    }
-
-    private class ReadingInstance {
-        final QRReader reader;
-        final TextureRegistry.SurfaceTextureEntry textureEntry;
-        final Result startResult;
-
-        private ReadingInstance(QRReader reader, TextureRegistry.SurfaceTextureEntry textureEntry, Result startResult) {
-            this.reader = reader;
-            this.textureEntry = textureEntry;
-            this.startResult = startResult;
-        }
-    }
-
-    private ReadingInstance readingInstance;
-
 
     @Override
     public void onMethodCall(MethodCall methodCall, Result result) {
@@ -112,7 +97,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
                 break;
             }
             case "heartbeat": {
-                if(readingInstance != null) {
+                if (readingInstance != null) {
                     readingInstance.reader.heartBeat();
                 }
                 result.success(null);
@@ -138,20 +123,40 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QRReaderCallback
         readingInstance.startResult.success(response);
     }
 
-    @Override
-    public void startingFailed(Throwable t) {
-        Log.w(TAG, "Starting QR Mobile Vision failed", t);
-        StackTraceElement[] stackTrace = t.getStackTrace();
+    private List<String> stackTraceAsString(StackTraceElement[] stackTrace) {
+        if (stackTrace == null) {
+            return null;
+        }
+
         List<String> stackTraceStrings = new ArrayList<>(stackTrace.length);
         for (StackTraceElement el : stackTrace) {
             stackTraceStrings.add(el.toString());
         }
+        return stackTraceStrings;
+    }
+
+    @Override
+    public void startingFailed(Throwable t) {
+        Log.w(TAG, "Starting QR Mobile Vision failed", t);
+        List<String> stackTraceStrings = stackTraceAsString(t.getStackTrace());
 
         if (t instanceof QRReader.Exception) {
-            QRReader.Exception qrException = (QRReader.Exception)t;
+            QRReader.Exception qrException = (QRReader.Exception) t;
             readingInstance.startResult.error("QRREADER_ERROR", qrException.reason().name(), stackTraceStrings);
         } else {
             readingInstance.startResult.error("UNKNOWN_ERROR", t.getMessage(), stackTraceStrings);
+        }
+    }
+
+    private class ReadingInstance {
+        final QRReader reader;
+        final TextureRegistry.SurfaceTextureEntry textureEntry;
+        final Result startResult;
+
+        private ReadingInstance(QRReader reader, TextureRegistry.SurfaceTextureEntry textureEntry, Result startResult) {
+            this.reader = reader;
+            this.textureEntry = textureEntry;
+            this.startResult = startResult;
         }
     }
 }

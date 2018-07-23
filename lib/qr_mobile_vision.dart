@@ -44,15 +44,12 @@ class QrMobileVision {
     @required QRCodeHandler qrCodeHandler,
     List<BarcodeFormats> formats = _defaultBarcodeFormats,
   }) async {
-    if (formats == null) {
-      formats == _defaultBarcodeFormats;
-    }
+    final _formats = formats ?? _defaultBarcodeFormats;
+    assert(_formats.length > 0);
 
-    assert(formats.length > 0);
+    List<String> formatStrings = _formats.map((format) => format.toString().split('.')[1]).toList(growable: false);
+
     channelReader.setQrCodeHandler(qrCodeHandler);
-
-    List<String> formatStrings = formats.map((format) => format.toString().split('.')[1]).toList(growable: false);
-
     var details = await _channel.invokeMethod(
         'start', {'targetWidth': width, 'targetHeight': height, 'heartbeatTimeout': 0, 'formats': formatStrings});
 

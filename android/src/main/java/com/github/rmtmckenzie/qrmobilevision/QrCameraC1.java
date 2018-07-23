@@ -17,7 +17,7 @@ class QrCameraC1 implements QrCamera {
 
     private Camera.CameraInfo info = new Camera.CameraInfo();
     private int targetWidth, targetHeight;
-    private Camera camera;
+    private Camera camera = null;
     private final SurfaceTexture texture;
     private final QrDetector detector;
 
@@ -29,31 +29,36 @@ class QrCameraC1 implements QrCamera {
     }
 
     @Override
-    public void start() {
-        camera = Camera.open();
-        Camera.getCameraInfo(0, info);
+    public void start() throws QRReader.Exception {
+        int numberOfCameras = Camera.getNumberOfCameras();
+        info = new Camera.CameraInfo();
+        for (int i = 0; i < numberOfCameras; i++) {
+            Camera.getCameraInfo(i, info);
+            if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+                camera = Camera.open(i);
+            }
+        }
+
+        if (camera == null) {
+            throw new QRReader.Exception(QRReader.Exception.Reason.noBackCamera);
+        }
+
         Camera.Parameters parameters = camera.getParameters();
+
+        List<String> focusModes = parameters.getSupportedFocusModes();
+        if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+        }
 
         List<Size> supportedSizes = parameters.getSupportedPreviewSizes();
         Size size = getAppropriateSize(supportedSizes);
 
         parameters.setPreviewSize(size.width, size.height);
-        parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-        try {
-            camera.setParameters(parameters);
-        } catch (RuntimeException ex) {
-            // if setting parameters failed, try without focus mode auto
-            parameters = camera.getParameters();
-            parameters.setPreviewSize(size.width, size.height);
-            camera.setParameters(parameters);
-        }
-
         texture.setDefaultBufferSize(size.width, size.height);
 
         detector.useNV21(size.width,size.height);
 
         try {
-
             camera.setPreviewCallback(new Camera.PreviewCallback() {
                 @Override
                 public void onPreviewFrame(byte[] data, Camera camera) {

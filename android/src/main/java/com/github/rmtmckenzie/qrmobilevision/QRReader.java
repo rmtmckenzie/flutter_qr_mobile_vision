@@ -41,7 +41,8 @@ class QRReader {
 
         enum Reason {
             noHardware,
-            noPermissions
+            noPermissions,
+            noBackCamera
         }
 
         public Exception(Reason reason) {

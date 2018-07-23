@@ -78,8 +78,6 @@ class QrDetector {
                 return null;
             }
 
-//            System.out.println("About to detect...");
-
             Frame.Builder frameBuilder = new Frame.Builder();
 
             Bitmap bmp;
