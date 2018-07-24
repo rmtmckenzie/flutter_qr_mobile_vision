@@ -10,7 +10,7 @@ import com.google.android.gms.vision.CameraSource;
 
 import java.io.IOException;
 
-class QrReader {
+class QrReader1 {
     private static final String TAG = "c.g.r.QrReader";
     final QrCamera qrCamera;
     private final Activity context;
@@ -18,9 +18,9 @@ class QrReader {
     private Heartbeat heartbeat;
     private CameraSource camera;
 
-    QrReader(int width, int height, Activity context, int barcodeFormats,
-             final QRReaderStartedCallback startedCallback, final QrReaderCallbacks communicator,
-             final SurfaceTexture texture) {
+    QrReader1(int width, int height, Activity context, int barcodeFormats,
+              final QRReaderStartedCallback startedCallback, final QrReaderCallbacks1 communicator,
+              final SurfaceTexture texture) {
         this.context = context;
         this.startedCallback = startedCallback;
 

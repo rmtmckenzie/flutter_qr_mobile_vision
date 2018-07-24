@@ -23,7 +23,7 @@ import java.util.Map;
 /**
  * QrMobileVisionPlugin
  */
-public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallbacks, QrReader.QRReaderStartedCallback, PluginRegistry.RequestPermissionsResultListener {
+public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallbacks1, QrReader.QRReaderStartedCallback, PluginRegistry.RequestPermissionsResultListener {
 
     private static final String TAG = "c.g.r.QrMobVisPlugin";
     private static final int REQUEST_PERMISSION = 1;
