@@ -96,6 +96,14 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
     })();
   }
 
+  /// This method can be used to manually stop the
+  /// camera.
+  void stop() {
+    (() async {
+      await QrMobileVision.stop();
+    })();
+  }
+
   @override
   deactivate() {
     super.deactivate();

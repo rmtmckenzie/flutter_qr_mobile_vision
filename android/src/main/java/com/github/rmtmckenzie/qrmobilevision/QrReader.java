@@ -11,7 +11,7 @@ import com.google.android.gms.vision.CameraSource;
 import java.io.IOException;
 
 class QrReader {
-    private static final String TAG = "c.g.r.QrReader";
+    private static final String TAG = "cgr.qrmv.QrReader";
     final QrCamera qrCamera;
     private final Activity context;
     private final QRReaderStartedCallback startedCallback;

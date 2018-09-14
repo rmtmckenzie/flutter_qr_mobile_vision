@@ -27,7 +27,7 @@ import static android.hardware.camera2.CameraMetadata.LENS_FACING_BACK;
 @TargetApi(21)
 class QrCameraC2 implements QrCamera {
 
-    private static final String TAG = "c.g.r.QrCameraC2";
+    private static final String TAG = "cgr.qrmv.QrCameraC2";
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
 
     static {

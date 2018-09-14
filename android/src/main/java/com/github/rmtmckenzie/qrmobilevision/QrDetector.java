@@ -5,8 +5,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.os.AsyncTask;
+import android.util.Log;
 import android.util.SparseArray;
-
 import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.barcode.Barcode;
@@ -20,14 +20,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 
 class QrDetector {
-    private AtomicInteger atomicCounter = new AtomicInteger();
+    private static final String TAG = "cgr.qrmv.QrDetector";
     private final QrReaderCallbacks communicator;
     private final Detector<Barcode> detector;
+    private AtomicInteger atomicCounter = new AtomicInteger();
     private int width = 0, height = 0;
-    boolean isNV21 = false;
+    private boolean isNV21 = false;
 
     QrDetector(QrReaderCallbacks communicator, Context context, int formats) {
-        System.out.println("Making detector for formats: " + formats);
+        Log.i(TAG, "Making detector for formats: " + formats);
         this.communicator = communicator;
         this.detector = new BarcodeDetector.Builder(context.getApplicationContext()).setBarcodeFormats(formats).build();
     }
@@ -49,32 +50,30 @@ class QrDetector {
     }
 
     private class ImageFrame {
+        final byte[] bytes;
+        //final ByteBuffer bytes;
+        final int count;
         ImageFrame(byte[] bytes, int count) {
             this.bytes = bytes;
             this.count = count;
         }
-
-        final byte[] bytes;
-        //final ByteBuffer bytes;
-        final int count;
     }
 
     private class qrTask extends AsyncTask<Void, Void, SparseArray<Barcode>> {
 
+        final byte[] bytes;
+        final int count;
+        final AtomicInteger counter;
         public qrTask(byte[] bytes, int count, AtomicInteger counter) {
             this.bytes = bytes;
             this.count = count;
             this.counter = counter;
         }
 
-        final byte[] bytes;
-        final int count;
-        final AtomicInteger counter;
-
         @Override
         protected SparseArray<Barcode> doInBackground(Void... voids) {
             if (count < atomicCounter.get()) {
-                System.out.println("Dropping frame");
+                Log.d(TAG, "Dropping frame.");
                 return null;
             }
 
@@ -98,7 +97,7 @@ class QrDetector {
         protected void onPostExecute(SparseArray<Barcode> detectedItems) {
             if (detectedItems == null) return;
             for (int i = 0; i < detectedItems.size(); ++i) {
-                System.out.println("Item read!: " + detectedItems.valueAt(i).rawValue);
+                Log.i(TAG, "Item read: " + detectedItems.valueAt(i).rawValue);
                 communicator.qrRead(detectedItems.valueAt(i).displayValue);
             }
         }

@@ -16,7 +16,7 @@ import java.util.List;
 @SuppressWarnings("deprecation")
 class QrCameraC1 implements QrCamera {
 
-    private static final String TAG = "c.g.r.QrCameraC1";
+    private static final String TAG = "cgr.qrmv.QrCameraC1";
     private final SurfaceTexture texture;
     private final QrDetector detector;
     private Camera.CameraInfo info = new Camera.CameraInfo();

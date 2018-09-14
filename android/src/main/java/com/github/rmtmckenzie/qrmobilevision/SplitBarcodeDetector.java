@@ -1,12 +1,15 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
+import android.annotation.TargetApi;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
+import android.renderscript.Allocation;
+import android.renderscript.Element;
+import android.renderscript.RenderScript;
+import android.renderscript.ScriptIntrinsicYuvToRGB;
 import android.util.SparseArray;
-import android.content.Context;
-import android.graphics.YuvImage;
-import android.graphics.Rect;
-
+import com.google.android.gms.common.api.Api;
 import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.barcode.Barcode;
@@ -15,11 +18,7 @@ import com.google.android.gms.vision.barcode.BarcodeDetector;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 
-import android.renderscript.ScriptIntrinsicYuvToRGB;
-import android.renderscript.Allocation;
-import android.renderscript.RenderScript;
-import android.renderscript.Element;
-
+@TargetApi(17)
 public class SplitBarcodeDetector extends Detector<Barcode> {
 
     private final BarcodeDetector detector;
