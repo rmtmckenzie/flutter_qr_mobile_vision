@@ -1,18 +1,15 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.ImageFormat;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.util.SparseArray;
+
 import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.barcode.BarcodeDetector;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -45,8 +42,11 @@ class QrDetector {
         this.height = 0;
     }
 
+    void detect(Frame frame) {
+        new qrTask(frame, atomicCounter.incrementAndGet(), atomicCounter).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    }
     void detect(byte[] bytes) {
-        new qrTask(bytes, atomicCounter.incrementAndGet(), atomicCounter).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+//        new qrTask(bytes, atomicCounter.incrementAndGet(), atomicCounter).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     private class ImageFrame {
@@ -61,11 +61,13 @@ class QrDetector {
 
     private class qrTask extends AsyncTask<Void, Void, SparseArray<Barcode>> {
 
-        final byte[] bytes;
+        final Frame frame;
+//        final byte[] bytes;
         final int count;
         final AtomicInteger counter;
-        public qrTask(byte[] bytes, int count, AtomicInteger counter) {
-            this.bytes = bytes;
+        public qrTask(Frame frame, int count, AtomicInteger counter) {
+//            this.bytes = bytes;
+            this.frame = frame;
             this.count = count;
             this.counter = counter;
         }
@@ -73,22 +75,22 @@ class QrDetector {
         @Override
         protected SparseArray<Barcode> doInBackground(Void... voids) {
             if (count < atomicCounter.get()) {
-                Log.d(TAG, "Dropping frame.");
                 return null;
             }
 
-            Frame.Builder frameBuilder = new Frame.Builder();
-
-            Bitmap bmp;
-            if (isNV21) {
-                frameBuilder.setImageData(ByteBuffer.wrap(bytes), width, height, ImageFormat.NV21);
-            } else {
-                bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                if (bmp == null) return null;
-                frameBuilder.setBitmap(bmp);
-            }
-
-            Frame frame = frameBuilder.build();
+//            Frame.Builder frameBuilder = new Frame.Builder();
+//
+//            Bitmap bmp;
+//            if (isNV21) {
+//                frameBuilder.setImageData(ByteBuffer.wrap(bytes), width, height, ImageFormat.NV21);
+//            } else {
+//                frameBuilder.setImageData(ByteBuffer.wrap(bytes), width, height, ImageFormat.YV12);
+////                bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+////                if (bmp == null) return null;
+////                frameBuilder.setBitmap(bmp);
+//            }
+//
+//            Frame frame = frameBuilder.build();
 
             return detector.detect(frame);
         }
@@ -97,7 +99,7 @@ class QrDetector {
         protected void onPostExecute(SparseArray<Barcode> detectedItems) {
             if (detectedItems == null) return;
             for (int i = 0; i < detectedItems.size(); ++i) {
-                Log.i(TAG, "Item read: " + detectedItems.valueAt(i).rawValue);
+                Log.i(TAG, "Item read: " + detectedItems.valueAt(i).rawValue + ", " + detectedItems.valueAt(i).displayValue);
                 communicator.qrRead(detectedItems.valueAt(i).displayValue);
             }
         }

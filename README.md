@@ -1,5 +1,7 @@
 # QR Mobile Vision
 
+![pub package][version_badge]
+
 _Reading QR codes and other barcodes using Google's Mobile Vision API._
 
 This plugin uses Android & iOS native APIs for reading images from the device's camera.
@@ -118,3 +120,6 @@ This has been tested on:
 - Alcatel Idol X Plus
 - Essential Phone
 - iPhone 6
+
+
+[version_badge]: https://img.shields.io/pub/v/qr_mobile_vision.svg
