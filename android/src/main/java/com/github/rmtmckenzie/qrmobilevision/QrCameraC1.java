@@ -38,6 +38,7 @@ class QrCameraC1 implements QrCamera {
             Camera.getCameraInfo(i, info);
             if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
                 camera = Camera.open(i);
+                break;
             }
         }
 
