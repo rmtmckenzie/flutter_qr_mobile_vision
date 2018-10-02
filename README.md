@@ -11,6 +11,9 @@ outputs a preview image to be shown on a flutter texture.
 The plugin includes a widget which performs all needed transformations on the camera
 output to show within the defined area.
 
+##### NOTICE: Building with flutter version 0.8.2 will cause crash on devices older than lollipop.
+Please either use an older version or wait until [the bug](https://github.com/flutter/flutter/issues/21730) is fixed.
+
 ## Usage
 
 See the example for how to use this plugin; it is the best resource available as it shows

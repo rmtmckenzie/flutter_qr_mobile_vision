@@ -12,3 +12,7 @@
 
   Also switched to using continuous autofocus if supported. Should hopefully 
   have better usability on some devices than before.
+  
+## [0.1.1] - Oct 2, 2018
+
+* Return RawData from barcode on android with camera1 api.

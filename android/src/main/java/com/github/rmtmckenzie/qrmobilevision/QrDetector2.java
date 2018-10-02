@@ -1,5 +1,6 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.ImageFormat;
@@ -111,16 +112,15 @@ class QrDetector2 {
         }
     }
 
+    @SuppressLint("StaticFieldLeak")
     private class QrTask extends AsyncTask<Void, Void, SparseArray<Barcode>> {
 
         final QrImage image;
         final int count;
-        final AtomicInteger counter;
 
         QrTask(QrImage image, int count, AtomicInteger counter) {
             this.image = image;
             this.count = count;
-            this.counter = counter;
         }
 
         @Override
@@ -132,7 +132,7 @@ class QrDetector2 {
 
             // Don't need to bother making it colour as qr works the same on
             // just greyscale.
-            ByteBuffer imageBuffer = image.toNv21(false);
+            ByteBuffer imageBuffer = image.toNv21(true);
 
             Frame.Builder builder = new Frame.Builder().setImageData(imageBuffer, image.width, image.height, ImageFormat.NV21);
             return detector.detect(builder.build());
@@ -142,7 +142,9 @@ class QrDetector2 {
         protected void onPostExecute(SparseArray<Barcode> detectedItems) {
             if (detectedItems == null) return;
             for (int i = 0; i < detectedItems.size(); ++i) {
-                Log.i(TAG, "Item read: " + detectedItems.valueAt(i).rawValue);
+                Log.i(TAG, "Item read with type: " + detectedItems.valueAt(i).valueFormat
+                    + ", display: " + detectedItems.valueAt(i).displayValue
+                    + ", raw: " + detectedItems.valueAt(i).rawValue);
                 communicator.qrRead(detectedItems.valueAt(i).rawValue);
             }
         }

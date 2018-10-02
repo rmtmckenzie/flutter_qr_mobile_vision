@@ -63,7 +63,7 @@ class QrCameraC1 implements QrCamera {
 
         texture.setDefaultBufferSize(size.width, size.height);
 
-        detector.useNV21(size.width, size.height);
+        detector.setSize(size.width, size.height);
 
         try {
             camera.setPreviewCallback(new Camera.PreviewCallback() {
