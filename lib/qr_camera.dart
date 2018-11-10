@@ -40,6 +40,10 @@ class QrCamera extends StatefulWidget {
   final ErrorCallback onError;
   final List<BarcodeFormats> formats;
 
+  toggleFlash() {
+    QrMobileVision.toggleFlash();
+  }
+
   @override
   QrCameraState createState() => new QrCameraState();
 }

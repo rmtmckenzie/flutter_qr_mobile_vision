@@ -127,6 +127,13 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
                 result.success(null);
                 break;
             }
+			case "toggleFlash": {
+                if (readingInstance != null && !waitingForPermissionResult) {
+                	readingInstance.reader.toggleFlash();
+                }
+                result.success(null);
+                break;
+            }
             case "heartbeat": {
                 if (readingInstance != null) {
                     readingInstance.reader.heartBeat();
