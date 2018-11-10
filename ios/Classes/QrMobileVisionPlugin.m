@@ -30,6 +30,8 @@
 @property(nonatomic, strong) GMVDetector *barcodeDetector;
 @property(nonatomic, copy) void (^onCodeAvailable)(NSString *);
 
+@property (nonatomic, assign) BOOL torchIsOn;
+
 - (instancetype)initWithErrorRef:(NSError **)error;
 @end
 
@@ -39,6 +41,8 @@
     self = [super init];
     NSAssert(self, @"super init cannot be nil");
     _captureSession = [[AVCaptureSession alloc] init];
+
+    torchIsOn = NO;
     
     if (@available(iOS 10.0, *)) {
         _captureDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
@@ -94,6 +98,23 @@
 
 - (void)stop {
     [_captureSession stopRunning];
+}
+
+- (void)toggleFlash {
+    if ([_captureDevice hasTorch] && [_captureDevice hasFlash]){
+
+        [_captureDevice lockForConfiguration:nil];
+        if (torchIsOn == NO) {
+            [_captureDevice setTorchMode:AVCaptureTorchModeOn];
+            [_captureDevice setFlashMode:AVCaptureFlashModeOn];
+            torchIsOn = YES;
+        } else {
+            [_captureDevice setTorchMode:AVCaptureTorchModeOff];
+            [_captureDevice setFlashMode:AVCaptureFlashModeOff];
+            torchIsOn = NO;            
+        }
+        [_captureDevice unlockForConfiguration];
+    }
 }
 
 // This returns a CGImageRef that needs to be released!
@@ -229,6 +250,9 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     } else if ([@"stop" isEqualToString:call.method]) {
         [self stop];
         result(nil);
+    } else if ([@"toggleFlash" isEqualToString:call.method]) {
+        [self toggleFlash];
+        result(nil);
     } else if ([@"heartbeat" isEqualToString:call.method]) {
         [self heartBeat];
         result(nil);
@@ -272,6 +296,13 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 - (void)stop {
     if (_reader) {
         [_reader stop];
+        _reader = nil;
+    }
+}
+
+- (void)toggleFlash {
+    if (_reader) {
+        [_reader toggleFlash];
         _reader = nil;
     }
 }
