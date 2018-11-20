@@ -2,7 +2,7 @@
 
 ![pub package][version_badge]
 
-_Reading QR codes and other barcodes using Google's Mobile Vision API._
+_Reading QR codes and other barcodes using zxing,/*Google's Mobile Vision API.*/_
 
 This plugin uses Android & iOS native APIs for reading images from the device's camera.
 It then pipes these images both to the Mobile Vision API which detects barcodes/qrcodes etc, 
