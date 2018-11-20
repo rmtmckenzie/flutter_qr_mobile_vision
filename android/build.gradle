@@ -34,7 +34,9 @@ android {
 }
 
 dependencies {
+    implementation 'com.github.yoojia:next-qrcode:2.0-2'
     implementation 'com.google.android.gms:play-services-vision:15.0.2'
+    implementation 'com.google.zxing:core:3.2.0' //QRCode scanner
 }
 
 

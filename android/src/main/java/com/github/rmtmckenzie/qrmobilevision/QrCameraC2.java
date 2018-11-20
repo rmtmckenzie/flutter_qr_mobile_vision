@@ -2,6 +2,8 @@ package com.github.rmtmckenzie.qrmobilevision;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -16,11 +18,20 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
 import android.support.annotation.NonNull;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Surface;
 
+import com.github.yoojia.qrcode.qrcode.QRCodeDecoder;
+import com.google.zxing.BinaryBitmap;
+import com.google.zxing.PlanarYUVLuminanceSource;
+import com.google.zxing.Result;
+import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.qrcode.QRCodeReader;
+
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -59,6 +70,7 @@ class QrCameraC2 implements QrCamera {
     private int orientation;
     private CameraDevice cameraDevice;
     private CameraCharacteristics cameraCharacteristics;
+    private QRCodeReader mQrReader;
 
     QrCameraC2(int width, int height, Context context, SurfaceTexture texture, QrDetector2 detector) {
         this.targetWidth = width;
@@ -66,6 +78,7 @@ class QrCameraC2 implements QrCamera {
         this.context = context;
         this.texture = texture;
         this.detector = detector;
+        this.mQrReader = new QRCodeReader();
     }
 
     @Override
@@ -176,7 +189,6 @@ class QrCameraC2 implements QrCamera {
 
         list.add(reader.getSurface());
 
-
         ImageReader.OnImageAvailableListener imageAvailableListener = new ImageReader.OnImageAvailableListener() {
             @Override
             public void onImageAvailable(ImageReader reader) {
@@ -186,6 +198,20 @@ class QrCameraC2 implements QrCamera {
                     QrDetector2.QrImage qrImage = new QrDetector2.QrImage(image);
 
                     detector.detect(qrImage);
+
+//                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+//                    byte[] data = new byte[buffer.remaining()];
+//                    buffer.get(data);
+//                    int width = image.getWidth();
+//                    int height = image.getHeight();
+//                    PlanarYUVLuminanceSource source = new PlanarYUVLuminanceSource(data, width, height,width/4,height/4,width/2,height/2,false);
+//                    BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+//
+//                    try{
+//                        Result rawResult = mQrReader.decode(bitmap);
+//                        detector.communicator.qrRead(rawResult.getText());
+//                    }catch (Exception e){}
+
                 } catch (Throwable t) {
                     t.printStackTrace();
                 }
