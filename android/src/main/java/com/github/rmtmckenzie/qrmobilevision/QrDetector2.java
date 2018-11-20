@@ -59,10 +59,12 @@ class QrDetector2 {
 //        final int yPlaneRowStride;
 //        final int uPlaneRowStride;
 //        final int vPlaneRowStride;
-            final ByteBuffer buffer;
+        final byte[] data;
 
         public QrImage(Image image) {
-            buffer = image.getPlanes()[0].getBuffer();
+            ByteBuffer bb = image.getPlanes()[0].getBuffer();
+            data = new byte[bb.remaining()];
+            bb.get(data);
             width = image.getWidth();
             height = image.getHeight();
 //            Image.Plane yPlane = planes[0];
@@ -146,18 +148,16 @@ class QrDetector2 {
             // Don't need to bother making it colour as qr works the same on
             // just greyscale.
 
-            ByteBuffer buffer = image.buffer;
-            byte[] data = new byte[buffer.remaining()];
-            buffer.get(data);
             int width = image.width;
             int height = image.height;
-            PlanarYUVLuminanceSource source = new PlanarYUVLuminanceSource(data, width, height,width/4,height/4,width/2,height/2,false);
+            PlanarYUVLuminanceSource source = new PlanarYUVLuminanceSource(image.data, width, height,width/4,height/4,width/2,height/2,false);
             BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
 
             try{
                 Result rawResult = mQrReader.decode(bitmap);
                 return rawResult.getText();
             }catch (Exception e){
+                e.printStackTrace();
                 return null;
             }
         }
