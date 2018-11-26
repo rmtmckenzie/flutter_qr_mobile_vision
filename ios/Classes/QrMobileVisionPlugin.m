@@ -42,7 +42,7 @@
     NSAssert(self, @"super init cannot be nil");
     _captureSession = [[AVCaptureSession alloc] init];
 
-    torchIsOn = NO;
+    _torchIsOn = NO;
     
     if (@available(iOS 10.0, *)) {
         _captureDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
@@ -104,14 +104,14 @@
     if ([_captureDevice hasTorch] && [_captureDevice hasFlash]){
 
         [_captureDevice lockForConfiguration:nil];
-        if (torchIsOn == NO) {
+        if (_torchIsOn == NO) {
             [_captureDevice setTorchMode:AVCaptureTorchModeOn];
             [_captureDevice setFlashMode:AVCaptureFlashModeOn];
-            torchIsOn = YES;
+            _torchIsOn = YES;
         } else {
             [_captureDevice setTorchMode:AVCaptureTorchModeOff];
             [_captureDevice setFlashMode:AVCaptureFlashModeOff];
-            torchIsOn = NO;            
+            _torchIsOn = NO;            
         }
         [_captureDevice unlockForConfiguration];
     }
