@@ -71,6 +71,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
 
     private void stopReader() {
         readingInstance.reader.stop();
+        readingInstance.textureEntry.release();
         readingInstance = null;
         lastHeartbeatTimeout = null;
     }
