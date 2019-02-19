@@ -89,6 +89,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
                     Integer targetWidth = methodCall.argument("targetWidth");
                     Integer targetHeight = methodCall.argument("targetHeight");
                     List<String> formatStrings = methodCall.argument("formats");
+                    String resolution = methodCall.argument("resolution");
 
                     if (targetWidth == null || targetHeight == null) {
                         result.error("INVALID_ARGUMENT", "Missing a required argument", "Expecting targetWidth, targetHeight, and optionally heartbeatTimeout");
@@ -99,7 +100,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
 
                     TextureRegistry.SurfaceTextureEntry textureEntry = textures.createSurfaceTexture();
                     QrReader reader = new QrReader(targetWidth, targetHeight, context, barcodeFormats,
-                        this, this, textureEntry.surfaceTexture());
+                        this, this, textureEntry.surfaceTexture(),resolution);
 
                     readingInstance = new ReadingInstance(reader, textureEntry, result);
                     try {
@@ -123,6 +124,13 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
             case "stop": {
                 if (readingInstance != null && !waitingForPermissionResult) {
                     stopReader();
+                }
+                result.success(null);
+                break;
+            }
+			case "toggleFlash": {
+                if (readingInstance != null && !waitingForPermissionResult) {
+                	readingInstance.reader.toggleFlash();
                 }
                 result.success(null);
                 break;

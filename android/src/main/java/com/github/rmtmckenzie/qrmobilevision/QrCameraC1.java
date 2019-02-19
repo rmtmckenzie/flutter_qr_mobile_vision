@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.Size;
+import android.hardware.Camera.Parameters;
 import android.util.Log;
 
 import java.io.IOException;
@@ -22,12 +23,14 @@ class QrCameraC1 implements QrCamera {
     private Camera.CameraInfo info = new Camera.CameraInfo();
     private int targetWidth, targetHeight;
     private Camera camera = null;
+    private String resolution;
 
-    QrCameraC1(int width, int height, SurfaceTexture texture, QrDetector detector) {
+    QrCameraC1(int width, int height, SurfaceTexture texture, QrDetector detector, String resolution) {
         this.texture = texture;
         targetHeight = height;
         targetWidth = width;
         this.detector = detector;
+        this.resolution = resolution;
     }
 
     @Override
@@ -69,8 +72,10 @@ class QrCameraC1 implements QrCamera {
             camera.setPreviewCallback(new Camera.PreviewCallback() {
                 @Override
                 public void onPreviewFrame(byte[] data, Camera camera) {
-                    if (data != null) detector.detect(data);
-                    else System.out.println("It's NULL!");
+                    if (data != null)
+                        detector.detect(data);
+                    else
+                        System.out.println("It's NULL!");
                 }
             });
             camera.setPreviewTexture(texture);
@@ -102,13 +107,33 @@ class QrCameraC1 implements QrCamera {
     }
 
     @Override
+    public void toggleFlash() {
+        Camera.Parameters p = camera.getParameters();
+
+        if (p.getFlashMode() == Parameters.FLASH_MODE_ON) {
+            p.setFlashMode(Parameters.FLASH_MODE_OFF);
+        } else if (p.getFlashMode() == Parameters.FLASH_MODE_OFF) {
+            p.setFlashMode(Parameters.FLASH_MODE_TORCH);
+        } else if (p.getFlashMode() == Parameters.FLASH_MODE_AUTO) {
+            p.setFlashMode(Parameters.FLASH_MODE_ON);
+        } else if (p.getFlashMode() == Parameters.FLASH_MODE_TORCH) {
+            p.setFlashMode(Parameters.FLASH_MODE_OFF);
+        } else {
+            p.setFlashMode(Parameters.FLASH_MODE_AUTO);
+        }
+
+        camera.setParameters(p);
+    }
+
+    @Override
     public void stop() {
         camera.stopPreview();
         camera.setPreviewCallback(null);
         camera.release();
     }
 
-    //Size here is Camera.Size, not android.util.Size as in the QrCameraC2 version of this method
+    // Size here is Camera.Size, not android.util.Size as in the QrCameraC2 version
+    // of this method
     private Size getAppropriateSize(List<Size> sizes) {
         // assume sizes is never 0
         if (sizes.size() == 1) {
@@ -116,43 +141,52 @@ class QrCameraC1 implements QrCamera {
         }
 
         Size s = sizes.get(0);
-        Size s1 = sizes.get(1);
+        Size s1 = sizes.get(sizes.size()-1);
 
-        if (s1.width > s.width || s1.height > s.height) {
+        if (s1.width * s1.height > s.width * s.height) {
             // ascending
-            if (info.orientation % 180 == 0) {
-                for (Size size : sizes) {
-                    s = size;
-                    if (size.height > targetHeight && size.width > targetWidth) {
-                        break;
+            if (this.resolution.endsWith("Max")) {
+                s = s1;
+            } else { // auto
+                if (info.orientation % 180 == 0) {
+                    for (Size size : sizes) {
+                        s = size;
+                        if (size.height > targetHeight && size.width > targetWidth) {
+                            break;
+                        }
                     }
-                }
-            } else {
-                for (Size size : sizes) {
-                    s = size;
-                    if (size.height > targetWidth && size.width > targetHeight) {
-                        break;
+                } else {
+                    for (Size size : sizes) {
+                        s = size;
+                        if (size.height > targetWidth && size.width > targetHeight) {
+                            break;
+                        }
                     }
                 }
             }
         } else {
             // descending
-            if (info.orientation % 180 == 0) {
-                for (Size size : sizes) {
-                    if (size.height < targetHeight || size.width < targetWidth) {
-                        break;
+            if (this.resolution.endsWith("Max")) {
+                s = sizes.get(0);
+            } else { // auto
+                if (info.orientation % 180 == 0) {
+                    for (Size size : sizes) {
+                        if (size.height < targetHeight || size.width < targetWidth) {
+                            break;
+                        }
+                        s = size;
                     }
-                    s = size;
-                }
-            } else {
-                for (Size size : sizes) {
-                    if (size.height < targetWidth || size.width < targetHeight) {
-                        break;
+                } else {
+                    for (Size size : sizes) {
+                        if (size.height < targetWidth || size.width < targetHeight) {
+                            break;
+                        }
+                        s = size;
                     }
-                    s = size;
                 }
             }
         }
+        Log.i(TAG, "Selected Resolution is: " + s);
         return s;
     }
 }
