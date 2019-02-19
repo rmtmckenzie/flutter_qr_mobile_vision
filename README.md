@@ -54,6 +54,10 @@ Takes as parameter the flutter `BoxFit`.
 Setting this to different values should get the preview image to fit in
 different ways, but only `BoxFit = cover` has been tested extensively.
 
+### 'resolution'
+
+Can be set to Resolution.Max for highest camera resolution, or Resolution.auto for automatic selection of the best resolution that fits in the widget.
+
 ### `notStartedBuilder`
 
 A callback that must return a widget if defined.
