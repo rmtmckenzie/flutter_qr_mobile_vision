@@ -59,15 +59,18 @@ class QrCameraC2 implements QrCamera {
     private int orientation;
     private CameraDevice cameraDevice;
     private CameraCharacteristics cameraCharacteristics;
+    private final String resolution;
 
     private boolean isFlashOn = false;
 
-    QrCameraC2(int width, int height, Context context, SurfaceTexture texture, QrDetector2 detector) {
+    QrCameraC2(int width, int height, Context context, SurfaceTexture texture, QrDetector2 detector,
+            String resolutionSel) {
         this.targetWidth = width;
         this.targetHeight = height;
         this.context = context;
         this.texture = texture;
         this.detector = detector;
+        this.resolution = resolutionSel;
     }
 
     @Override
@@ -115,7 +118,8 @@ class QrCameraC2 implements QrCamera {
 
         try {
             cameraCharacteristics = manager.getCameraCharacteristics(cameraId);
-            StreamConfigurationMap map = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            StreamConfigurationMap map = cameraCharacteristics
+                    .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             // it seems as though the orientation is already corrected, so setting to 0
             // orientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
             orientation = 0;
@@ -178,12 +182,12 @@ class QrCameraC2 implements QrCamera {
 
         list.add(reader.getSurface());
 
-
         ImageReader.OnImageAvailableListener imageAvailableListener = new ImageReader.OnImageAvailableListener() {
             @Override
             public void onImageAvailable(ImageReader reader) {
                 try (Image image = reader.acquireLatestImage()) {
-                    if (image == null) return;
+                    if (image == null)
+                        return;
 
                     QrDetector2.QrImage qrImage = new QrDetector2.QrImage(image);
 
@@ -243,12 +247,14 @@ class QrCameraC2 implements QrCamera {
     private void startPreview() {
         CameraCaptureSession.CaptureCallback listener = new CameraCaptureSession.CaptureCallback() {
             @Override
-            public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+            public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request,
+                    @NonNull TotalCaptureResult result) {
                 super.onCaptureCompleted(session, request, result);
             }
         };
 
-        if (cameraDevice == null) return;
+        if (cameraDevice == null)
+            return;
 
         try {
             previewSession.setRepeatingRequest(previewBuilder.build(), listener, null);
@@ -257,39 +263,30 @@ class QrCameraC2 implements QrCamera {
         }
     }
 
-    public void turnOnFlashLight()
-    {
-        try
-        {
+    public void turnOnFlashLight() {
+        try {
             previewBuilder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_TORCH);
             previewSession.setRepeatingRequest(previewBuilder.build(), null, null);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void turnOffFlashLight()
-    {
-        try
-        {
+    public void turnOffFlashLight() {
+        try {
             previewBuilder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_OFF);
             previewSession.setRepeatingRequest(previewBuilder.build(), null, null);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     @Override
     public void toggleFlash() {
-        if(isFlashOn) {
+        if (isFlashOn) {
             turnOffFlashLight();
             isFlashOn = false;
-        }
-        else {
+        } else {
             turnOnFlashLight();
             isFlashOn = true;
         }
@@ -312,45 +309,57 @@ class QrCameraC2 implements QrCamera {
         }
 
         Size s = sizes[0];
-        Size s1 = sizes[1];
+        Size s1 = sizes[sizes.length-1];
 
-        if (s1.getWidth() > s.getWidth() || s1.getHeight() > s.getHeight()) {
+        if (s1.getHeight() > s.getHeight() ) {
             // ascending
-            if (orientation % 180 == 0) {
-                for (Size size : sizes) {
-                    s = size;
-                    if (size.getHeight() > targetHeight && size.getWidth() > targetWidth) {
-                        break;
+            Log.i(TAG, "ascending resolution list:"+this.resolution);
+
+            if (this.resolution.endsWith("Max")) {
+                s = s1;
+            } else { // auto
+                Log.i(TAG, "auto resolution ascending");
+                if (orientation % 180 == 0) {
+                    for (Size size : sizes) {
+                        s = size;
+                        if (size.getHeight() > targetHeight && size.getWidth() > targetWidth) {
+                            break;
+                        }
                     }
-                }
-            } else {
-                for (Size size : sizes) {
-                    s = size;
-                    if (size.getHeight() > targetWidth && size.getWidth() > targetHeight) {
-                        break;
+                } else {
+                    for (Size size : sizes) {
+                        s = size;
+                        if (size.getHeight() > targetWidth && size.getWidth() > targetHeight) {
+                            break;
+                        }
                     }
                 }
             }
+
         } else {
             // descending
-            if (orientation % 180 == 0) {
-                for (Size size : sizes) {
-                    if (size.getHeight() < targetHeight || size.getWidth() < targetWidth) {
-                        break;
+            if (this.resolution.endsWith("Max")) {
+                s = sizes[0];
+            } else { // auto
+                if (orientation % 180 == 0) {
+                    for (Size size : sizes) {
+                        if (size.getHeight() < targetHeight || size.getWidth() < targetWidth) {
+                            break;
+                        }
+                        s = size;
                     }
-                    s = size;
-                }
-            } else {
-                for (Size size : sizes) {
-                    if (size.getHeight() < targetWidth || size.getWidth() < targetHeight) {
-                        break;
+                } else {
+                    for (Size size : sizes) {
+                        if (size.getHeight() < targetWidth || size.getWidth() < targetHeight) {
+                            break;
+                        }
+                        s = size;
                     }
-                    s = size;
                 }
             }
         }
+        Log.i(TAG, "Selected Resolution is: " + s);
         return s;
     }
-
 
 }
