@@ -3,8 +3,15 @@ package com.github.rmtmckenzie.qrmobilevision;
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
-import android.support.v4.app.ActivityCompat;
+import androidx.core.app.ActivityCompat;
 import android.util.Log;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -12,12 +19,6 @@ import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
 import io.flutter.view.TextureRegistry;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 
 /**
@@ -70,7 +71,9 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
     }
 
     private void stopReader() {
-        readingInstance.reader.stop();
+        if (readingInstance != null && readingInstance.reader != null) {
+            readingInstance.reader.stop();
+        }
         readingInstance = null;
         lastHeartbeatTimeout = null;
     }
@@ -132,6 +135,36 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
                     readingInstance.reader.heartBeat();
                 }
                 result.success(null);
+                break;
+            }
+            case "getSupportedSizes": {
+                //TODO:
+                String name = methodCall.argument("name");
+                CameraInfo info = new CameraInfo(context, name);
+                List<CameraInfo.Size> supportedSizes = info.getSupportedSizes();
+
+                List<List<Integer>> supportedSizesData = new ArrayList<>(supportedSizes.size());
+                for(CameraInfo.Size size : supportedSizes) {
+                    List<Integer> sizeData = new ArrayList<>(2);
+                    sizeData.add(size.width);
+                    sizeData.add(size.height);
+                    supportedSizesData.add(sizeData);
+                }
+                result.success(supportedSizesData);
+                break;
+            }
+            case "getCameras": {
+                List<CameraInfo> cameraInfos = CameraInfo.getCameraInfos(context);
+
+                List<Map<String, String>> cameraInfoData = new ArrayList<>(cameraInfos.size());
+                for(CameraInfo cameraInfo : cameraInfos) {
+                    Map<String, String> map = new HashMap<>(4);
+                    map.put("name", cameraInfo.name);
+                    map.put("orientation", cameraInfo.getOrientation().name());
+                    cameraInfoData.add(map);
+                }
+
+                result.success(cameraInfoData);
                 break;
             }
             default:

@@ -1,11 +1,12 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:native_device_orientation/native_device_orientation.dart';
-import 'package:qr_mobile_vision/qr_mobile_vision.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+
+import 'qr_mobile_vision.dart';
 
 final WidgetBuilder _defaultNotStartedBuilder = (context) => new Text("Camera Loading ...");
 final WidgetBuilder _defaultOffscreenBuilder = (context) => new Text("Camera Paused.");
@@ -16,9 +17,190 @@ final ErrorCallback _defaultOnError = (BuildContext context, Object error) {
 
 typedef Widget ErrorCallback(BuildContext context, Object error);
 
+class QrCameraValue {
+  final bool isInitialized;
+  final bool isCapturing;
+  final PreviewDetails previewDetails;
+
+  const QrCameraValue({this.isInitialized, this.isCapturing, this.previewDetails});
+
+  const QrCameraValue.uninitialized()
+      : isInitialized = false,
+        isCapturing = false,
+        previewDetails = null;
+
+  QrCameraValue copyWith({bool isInitialized, bool isCapturing, PreviewDetails previewDetails}) {
+    return QrCameraValue(
+      isInitialized: isInitialized ?? this.isInitialized,
+      isCapturing: isCapturing ?? this.isCapturing,
+      previewDetails: previewDetails ?? this.previewDetails,
+    );
+  }
+}
+
+Future<List<Size>> getQrPreviewSizes(QrCameraDescription description) {
+  return QrMobileVision.getSupportedSizes(description);
+}
+
+Future<List<QrCameraDescription>> getQrCameras() {
+  return QrMobileVision.getCameras();
+}
+
+class QrCameraException implements Exception {
+  QrCameraException(this.code, this.description);
+
+  final String code;
+  final String description;
+
+  @override
+  String toString() => '$runtimeType($code, $description)';
+}
+
+class QrCameraController extends ValueNotifier<QrCameraValue> {
+  QrCameraController({
+    @required this.formats,
+    @required this.type,
+    @required this.size,
+    this.handler,
+  }) : super(QrCameraValue.uninitialized());
+
+  final QrCameraType type;
+  final Size size;
+  final List<BarcodeFormats> formats;
+  final QrCodeHandler handler;
+
+  bool _isDisposed;
+
+  bool get started => value.isCapturing;
+
+  Future<void> initialize() async {}
+
+  Future start({QrCodeHandler handler}) async {
+    if (_isDisposed) {
+      return Future<void>.value();
+    }
+
+    try {
+      var previewDetails = await QrMobileVision.start(
+        width: size.width.toInt(),
+        height: size.height.toInt(),
+        qrCodeHandler: handler ?? this.handler,
+      );
+      value = QrCameraValue(isInitialized: true, isCapturing: true, previewDetails: previewDetails);
+    } on PlatformException catch (e) {
+      throw QrCameraException(e.code, e.message);
+    }
+  }
+
+  Future stop() async {
+    await QrMobileVision.stop();
+    value = value.copyWith(isCapturing: false, previewDetails: null);
+  }
+
+  @override
+  Future<void> dispose() async {
+    if (_isDisposed) {
+      return;
+    }
+
+    _isDisposed = true;
+    super.dispose();
+
+    await stop();
+  }
+}
+
+class _AutoQrCameraStopping extends StatefulWidget {
+  final QrCameraController controller;
+  final Widget child;
+
+  const _AutoQrCameraStopping({Key key, this.controller, this.child}) : super(key: key);
+
+  @override
+  _AutoQrCameraStoppingState createState() => _AutoQrCameraStoppingState();
+}
+
+class _AutoQrCameraStoppingState extends State<_AutoQrCameraStopping> with WidgetsBindingObserver {
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  bool shouldRestart = false;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && shouldRestart) {
+      shouldRestart = false;
+      widget.controller.start();
+    } else {
+      if (widget.controller.started) {
+        shouldRestart = true;
+        widget.controller.stop();
+      }
+    }
+  }
+}
+
+class NewQrCamera extends StatelessWidget {
+  NewQrCamera({
+    @required this.controller,
+    this.autoStopping = true,
+    this.fit = BoxFit.cover,
+    WidgetBuilder notStartedBuilder,
+    WidgetBuilder offscreenBuilder,
+  })  : notStartedBuilder = notStartedBuilder ?? _defaultNotStartedBuilder,
+        offscreenBuilder = offscreenBuilder ?? notStartedBuilder ?? _defaultOffscreenBuilder;
+
+  final bool autoStopping;
+  final QrCameraController controller;
+  final BoxFit fit;
+  final WidgetBuilder notStartedBuilder;
+  final WidgetBuilder offscreenBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!controller.value.isInitialized) {
+      return notStartedBuilder(context);
+    }
+
+    if (!controller.value.isCapturing) {
+      return offscreenBuilder(context);
+    }
+
+    Widget widget = LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
+      return Preview(
+        previewDetails: controller.value.previewDetails,
+        targetWidth: constraints.maxWidth,
+        targetHeight: constraints.maxHeight,
+        fit: fit,
+      );
+    });
+
+    if (autoStopping) {
+      widget = _AutoQrCameraStopping(controller: controller, child: widget);
+    }
+
+    return widget;
+  }
+}
+
 class QrCamera extends StatefulWidget {
   QrCamera({
     Key key,
+//    this.controller,
     @required this.qrCodeCallback,
     this.child,
     this.fit = BoxFit.cover,
@@ -33,6 +215,7 @@ class QrCamera extends StatefulWidget {
         super(key: key);
 
   final BoxFit fit;
+//  final QrCameraController controller;
   final ValueChanged<String> qrCodeCallback;
   final Widget child;
   final WidgetBuilder notStartedBuilder;
@@ -63,6 +246,7 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
       setState(() => onScreen = true);
     } else {
       if (_asyncInitOnce != null && onScreen) {
+//        widget.controller.stop();
         QrMobileVision.stop();
       }
       setState(() {
@@ -158,73 +342,5 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
         },
       );
     });
-  }
-}
-
-class Preview extends StatelessWidget {
-  final double width, height;
-  final double targetWidth, targetHeight;
-  final int textureId;
-  final int orientation;
-  final BoxFit fit;
-
-  Preview({
-    @required PreviewDetails previewDetails,
-    @required this.targetWidth,
-    @required this.targetHeight,
-    @required this.fit,
-  })  : assert(previewDetails != null),
-        textureId = previewDetails.textureId,
-        width = previewDetails.width.toDouble(),
-        height = previewDetails.height.toDouble(),
-        orientation = previewDetails.orientation;
-
-  @override
-  Widget build(BuildContext context) {
-    double frameHeight, frameWidth;
-
-    return new NativeDeviceOrientationReader(
-      builder: (context) {
-        var nativeOrientation = NativeDeviceOrientationReader.orientation(context);
-
-        int baseOrientation = 0;
-        if (orientation != 0 && (width > height)) {
-          baseOrientation = orientation ~/ 90;
-          frameWidth = width;
-          frameHeight = height;
-        } else {
-          frameHeight = width;
-          frameWidth = height;
-        }
-
-        int nativeOrientationInt;
-        switch (nativeOrientation) {
-          case NativeDeviceOrientation.landscapeLeft:
-            nativeOrientationInt = Platform.isAndroid ? 3 : 1;
-            break;
-          case NativeDeviceOrientation.landscapeRight:
-            nativeOrientationInt = Platform.isAndroid ? 1 : 3;
-            break;
-          case NativeDeviceOrientation.portraitDown:
-            nativeOrientationInt = 2;
-            break;
-          case NativeDeviceOrientation.portraitUp:
-          case NativeDeviceOrientation.unknown:
-            nativeOrientationInt = 0;
-        }
-
-        return new FittedBox(
-          fit: fit,
-          child: new RotatedBox(
-            quarterTurns: baseOrientation + nativeOrientationInt,
-            child: new SizedBox(
-              width: frameWidth,
-              height: frameHeight,
-              child: new Texture(textureId: textureId),
-            ),
-          ),
-        );
-      },
-    );
   }
 }

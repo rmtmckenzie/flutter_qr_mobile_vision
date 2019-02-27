@@ -1,13 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:qr_mobile_vision/qr_camera.dart';
+import 'package:qr_mobile_vision/qr_mobile_vision.dart';
 
-void main() {
+main() async {
   debugPaintSizeEnabled = false;
+  List<QrCameraDescription> qrCameras = await getQrCameras();
+  QrCameraDescription chosenCamera;
+  for (QrCameraDescription camera in qrCameras) {
+    if (camera.type == QrCameraType.back) {
+      chosenCamera = camera;
+      break;
+    }
+  }
+  chosenCamera ??= qrCameras[0];
   runApp(new HomePage());
 }
 
 class HomePage extends StatefulWidget {
+  QrCameraDescription cameraDescription;
+
   @override
   HomeState createState() => new HomeState();
 }
