@@ -1,3 +1,8 @@
+## [0.2.1] - March 5, 2019
+
+* Changes to Android Camera2 buffer system so that new buffers aren't being allocated constantly
+  but rather the same buffers are reused.
+
 ## [0.2.0] - March 4, 2019
 
 * Upgrade to AndroidX, hopefully fix an android crash issue and autofocus on some devices.
