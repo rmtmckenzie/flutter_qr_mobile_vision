@@ -1,8 +1,6 @@
-## [0.0.1] - June 5, 2018
+## [0.2.0] - March 4, 2019
 
-* Initial release that supports scanning all types of barcodes
-  that the QR Mobile Vision library supports.
-  
+* Upgrade to AndroidX, hopefully fix an android crash issue and autofocus on some devices.
 
 ## [0.1.0] - Sept 28, 2018
 
@@ -12,3 +10,10 @@
 
   Also switched to using continuous autofocus if supported. Should hopefully 
   have better usability on some devices than before.
+
+## [0.0.1] - June 5, 2018
+
+* Initial release that supports scanning all types of barcodes
+  that the QR Mobile Vision library supports.
+  
+
