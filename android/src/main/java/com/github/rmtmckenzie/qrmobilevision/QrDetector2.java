@@ -13,6 +13,7 @@ import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.barcode.BarcodeDetector;
 
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -49,7 +50,7 @@ class QrDetector2 {
         // there isn't currently a scheduled task.
         if (needsScheduling.get() && !isScheduled.get()) {
             isScheduled.set(true);
-            new QrTaskV2().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR);
+            new QrTaskV2(this).executeOnExecutor(AsyncTask.SERIAL_EXECUTOR);
         }
     }
 
@@ -91,7 +92,7 @@ class QrDetector2 {
         byte[] uPlaneBytes = new byte[0];
         byte[] vPlaneBytes = new byte[0];
 
-        public void copyImage(Image image) {
+        void copyImage(Image image) {
             Image.Plane[] planes = image.getPlanes();
             Image.Plane yPlane = planes[0];
             Image.Plane uPlane = planes[1];
@@ -158,51 +159,64 @@ class QrDetector2 {
         }
     }
 
-    private class QrTaskV2 extends AsyncTask<Void, Void, SparseArray<Barcode>> {
+    private static class QrTaskV2 extends AsyncTask<Void, Void, SparseArray<Barcode>> {
+
+        private final WeakReference<QrDetector2> qrDetector;
+
+        private QrTaskV2(QrDetector2 qrDetector) {
+            this.qrDetector = new WeakReference<>(qrDetector);
+        }
 
         @Override
         protected SparseArray<Barcode> doInBackground(Void... voids) {
-            needsScheduling.set(false);
-            isScheduled.set(false);
+
+            QrDetector2 qrDetector = this.qrDetector.get();
+            if (qrDetector == null) return null;
+
+            qrDetector.needsScheduling.set(false);
+            qrDetector.isScheduled.set(false);
 
             ByteBuffer imageBuffer;
             int width;
             int height;
-            if (nextImageSet.get()) {
+            if (qrDetector.nextImageSet.get()) {
                 try {
-                    nextImageLock.lock();
-                    imageBuffer = nextImage.toNv21(false);
-                    width = nextImage.width;
-                    height = nextImage.height;
+                    qrDetector.nextImageLock.lock();
+                    imageBuffer = qrDetector.nextImage.toNv21(false);
+                    width = qrDetector.nextImage.width;
+                    height = qrDetector.nextImage.height;
                 } finally {
-                    nextImageLock.unlock();
+                    qrDetector.nextImageLock.unlock();
                 }
             } else {
                 try {
-                    imageToCheckLock.lock();
-                    imageBuffer = imageToCheck.toNv21(false);
-                    width = imageToCheck.width;
-                    height = imageToCheck.height;
+                    qrDetector.imageToCheckLock.lock();
+                    imageBuffer = qrDetector.imageToCheck.toNv21(false);
+                    width = qrDetector.imageToCheck.width;
+                    height = qrDetector.imageToCheck.height;
                 } finally {
-                    imageToCheckLock.unlock();
+                    qrDetector.imageToCheckLock.unlock();
                 }
             }
 
             Frame.Builder builder = new Frame.Builder().setImageData(imageBuffer, width, height, ImageFormat.NV21);
-            return detector.detect(builder.build());
+            return qrDetector.detector.detect(builder.build());
         }
 
         @Override
         protected void onPostExecute(SparseArray<Barcode> detectedItems) {
+            QrDetector2 qrDetector = this.qrDetector.get();
+            if (qrDetector == null) return;
+
             if (detectedItems != null) {
                 for (int i = 0; i < detectedItems.size(); ++i) {
                     Log.i(TAG, "Item read: " + detectedItems.valueAt(i).rawValue);
-                    communicator.qrRead(detectedItems.valueAt(i).rawValue);
+                    qrDetector.communicator.qrRead(detectedItems.valueAt(i).rawValue);
                 }
             }
 
             // if needed keep processing.
-            maybeStartProcessing();
+            qrDetector.maybeStartProcessing();
         }
     }
 }

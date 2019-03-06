@@ -1,3 +1,10 @@
+## [0.2.2] - March 5, 2019
+
+* Fix detector for older phones as it wouldn't work if the returned preview size
+  wasn't the same as what it requested.
+  
+* Fix lint warnings
+
 ## [0.2.1] - March 5, 2019
 
 * Changes to Android Camera2 buffer system so that new buffers aren't being allocated constantly
@@ -20,5 +27,3 @@
 
 * Initial release that supports scanning all types of barcodes
   that the QR Mobile Vision library supports.
-  
-
