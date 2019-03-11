@@ -13,9 +13,12 @@ import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.barcode.BarcodeDetector;
 
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Allows QrCamera classes to send frames to a Detector
@@ -25,7 +28,16 @@ class QrDetector2 {
     private static final String TAG = "cgr.qrmv.QrDetector";
     private final QrReaderCallbacks communicator;
     private final Detector<Barcode> detector;
-    private AtomicInteger atomicCounter = new AtomicInteger();
+    private final Lock imageToCheckLock = new ReentrantLock();
+    private final Lock nextImageLock = new ReentrantLock();
+    private final AtomicBoolean isScheduled = new AtomicBoolean(false);
+    private final AtomicBoolean needsScheduling = new AtomicBoolean(false);
+
+
+    private final AtomicBoolean nextImageSet = new AtomicBoolean(false);
+
+    private QrImage imageToCheck = new QrImage();
+    private QrImage nextImage = new QrImage();
 
     QrDetector2(QrReaderCallbacks communicator, Context context, int formats) {
         Log.i(TAG, "Making detector2 for formats: " + formats);
@@ -33,24 +45,54 @@ class QrDetector2 {
         this.detector = new BarcodeDetector.Builder(context.getApplicationContext()).setBarcodeFormats(formats).build();
     }
 
-    void detect(QrImage image) {
-        new QrTask(image, atomicCounter.incrementAndGet(), atomicCounter).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    private void maybeStartProcessing() {
+        // start processing, only if scheduling is needed and
+        // there isn't currently a scheduled task.
+        if (needsScheduling.get() && !isScheduled.get()) {
+            isScheduled.set(true);
+            new QrTaskV2(this).executeOnExecutor(AsyncTask.SERIAL_EXECUTOR);
+        }
+    }
+
+    void detect(Image image) {
+        needsScheduling.set(true);
+
+        if (imageToCheckLock.tryLock()) {
+            // copy image if not in use
+            try {
+                nextImageSet.set(false);
+                imageToCheck.copyImage(image);
+            } finally {
+                imageToCheckLock.unlock();
+            }
+        } else if (nextImageLock.tryLock()) {
+            // if first image buffer is in use, use second buffer
+            // one or the other should always be free but if not this
+            // frame is dropped..
+            try {
+                nextImageSet.set(true);
+                nextImage.copyImage(image);
+            } finally {
+                nextImageLock.unlock();
+            }
+        }
+        maybeStartProcessing();
     }
 
     static class QrImage {
-        final int width;
-        final int height;
-        final byte[] yPlaneBytes;
-        final byte[] uPlaneBytes;
-        final byte[] vPlaneBytes;
-        final int yPlanePixelStride;
-        final int uPlanePixelStride;
-        final int vPlanePixelStride;
-        final int yPlaneRowStride;
-        final int uPlaneRowStride;
-        final int vPlaneRowStride;
+        int width;
+        int height;
+        int yPlanePixelStride;
+        int uPlanePixelStride;
+        int vPlanePixelStride;
+        int yPlaneRowStride;
+        int uPlaneRowStride;
+        int vPlaneRowStride;
+        byte[] yPlaneBytes = new byte[0];
+        byte[] uPlaneBytes = new byte[0];
+        byte[] vPlaneBytes = new byte[0];
 
-        public QrImage(Image image) {
+        void copyImage(Image image) {
             Image.Plane[] planes = image.getPlanes();
             Image.Plane yPlane = planes[0];
             Image.Plane uPlane = planes[1];
@@ -60,9 +102,15 @@ class QrDetector2 {
                 uBufferDirect = uPlane.getBuffer(),
                 vBufferDirect = vPlane.getBuffer();
 
-            yPlaneBytes = new byte[yBufferDirect.capacity()];
-            uPlaneBytes = new byte[uBufferDirect.capacity()];
-            vPlaneBytes = new byte[vBufferDirect.capacity()];
+            if (yPlaneBytes.length != yBufferDirect.capacity()) {
+                yPlaneBytes = new byte[yBufferDirect.capacity()];
+            }
+            if (uPlaneBytes.length != uBufferDirect.capacity()) {
+                uPlaneBytes = new byte[uBufferDirect.capacity()];
+            }
+            if (vPlaneBytes.length != vBufferDirect.capacity()) {
+                vPlaneBytes = new byte[vBufferDirect.capacity()];
+            }
 
             yBufferDirect.get(yPlaneBytes);
             uBufferDirect.get(uPlaneBytes);
@@ -111,40 +159,64 @@ class QrDetector2 {
         }
     }
 
-    private class QrTask extends AsyncTask<Void, Void, SparseArray<Barcode>> {
+    private static class QrTaskV2 extends AsyncTask<Void, Void, SparseArray<Barcode>> {
 
-        final QrImage image;
-        final int count;
-        final AtomicInteger counter;
+        private final WeakReference<QrDetector2> qrDetector;
 
-        QrTask(QrImage image, int count, AtomicInteger counter) {
-            this.image = image;
-            this.count = count;
-            this.counter = counter;
+        private QrTaskV2(QrDetector2 qrDetector) {
+            this.qrDetector = new WeakReference<>(qrDetector);
         }
 
         @Override
         protected SparseArray<Barcode> doInBackground(Void... voids) {
-            // ignore this frame if the next item has already been queued.
-            if (count < atomicCounter.get()) {
-                return null;
+
+            QrDetector2 qrDetector = this.qrDetector.get();
+            if (qrDetector == null) return null;
+
+            qrDetector.needsScheduling.set(false);
+            qrDetector.isScheduled.set(false);
+
+            ByteBuffer imageBuffer;
+            int width;
+            int height;
+            if (qrDetector.nextImageSet.get()) {
+                try {
+                    qrDetector.nextImageLock.lock();
+                    imageBuffer = qrDetector.nextImage.toNv21(false);
+                    width = qrDetector.nextImage.width;
+                    height = qrDetector.nextImage.height;
+                } finally {
+                    qrDetector.nextImageLock.unlock();
+                }
+            } else {
+                try {
+                    qrDetector.imageToCheckLock.lock();
+                    imageBuffer = qrDetector.imageToCheck.toNv21(false);
+                    width = qrDetector.imageToCheck.width;
+                    height = qrDetector.imageToCheck.height;
+                } finally {
+                    qrDetector.imageToCheckLock.unlock();
+                }
             }
 
-            // Don't need to bother making it colour as qr works the same on
-            // just greyscale.
-            ByteBuffer imageBuffer = image.toNv21(false);
-
-            Frame.Builder builder = new Frame.Builder().setImageData(imageBuffer, image.width, image.height, ImageFormat.NV21);
-            return detector.detect(builder.build());
+            Frame.Builder builder = new Frame.Builder().setImageData(imageBuffer, width, height, ImageFormat.NV21);
+            return qrDetector.detector.detect(builder.build());
         }
 
         @Override
         protected void onPostExecute(SparseArray<Barcode> detectedItems) {
-            if (detectedItems == null) return;
-            for (int i = 0; i < detectedItems.size(); ++i) {
-                Log.i(TAG, "Item read: " + detectedItems.valueAt(i).rawValue);
-                communicator.qrRead(detectedItems.valueAt(i).rawValue);
+            QrDetector2 qrDetector = this.qrDetector.get();
+            if (qrDetector == null) return;
+
+            if (detectedItems != null) {
+                for (int i = 0; i < detectedItems.size(); ++i) {
+                    Log.i(TAG, "Item read: " + detectedItems.valueAt(i).rawValue);
+                    qrDetector.communicator.qrRead(detectedItems.valueAt(i).rawValue);
+                }
             }
+
+            // if needed keep processing.
+            qrDetector.maybeStartProcessing();
         }
     }
 }
