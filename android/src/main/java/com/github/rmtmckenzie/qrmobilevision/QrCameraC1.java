@@ -1,6 +1,7 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
 import android.annotation.TargetApi;
+import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.Size;
@@ -17,6 +18,7 @@ import java.util.List;
 class QrCameraC1 implements QrCamera {
 
     private static final String TAG = "cgr.qrmv.QrCameraC1";
+    private static final int IMAGEFORMAT = ImageFormat.NV21;
     private final SurfaceTexture texture;
     private final QrDetector detector;
     private Camera.CameraInfo info = new Camera.CameraInfo();
@@ -46,7 +48,7 @@ class QrCameraC1 implements QrCamera {
             throw new QrReader.Exception(QrReader.Exception.Reason.noBackCamera);
         }
 
-        Camera.Parameters parameters = camera.getParameters();
+        final Camera.Parameters parameters = camera.getParameters();
 
         List<String> focusModes = parameters.getSupportedFocusModes();
         if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
@@ -60,17 +62,21 @@ class QrCameraC1 implements QrCamera {
         Size size = getAppropriateSize(supportedSizes);
 
         parameters.setPreviewSize(size.width, size.height);
-
         texture.setDefaultBufferSize(size.width, size.height);
 
-        detector.setSize(size.width, size.height);
+        parameters.setPreviewFormat(IMAGEFORMAT);
 
         try {
             camera.setPreviewCallback(new Camera.PreviewCallback() {
                 @Override
                 public void onPreviewFrame(byte[] data, Camera camera) {
-                    if (data != null) detector.detect(data);
-                    else System.out.println("It's NULL!");
+                    Size previewSize = camera.getParameters().getPreviewSize();
+                    if (data != null) {
+                        detector.detect(data, previewSize.width, previewSize.height, IMAGEFORMAT);
+                    } else {
+                        //TODO: something better here?
+                        System.out.println("It's NULL!");
+                    }
                 }
             });
             camera.setPreviewTexture(texture);

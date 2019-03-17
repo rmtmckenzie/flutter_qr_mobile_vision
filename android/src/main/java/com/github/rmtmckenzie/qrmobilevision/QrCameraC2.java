@@ -15,7 +15,6 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
-import androidx.annotation.NonNull;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
@@ -24,6 +23,8 @@ import android.view.Surface;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+
+import androidx.annotation.NonNull;
 
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_AUTO;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE;
@@ -172,20 +173,16 @@ class QrCameraC2 implements QrCamera {
         Size jpegSize = getAppropriateSize(jpegSizes);
 
         final int width = jpegSize.getWidth(), height = jpegSize.getHeight();
-        reader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, 2);
+        reader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, 5);
 
         list.add(reader.getSurface());
-
 
         ImageReader.OnImageAvailableListener imageAvailableListener = new ImageReader.OnImageAvailableListener() {
             @Override
             public void onImageAvailable(ImageReader reader) {
                 try (Image image = reader.acquireLatestImage()) {
                     if (image == null) return;
-
-                    QrDetector2.QrImage qrImage = new QrDetector2.QrImage(image);
-
-                    detector.detect(qrImage);
+                    detector.detect(image);
                 } catch (Throwable t) {
                     t.printStackTrace();
                 }
@@ -203,18 +200,18 @@ class QrCameraC2 implements QrCamera {
 
             Integer afMode = afMode(cameraCharacteristics);
 
+            previewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+
             if (afMode != null) {
+                previewBuilder.set(CaptureRequest.CONTROL_AF_MODE, afMode);
                 Log.i(TAG, "Setting af mode to: " + afMode);
                 if (afMode == CONTROL_AF_MODE_AUTO) {
-                    previewBuilder.set(CaptureRequest.CONTROL_AF_MODE, afMode);
                     previewBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START);
                 } else {
                     previewBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_CANCEL);
-                    previewBuilder.set(CaptureRequest.CONTROL_AF_MODE, afMode);
                 }
             }
 
-            previewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
         } catch (java.lang.Exception e) {
             e.printStackTrace();
             return;
