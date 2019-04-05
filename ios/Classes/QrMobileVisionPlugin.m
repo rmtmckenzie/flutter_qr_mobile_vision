@@ -205,6 +205,10 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
     
+    if ([@"initialize" isEqualToString:call.method]) {
+        
+    }
+    
     if ([@"start" isEqualToString:call.method]) {
         // NSNumber *heartbeatTimeout = call.arguments[@"heartbeatTimeout"];
         NSNumber *targetWidth = call.arguments[@"targetWidth"];
