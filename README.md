@@ -1,6 +1,6 @@
 # QR Mobile Vision
 
-![pub package][version_badge]
+[![pub package][version_badge]](https://pub.dartlang.org/packages/qr_mobile_vision)
 
 _Reading QR codes and other barcodes using Google's Mobile Vision API._
 
