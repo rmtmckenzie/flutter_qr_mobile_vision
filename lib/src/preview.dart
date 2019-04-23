@@ -35,7 +35,7 @@ class Preview extends StatelessWidget {
   Widget build(BuildContext context) {
     double frameHeight, frameWidth;
 
-    return new NativeDeviceOrientationReader(
+    return NativeDeviceOrientationReader(
       builder: (context) {
         var nativeOrientation = NativeDeviceOrientationReader.orientation(context);
 

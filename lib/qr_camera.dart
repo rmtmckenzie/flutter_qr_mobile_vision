@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart';
 import 'qr_mobile_vision.dart';
 
 part 'src/controller.dart';
+part 'src/orientation.dart';
 
 final WidgetBuilder _defaultNotStartedBuilder = (context) => new Text("Camera Loading ...");
 final WidgetBuilder _defaultOffscreenBuilder = (context) => new Text("Camera Paused.");
@@ -95,7 +96,7 @@ class QrCamera extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!controller.value.isInitialized) {
+    if (controller == null || !controller.value.isInitialized) {
       return notStartedBuilder(context);
     }
 //    if (!controller.value.isCapturing) {

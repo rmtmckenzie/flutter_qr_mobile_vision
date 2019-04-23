@@ -40,9 +40,35 @@ class _MyAppState extends State<MyApp> {
   String qr;
   bool camState = false;
 
+  QrCameraController controller;
+
+  asyncInit() async {
+    var cameras = await QrMobileVision.getCameras();
+    print("Cameras: $cameras");
+    if (cameras.length == 0) {
+      //TODO: some sort of error for user
+      return;
+    }
+    QrCameraDescription camera;
+    for(var cam in cameras) {
+      if (cam.type == QrCameraType.back) {
+        camera = cam;
+        break;
+      }
+    }
+
+    // fallback to first camera if there's no back camera
+    camera = camera ?? cameras[0];
+
+    var resolutions = await QrMobileVision.getResolutions(camera);
+    print("resolutions: $resolutions");
+
+  }
+
   @override
   initState() {
     super.initState();
+    asyncInit();
   }
 
   @override
@@ -63,21 +89,7 @@ class _MyAppState extends State<MyApp> {
                           width: 300.0,
                           height: 600.0,
                           child: new QrCamera(
-                            onError: (context, error) => Text(
-                                  error.toString(),
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                            qrCodeCallback: (code) {
-                              setState(() {
-                                qr = code;
-                              });
-                            },
-                            child: new Container(
-                              decoration: new BoxDecoration(
-                                color: Colors.transparent,
-                                border: Border.all(color: Colors.orange, width: 10.0, style: BorderStyle.solid),
-                              ),
-                            ),
+                            controller: controller,
                           ),
                         ),
                       )
