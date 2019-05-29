@@ -30,6 +30,7 @@ import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_AUTO;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO;
 import static android.hardware.camera2.CameraMetadata.LENS_FACING_BACK;
+import static android.hardware.camera2.CameraMetadata.LENS_FACING_FRONT;
 
 /**
  * Implements QrCamera using Camera2 API
@@ -60,7 +61,10 @@ class QrCameraC2 implements QrCamera {
     private int orientation;
     private CameraDevice cameraDevice;
     private CameraCharacteristics cameraCharacteristics;
-
+    private boolean isManualFocusSupported;
+    private float minFocus;
+    // private float maxFocus;
+    
     QrCameraC2(int width, int height, Context context, SurfaceTexture texture, QrDetector2 detector) {
         this.targetWidth = width;
         this.targetHeight = height;
@@ -87,7 +91,6 @@ class QrCameraC2 implements QrCamera {
     @Override
     public void start() throws QrReader.Exception {
         CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-
         if (manager == null) {
             throw new RuntimeException("Unable to get camera manager.");
         }
@@ -98,13 +101,15 @@ class QrCameraC2 implements QrCamera {
             for (String id : cameraIdList) {
                 CameraCharacteristics cameraCharacteristics = manager.getCameraCharacteristics(id);
                 Integer integer = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING);
-                if (integer != null && integer == LENS_FACING_BACK) {
+                // if (integer != null && integer == LENS_FACING_BACK) {
+                if (integer != null && integer == LENS_FACING_FRONT) {
                     cameraId = id;
                     break;
                 }
             }
         } catch (CameraAccessException e) {
-            Log.w(TAG, "Error getting back camera.", e);
+            // Log.w(TAG, "Error getting back camera.", e);
+            Log.w(TAG, "Error getting front camera.", e);
             throw new RuntimeException(e);
         }
 
@@ -138,6 +143,18 @@ class QrCameraC2 implements QrCamera {
                     Log.w(TAG, "Error opening camera: " + error);
                 }
             }, null);
+
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+            int[] capabilities = characteristics.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
+            for (int id : capabilities) {
+                if(id == cameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_MANUAL_SENSOR) {
+                    isManualFocusSupported = true;
+                    float yourMinFocus = characteristics.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
+                    // float yourMaxFocus = characteristics.get(CameraCharacteristics.LENS_INFO_HYPERFOCAL_DISTANCE);
+                    minFocus = yourMinFocus;
+                    // maxFocus = yourMaxFocus;
+                }
+            }
         } catch (CameraAccessException e) {
             Log.w(TAG, "Error getting camera configuration.", e);
         }
@@ -201,8 +218,11 @@ class QrCameraC2 implements QrCamera {
             Integer afMode = afMode(cameraCharacteristics);
 
             previewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-
-            if (afMode != null) {
+            if (isManualFocusSupported && minFocus >= 0.0) {
+                previewBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
+                previewBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, minFocus);
+            } 
+            else if (afMode != null) {
                 previewBuilder.set(CaptureRequest.CONTROL_AF_MODE, afMode);
                 Log.i(TAG, "Setting af mode to: " + afMode);
                 if (afMode == CONTROL_AF_MODE_AUTO) {
