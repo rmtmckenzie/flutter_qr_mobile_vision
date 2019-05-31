@@ -20,10 +20,10 @@ PODS:
     - GoogleMobileVision/BarcodeDetector
 
 DEPENDENCIES:
-  - Flutter (from `/Users/morgan/flutter/bin/cache/artifacts/engine/ios`)
+  - Flutter (from `/Users/howardwkim/development/flutter/bin/cache/artifacts/engine/ios`)
   - GoogleMobileVision/BarcodeDetector
-  - native_device_orientation (from `/Users/morgan/.pub-cache/hosted/pub.dartlang.org/native_device_orientation-0.0.2/ios`)
-  - qr_mobile_vision (from `/Users/morgan/Programming/flutter/flutter_qr_mobile_vision/ios`)
+  - native_device_orientation (from `/Users/howardwkim/development/flutter/.pub-cache/hosted/pub.dartlang.org/native_device_orientation-0.1.2/ios`)
+  - qr_mobile_vision (from `/Users/howardwkim/custom/flutter_qr_mobile_vision/ios`)
 
 SPEC REPOS:
   https://github.com/cocoapods/specs.git:
@@ -35,22 +35,22 @@ SPEC REPOS:
 
 EXTERNAL SOURCES:
   Flutter:
-    :path: "/Users/morgan/flutter/bin/cache/artifacts/engine/ios"
+    :path: "/Users/howardwkim/development/flutter/bin/cache/artifacts/engine/ios"
   native_device_orientation:
-    :path: "/Users/morgan/.pub-cache/hosted/pub.dartlang.org/native_device_orientation-0.0.2/ios"
+    :path: "/Users/howardwkim/development/flutter/.pub-cache/hosted/pub.dartlang.org/native_device_orientation-0.1.2/ios"
   qr_mobile_vision:
-    :path: "/Users/morgan/Programming/flutter/flutter_qr_mobile_vision/ios"
+    :path: "/Users/howardwkim/custom/flutter_qr_mobile_vision/ios"
 
 SPEC CHECKSUMS:
-  Flutter: 9d0fac939486c9aba2809b7982dfdbb47a7b0296
+  Flutter: 58dd7d1b27887414a370fcccb9e645c08ffd7a6a
   GoogleInterchangeUtilities: d5bc4d88d5b661ab72f9d70c58d02ca8c27ad1f7
   GoogleMobileVision: d344d69c8987ee239c8a47257e2039084682d181
   GoogleNetworkingUtilities: 3edd3a8161347494f2da60ea0deddc8a472d94cb
   GoogleSymbolUtilities: 631ee17048aa5e9ab133470d768ea997a5ef9b96
   GoogleUtilities: 8bbc733218aad26306f9d4a253823986110e3358
-  native_device_orientation: 1126735962ee926c7067a26ee9b0be020d3f5890
-  qr_mobile_vision: 8611faee1dfa5581ede7b7dfcf740b01ebee970b
+  native_device_orientation: e24d00be281de72996640885d80e706142707660
+  qr_mobile_vision: be1c3c9f00796683610e8bab9bbab2920dd4ffca
 
 PODFILE CHECKSUM: f7ea81b8ea6ff333387d1e924f8c2e073394c24b
 
-COCOAPODS: 1.5.3
+COCOAPODS: 1.6.1
