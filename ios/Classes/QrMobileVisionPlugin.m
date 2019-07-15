@@ -2,7 +2,6 @@
 
 #import "QrMobileVisionPlugin.h"
 #import <libkern/OSAtomic.h>
-#import "GoogleMobileVision/GoogleMobileVision.h"
 
 @interface NSError (FlutterError)
 @property(readonly, nonatomic) FlutterError *flutterError;
@@ -25,20 +24,22 @@
 @property(readonly, nonatomic) AVCaptureDevice *captureDevice;
 @property(readonly) CVPixelBufferRef volatile latestPixelBuffer;
 @property(readonly, nonatomic) CMVideoDimensions previewSize;
-@property(readonly, nonatomic) dispatch_queue_t mainQueue;
 
-@property(nonatomic, strong) GMVDetector *barcodeDetector;
+@property(nonatomic, strong) CIDetector *barcodeDetector;
 @property(nonatomic, copy) void (^onCodeAvailable)(NSString *);
 
 - (instancetype)initWithErrorRef:(NSError **)error;
 @end
 
-@implementation QrReader
+@implementation QrReader {
+    BOOL _isScanning;
+}
 
 - (instancetype)initWithErrorRef:(NSError **)error {
     self = [super init];
     NSAssert(self, @"super init cannot be nil");
     _captureSession = [[AVCaptureSession alloc] init];
+    _isScanning = NO;
     
     if (@available(iOS 10.0, *)) {
         _captureDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
@@ -49,13 +50,11 @@
                 break;
             }
         }
-
+        
         if (_captureDevice == nil) {
             _captureDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
         }
     }
-    
-    _mainQueue = dispatch_get_main_queue();
     
     NSError *localError = nil;
     AVCaptureInput *input = [AVCaptureDeviceInput deviceInputWithDevice:_captureDevice error:&localError];
@@ -81,7 +80,10 @@
     [_captureSession addOutputWithNoConnections:output];
     [_captureSession addConnection:connection];
     
-    _barcodeDetector = [GMVDetector detectorOfType:GMVDetectorTypeBarcode options:nil];
+    //    _barcodeDetector = [GMVDetector detectorOfType:GMVDetectorTypeBarcode options:nil];
+    _barcodeDetector = [CIDetector detectorOfType:CIDetectorTypeQRCode
+                                          context:nil
+                                          options:nil];
     
     return self;
 }
@@ -109,7 +111,7 @@
 didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
        fromConnection:(AVCaptureConnection *)connection {
     // runs on main queue
-
+    
     // create a new buffer in the form of a CGImage containing the image.
     // NOTE: it must be released manually!
     CGImageRef cgImageRef = [self cgImageRefFromCMSampleBufferRef:sampleBuffer];
@@ -125,34 +127,32 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         CFRelease(old);
     }
     
-    dispatch_sync(_mainQueue, ^{
+    dispatch_sync(dispatch_get_main_queue(), ^{
         self.onFrameAvailable();
     });
     
-    ///////// TODO: dispatch this to a background thread (or at least later on main thread?)!
-    /// process the frame with GMV
-    AVCaptureDevicePosition devicePosition = AVCaptureDevicePositionBack;
-    UIDeviceOrientation deviceOrientation = [[UIDevice currentDevice] orientation];
-    // TODO: last known orientation?
-    GMVImageOrientation orientation = [GMVUtility imageOrientationFromOrientation:deviceOrientation withCaptureDevicePosition:devicePosition defaultDeviceOrientation:UIDeviceOrientationPortrait];
+    if (_isScanning)
+        return;
     
-    NSDictionary *options = @{
-        GMVDetectorImageOrientation: @(orientation)
-    };
+    _isScanning = YES;
     
-    UIImage *image = [UIImage imageWithCGImage:cgImageRef];
-    NSArray<GMVBarcodeFeature *> *barcodes = [_barcodeDetector featuresInImage:image options:options];
-    image = nil;
+    NSArray<CIFeature *> *features = nil;
+    @autoreleasepool {
+        features = [_barcodeDetector featuresInImage:[CIImage imageWithCGImage:cgImageRef]];
+    }
+    
     CGImageRelease(cgImageRef);
-
-    if (barcodes.count > 0) {
-        GMVBarcodeFeature *barcode0 = barcodes[0];
-        NSString * value = [barcode0 rawValue];
+    
+    if (features.count > 0) {
+        CIQRCodeFeature *feature0 = (CIQRCodeFeature *)features[0];
+        NSString * value = feature0.messageString;
         NSLog(@"Detected barcode: %@", value);
-        dispatch_async(_mainQueue, ^{
+        dispatch_async(dispatch_get_main_queue(), ^{
             self->_onCodeAvailable(value);
         });
     }
+    
+    _isScanning = NO;
 }
 
 - (void)heartBeat {
@@ -243,28 +243,28 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         failureCallback([NSError errorWithDomain:@"qr_mobile_vision" code:1 userInfo:@{NSLocalizedDescriptionKey:NSLocalizedString(@"Reader already running.", nil)}]);
         return;
     }
-
+    
     NSError* localError = nil;
     _reader = [[QrReader alloc] initWithErrorRef: &localError];
-
+    
     if (localError) {
         failureCallback(localError);
         return;
     }
-
+    
     NSObject<FlutterTextureRegistry> * __weak registry = _registry;
     int64_t textureId = [_registry registerTexture:_reader];
     _reader.onFrameAvailable = ^{
         [registry textureFrameAvailable:textureId];
     };
-
+    
     FlutterMethodChannel * __weak channel = _channel;
     _reader.onCodeAvailable = ^(NSString *value) {
         [channel invokeMethod:@"qrRead" arguments: value];
     };
-
+    
     [_reader start];
-
+    
     ///////// texture, width, height
     completedCallback(_reader.previewSize.width, _reader.previewSize.height, 0, textureId);
 }
@@ -283,3 +283,4 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 }
 
 @end
+
