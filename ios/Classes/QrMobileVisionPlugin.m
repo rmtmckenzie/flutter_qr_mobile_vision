@@ -180,6 +180,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 
 @interface QrMobileVisionPlugin ()
 @property(readonly, nonatomic) NSObject<FlutterTextureRegistry> *registry;
+@property(readonly, nonatomic) int64_t textureId;
 @property(readonly, nonatomic) FlutterMethodChannel *channel;
 
 @property(readonly, nonatomic) QrReader *reader;
@@ -255,9 +256,13 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     }
     
     NSObject<FlutterTextureRegistry> * __weak registry = _registry;
-    int64_t textureId = [_registry registerTexture:_reader];
+    _textureId = [_registry registerTexture:_reader];
+    QrMobileVisionPlugin * __weak weakSelf = self;
     _reader.onFrameAvailable = ^{
-        [registry textureFrameAvailable:textureId];
+        QrMobileVisionPlugin *strongSelf = weakSelf;
+        if (strongSelf) {
+            [registry textureFrameAvailable:strongSelf->_textureId];
+        }
     };
     
     FlutterMethodChannel * __weak channel = _channel;
@@ -268,10 +273,14 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     [_reader start];
     
     ///////// texture, width, height
-    completedCallback(_reader.previewSize.width, _reader.previewSize.height, 0, textureId);
+    completedCallback(_reader.previewSize.width, _reader.previewSize.height, 0, _textureId);
 }
 
 - (void)stop {
+    NSObject<FlutterTextureRegistry> * __weak registry = _registry;
+    [registry unregisterTexture:_textureId];
+    _textureId = 0;
+    
     if (_reader) {
         [_reader stop];
         _reader = nil;
