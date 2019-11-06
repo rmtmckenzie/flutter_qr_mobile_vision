@@ -1,3 +1,6 @@
+## [0.3.0] - November 6, 2019
+* Small maintenance upgrade because dependency wouldn't compile"
+
 ## [0.2.2] - March 5, 2019
 
 * Fix detector for older phones as it wouldn't work if the returned preview size
