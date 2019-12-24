@@ -1,3 +1,6 @@
+## [0.3.1] - December 24, 2019
+* Fix NPE on sms permission acceptance
+
 ## [0.3.0] - November 6, 2019
 * Small maintenance upgrade because dependency wouldn't compile"
 
