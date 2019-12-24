@@ -3,12 +3,16 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+enum CameraFacing {
+  FRONT,
+  BACK,
+}
+
 class PreviewDetails {
   num width;
   num height;
   num orientation;
   int textureId;
-
   PreviewDetails(this.width, this.height, this.orientation, this.textureId);
 }
 
@@ -42,6 +46,7 @@ class QrMobileVision {
     @required int width,
     @required int height,
     @required QRCodeHandler qrCodeHandler,
+    CameraFacing cameraFacing,
     List<BarcodeFormats> formats = _defaultBarcodeFormats,
   }) async {
     final _formats = formats ?? _defaultBarcodeFormats;
@@ -51,7 +56,7 @@ class QrMobileVision {
 
     channelReader.setQrCodeHandler(qrCodeHandler);
     var details = await _channel.invokeMethod(
-        'start', {'targetWidth': width, 'targetHeight': height, 'heartbeatTimeout': 0, 'formats': formatStrings});
+        'start', {'targetWidth': width, 'targetHeight': height, 'heartbeatTimeout': 0, 'cameraFacing': (cameraFacing == CameraFacing.FRONT ? 0 : 1), 'formats': formatStrings});
 
     // invokeMethod returns Map<dynamic,...> in dart 2.0
     assert(details is Map<dynamic, dynamic>);

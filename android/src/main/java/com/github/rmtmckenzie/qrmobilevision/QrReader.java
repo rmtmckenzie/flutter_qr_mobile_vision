@@ -33,7 +33,7 @@ class QrReader {
         }
     }
 
-    void start(final int heartBeatTimeout) throws IOException, NoPermissionException, Exception {
+    void start(final int heartBeatTimeout, final int cameraFacing) throws IOException, NoPermissionException, Exception {
         if (!hasCameraHardware(context)) {
             throw new Exception(Exception.Reason.noHardware);
         }
@@ -41,11 +41,11 @@ class QrReader {
         if (!checkCameraPermission(context)) {
             throw new NoPermissionException();
         } else {
-            continueStarting(heartBeatTimeout);
+            continueStarting(heartBeatTimeout, cameraFacing);
         }
     }
 
-    private void continueStarting(int heartBeatTimeout) throws IOException {
+    private void continueStarting(int heartBeatTimeout, final int cameraFacing) throws IOException {
         try {
             if (heartBeatTimeout > 0) {
                 if (heartbeat != null) {
@@ -59,7 +59,7 @@ class QrReader {
                 });
             }
 
-            qrCamera.start();
+            qrCamera.start(cameraFacing);
             startedCallback.started();
         } catch (Throwable t) {
             startedCallback.startingFailed(t);

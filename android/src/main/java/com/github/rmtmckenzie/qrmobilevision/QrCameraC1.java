@@ -33,12 +33,12 @@ class QrCameraC1 implements QrCamera {
     }
 
     @Override
-    public void start() throws QrReader.Exception {
+    public void start(final int cameraFacing) throws QrReader.Exception {
         int numberOfCameras = Camera.getNumberOfCameras();
         info = new Camera.CameraInfo();
         for (int i = 0; i < numberOfCameras; i++) {
             Camera.getCameraInfo(i, info);
-            if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+            if (info.facing == (cameraFacing == 0 ? Camera.CameraInfo.CAMERA_FACING_FRONT : Camera.CameraInfo.CAMERA_FACING_BACK)) {
                 camera = Camera.open(i);
                 break;
             }

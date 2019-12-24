@@ -30,23 +30,34 @@
 @property(nonatomic, strong) GMVDetector *barcodeDetector;
 @property(nonatomic, copy) void (^onCodeAvailable)(NSString *);
 
-- (instancetype)initWithErrorRef:(NSError **)error;
+- (instancetype)initWithErrorRef:(NSError **)error cameraFacing:(int)cameraFacing;
 @end
 
 @implementation QrReader
 
-- (instancetype)initWithErrorRef:(NSError **)error {
+- (instancetype)initWithErrorRef:(NSError **)error cameraFacing:(int)cameraFacing {
     self = [super init];
     NSAssert(self, @"super init cannot be nil");
     _captureSession = [[AVCaptureSession alloc] init];
     
     if (@available(iOS 10.0, *)) {
-        _captureDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
+        if (cameraFacing == 0) {
+            _captureDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionFront];
+        } else {
+            _captureDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
+        }
     } else {
         for(AVCaptureDevice* device in [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]) {
-            if (device.position == AVCaptureDevicePositionBack) {
-                _captureDevice = device;
-                break;
+            if (cameraFacing == 0) {
+                if (device.position == AVCaptureDevicePositionFront) {
+                    _captureDevice = device;
+                    break;
+                }
+            } else {
+                if (device.position == AVCaptureDevicePositionBack) {
+                    _captureDevice = device;
+                    break;
+                }
             }
         }
 
@@ -209,6 +220,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         // NSNumber *heartbeatTimeout = call.arguments[@"heartbeatTimeout"];
         NSNumber *targetWidth = call.arguments[@"targetWidth"];
         NSNumber *targetHeight = call.arguments[@"targetHeight"];
+        NSNumber *cameraFacing = call.arguments[@"cameraFacing"];
         
         if (targetWidth == nil || targetHeight == nil) {
             result([FlutterError errorWithCode:@"INVALID_ARGS"
@@ -221,11 +233,13 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
                      @"surfaceWidth": @(width),
                      @"surfaceHeight": @(height),
                      @"surfaceOrientation": @(orientation),
-                     @"textureId": @(textureId)
+                     @"textureId": @(textureId),
                      });
-        } orFailure: ^ (NSError *error) {
-            result(error.flutterError);
-        }];
+            } orFailure: ^ (NSError *error) {
+                result(error.flutterError);
+            } 
+            cameraFacing: [cameraFacing intValue]
+        ];
     } else if ([@"stop" isEqualToString:call.method]) {
         [self stop];
         result(nil);
@@ -237,7 +251,9 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     }
 }
 
-- (void)startWithCallback:(void (^)(int width, int height, int orientation, int64_t textureId))completedCallback orFailure:(void (^)(NSError *))failureCallback {
+- (void)startWithCallback:(void (^)(int width, int height, int orientation, int64_t textureId))completedCallback
+        orFailure:(void (^)(NSError *))failureCallback
+        cameraFacing:(int)cameraFacing {
     
     if (_reader) {
         failureCallback([NSError errorWithDomain:@"qr_mobile_vision" code:1 userInfo:@{NSLocalizedDescriptionKey:NSLocalizedString(@"Reader already running.", nil)}]);
@@ -245,7 +261,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     }
 
     NSError* localError = nil;
-    _reader = [[QrReader alloc] initWithErrorRef: &localError];
+    _reader = [[QrReader alloc] initWithErrorRef: &localError cameraFacing:cameraFacing];
 
     if (localError) {
         failureCallback(localError);
