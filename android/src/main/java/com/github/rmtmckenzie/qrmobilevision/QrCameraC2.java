@@ -86,7 +86,7 @@ class QrCameraC2 implements QrCamera {
     }
 
     @Override
-    public void start(final int cameraFacing) throws QrReader.Exception {
+    public void start(final int cameraDirection) throws QrReader.Exception {
         CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
 
         if (manager == null) {
@@ -99,7 +99,7 @@ class QrCameraC2 implements QrCamera {
             for (String id : cameraIdList) {
                 CameraCharacteristics cameraCharacteristics = manager.getCameraCharacteristics(id);
                 Integer integer = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING);
-                if (integer != null && integer == (cameraFacing == 0 ? LENS_FACING_FRONT : LENS_FACING_BACK)) {
+                if (integer != null && integer == (cameraDirection == 0 ? LENS_FACING_FRONT : LENS_FACING_BACK)) {
                     cameraId = id;
                     break;
                 }

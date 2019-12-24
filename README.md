@@ -69,7 +69,7 @@ weird issues so try not to.
 
 Standard flutter key argument. Can be used to get QrCameraState with a GlobalKey.
 
-### `cameraFacing`
+### `cameraDirection`
 
 Uses a camera of the specified direction. Default is to use `BACK`
 

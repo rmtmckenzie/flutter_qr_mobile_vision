@@ -30,25 +30,25 @@
 @property(nonatomic, strong) GMVDetector *barcodeDetector;
 @property(nonatomic, copy) void (^onCodeAvailable)(NSString *);
 
-- (instancetype)initWithErrorRef:(NSError **)error cameraFacing:(int)cameraFacing;
+- (instancetype)initWithErrorRef:(NSError **)error cameraDirection:(int)cameraDirection;
 @end
 
 @implementation QrReader
 
-- (instancetype)initWithErrorRef:(NSError **)error cameraFacing:(int)cameraFacing {
+- (instancetype)initWithErrorRef:(NSError **)error cameraDirection:(int)cameraDirection {
     self = [super init];
     NSAssert(self, @"super init cannot be nil");
     _captureSession = [[AVCaptureSession alloc] init];
     
     if (@available(iOS 10.0, *)) {
-        if (cameraFacing == 0) {
+        if (cameraDirection == 0) {
             _captureDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionFront];
         } else {
             _captureDevice = [AVCaptureDevice defaultDeviceWithDeviceType:AVCaptureDeviceTypeBuiltInWideAngleCamera mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
         }
     } else {
         for(AVCaptureDevice* device in [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]) {
-            if (cameraFacing == 0) {
+            if (cameraDirection == 0) {
                 if (device.position == AVCaptureDevicePositionFront) {
                     _captureDevice = device;
                     break;
@@ -220,7 +220,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         // NSNumber *heartbeatTimeout = call.arguments[@"heartbeatTimeout"];
         NSNumber *targetWidth = call.arguments[@"targetWidth"];
         NSNumber *targetHeight = call.arguments[@"targetHeight"];
-        NSNumber *cameraFacing = call.arguments[@"cameraFacing"];
+        NSNumber *cameraDirection = call.arguments[@"cameraDirection"];
         
         if (targetWidth == nil || targetHeight == nil) {
             result([FlutterError errorWithCode:@"INVALID_ARGS"
@@ -238,7 +238,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
             } orFailure: ^ (NSError *error) {
                 result(error.flutterError);
             } 
-            cameraFacing: [cameraFacing intValue]
+            cameraDirection: [cameraDirection intValue]
         ];
     } else if ([@"stop" isEqualToString:call.method]) {
         [self stop];
@@ -253,7 +253,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 
 - (void)startWithCallback:(void (^)(int width, int height, int orientation, int64_t textureId))completedCallback
         orFailure:(void (^)(NSError *))failureCallback
-        cameraFacing:(int)cameraFacing {
+        cameraDirection:(int)cameraDirection {
     
     if (_reader) {
         failureCallback([NSError errorWithDomain:@"qr_mobile_vision" code:1 userInfo:@{NSLocalizedDescriptionKey:NSLocalizedString(@"Reader already running.", nil)}]);
@@ -261,7 +261,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     }
 
     NSError* localError = nil;
-    _reader = [[QrReader alloc] initWithErrorRef: &localError cameraFacing:cameraFacing];
+    _reader = [[QrReader alloc] initWithErrorRef: &localError cameraDirection:cameraDirection];
 
     if (localError) {
         failureCallback(localError);
