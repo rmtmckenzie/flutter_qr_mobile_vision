@@ -61,6 +61,8 @@ class QrCameraC2 implements QrCamera {
     private CameraDevice cameraDevice;
     private CameraCharacteristics cameraCharacteristics;
 
+    private boolean isFlashOn = false;
+
     QrCameraC2(int width, int height, Context context, SurfaceTexture texture, QrDetector2 detector) {
         this.targetWidth = width;
         this.targetHeight = height;
@@ -251,6 +253,44 @@ class QrCameraC2 implements QrCamera {
             previewSession.setRepeatingRequest(previewBuilder.build(), listener, null);
         } catch (java.lang.Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public void turnOnFlashLight()
+    {
+        try
+        {
+            previewBuilder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_TORCH);
+            previewSession.setRepeatingRequest(previewBuilder.build(), null, null);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public void turnOffFlashLight()
+    {
+        try
+        {
+            previewBuilder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_OFF);
+            previewSession.setRepeatingRequest(previewBuilder.build(), null, null);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void toggleFlash() {
+        if(isFlashOn) {
+            turnOffFlashLight();
+            isFlashOn = false;
+        }
+        else {
+            turnOnFlashLight();
+            isFlashOn = true;
         }
     }
 
