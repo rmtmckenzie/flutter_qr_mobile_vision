@@ -277,10 +277,11 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 }
 
 - (void)stop {
-    NSObject<FlutterTextureRegistry> * __weak registry = _registry;
-    [registry unregisterTexture:_textureId];
-    _textureId = 0;
-    
+    if (_textureId) {
+        NSObject<FlutterTextureRegistry> * __weak registry = _registry;
+        [registry unregisterTexture:_textureId];
+        _textureId = 0;
+    }
     if (_reader) {
         [_reader stop];
         _reader = nil;
