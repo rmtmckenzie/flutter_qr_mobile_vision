@@ -3,8 +3,21 @@ package com.github.rmtmckenzie.qrmobilevision;
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
-import androidx.core.app.ActivityCompat;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -13,42 +26,91 @@ import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
 import io.flutter.view.TextureRegistry;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 
 /**
  * QrMobileVisionPlugin
  */
-public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallbacks, QrReader.QRReaderStartedCallback, PluginRegistry.RequestPermissionsResultListener {
+public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallbacks, QrReader.QRReaderStartedCallback, PluginRegistry.RequestPermissionsResultListener, FlutterPlugin, ActivityAware {
 
     private static final String TAG = "cgr.qrmv.QrMobVisPlugin";
     private static final int REQUEST_PERMISSION = 1;
-    private final MethodChannel channel;
-    private final Activity context;
-    private final TextureRegistry textures;
+    private static MethodChannel channel;
+    private static Activity activity;
+    private static TextureRegistry textures;
     private Integer lastHeartbeatTimeout;
     private boolean waitingForPermissionResult;
     private boolean permissionDenied;
     private ReadingInstance readingInstance;
-
-    public QrMobileVisionPlugin(MethodChannel channel, Activity context, TextureRegistry textures) {
-        this.textures = textures;
-        this.channel = channel;
-        this.context = context;
-    }
+    private FlutterPluginBinding flutterPluginBinding;
 
     /**
      * Plugin registration.
      */
     public static void registerWith(Registrar registrar) {
-        final MethodChannel channel = new MethodChannel(registrar.messenger(), "com.github.rmtmckenzie/qr_mobile_vision");
-        QrMobileVisionPlugin qrMobileVisionPlugin = new QrMobileVisionPlugin(channel, registrar.activity(), registrar.textures());
+        performV1Registration(registrar);
+    }
+
+    @Override
+    public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
+        flutterPluginBinding = binding;
+    }
+
+    @Override
+    public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+        flutterPluginBinding = null;
+    }
+
+    @Override
+    public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
+        performV2Registration(flutterPluginBinding, binding);
+    }
+
+    @Override
+    public void onDetachedFromActivityForConfigChanges() {
+        onDetachedFromActivity();
+    }
+
+    @Override
+    public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+        onAttachedToActivity(binding);
+    }
+
+    @Override
+    public void onDetachedFromActivity() {
+        channel.setMethodCallHandler(null);
+        channel = null;
+        activity = null;
+        textures = null;
+    }
+
+    private static void performV1Registration(Registrar registrar) {
+        performRegistration(true, registrar, null, null);
+    }
+
+    private static void performV2Registration(FlutterPluginBinding flutterPluginBinding, ActivityPluginBinding activityPluginBinding) {
+        performRegistration(false, null, flutterPluginBinding, activityPluginBinding);
+    }
+
+    private static void performRegistration(boolean isVersion1Embedding, Registrar registrar, FlutterPluginBinding flutterPluginBinding, ActivityPluginBinding activityPluginBinding) {
+        BinaryMessenger messenger;
+        if (isVersion1Embedding) {
+            messenger = registrar.messenger();
+            activity = registrar.activity();
+            textures = registrar.textures();
+        } else {
+            messenger = flutterPluginBinding.getBinaryMessenger();
+            activity = activityPluginBinding.getActivity();
+            textures = flutterPluginBinding.getTextureRegistry();
+
+        }
+        channel = new MethodChannel(messenger, "com.github.rmtmckenzie/qr_mobile_vision");
+        QrMobileVisionPlugin qrMobileVisionPlugin = new QrMobileVisionPlugin();
         channel.setMethodCallHandler(qrMobileVisionPlugin);
-        registrar.addRequestPermissionsResultListener(qrMobileVisionPlugin);
+        if (isVersion1Embedding) {
+            registrar.addRequestPermissionsResultListener(qrMobileVisionPlugin);
+        } else {
+            activityPluginBinding.addRequestPermissionsResultListener(qrMobileVisionPlugin);
+        }
     }
 
     @Override
@@ -105,7 +167,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
                     int barcodeFormats = BarcodeFormats.intFromStringList(formatStrings);
 
                     TextureRegistry.SurfaceTextureEntry textureEntry = textures.createSurfaceTexture();
-                    QrReader reader = new QrReader(targetWidth, targetHeight, context, barcodeFormats,
+                    QrReader reader = new QrReader(targetWidth, targetHeight, activity, barcodeFormats,
                         this, this, textureEntry.surfaceTexture());
 
                     readingInstance = new ReadingInstance(reader, textureEntry, result);
@@ -121,7 +183,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
                         result.error(e.reason().name(), "Error starting camera for reason: " + e.reason().name(), null);
                     } catch (NoPermissionException e) {
                         waitingForPermissionResult = true;
-                        ActivityCompat.requestPermissions(context,
+                        ActivityCompat.requestPermissions(activity,
                             new String[]{Manifest.permission.CAMERA}, REQUEST_PERMISSION);
                     }
                 }
