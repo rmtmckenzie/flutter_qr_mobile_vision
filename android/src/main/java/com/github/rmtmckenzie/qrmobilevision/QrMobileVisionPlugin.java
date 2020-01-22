@@ -34,20 +34,24 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
 
     private static final String TAG = "cgr.qrmv.QrMobVisPlugin";
     private static final int REQUEST_PERMISSION = 1;
-    private static MethodChannel channel;
-    private static Activity activity;
-    private static TextureRegistry textures;
+    private MethodChannel channel;
+    private Activity activity;
+    private TextureRegistry textures;
     private Integer lastHeartbeatTimeout;
     private boolean waitingForPermissionResult;
     private boolean permissionDenied;
     private ReadingInstance readingInstance;
     private FlutterPluginBinding flutterPluginBinding;
 
+    public QrMobileVisionPlugin() {
+    }
+
     /**
      * Plugin registration.
      */
     public static void registerWith(Registrar registrar) {
-        performV1Registration(registrar);
+        QrMobileVisionPlugin plugin = new QrMobileVisionPlugin();
+        plugin.performV1Registration(registrar);
     }
 
     @Override
@@ -79,38 +83,31 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
     public void onDetachedFromActivity() {
         channel.setMethodCallHandler(null);
         channel = null;
-        activity = null;
-        textures = null;
     }
 
-    private static void performV1Registration(Registrar registrar) {
+    private void performV1Registration(Registrar registrar) {
         performRegistration(true, registrar, null, null);
     }
 
-    private static void performV2Registration(FlutterPluginBinding flutterPluginBinding, ActivityPluginBinding activityPluginBinding) {
+    private void performV2Registration(FlutterPluginBinding flutterPluginBinding, ActivityPluginBinding activityPluginBinding) {
         performRegistration(false, null, flutterPluginBinding, activityPluginBinding);
     }
 
-    private static void performRegistration(boolean isVersion1Embedding, Registrar registrar, FlutterPluginBinding flutterPluginBinding, ActivityPluginBinding activityPluginBinding) {
+    private void performRegistration(boolean isVersion1Embedding, Registrar registrar, FlutterPluginBinding flutterPluginBinding, ActivityPluginBinding activityPluginBinding) {
         BinaryMessenger messenger;
         if (isVersion1Embedding) {
             messenger = registrar.messenger();
             activity = registrar.activity();
             textures = registrar.textures();
+            registrar.addRequestPermissionsResultListener(this);
         } else {
             messenger = flutterPluginBinding.getBinaryMessenger();
             activity = activityPluginBinding.getActivity();
             textures = flutterPluginBinding.getTextureRegistry();
-
+            activityPluginBinding.addRequestPermissionsResultListener(this);
         }
         channel = new MethodChannel(messenger, "com.github.rmtmckenzie/qr_mobile_vision");
-        QrMobileVisionPlugin qrMobileVisionPlugin = new QrMobileVisionPlugin();
-        channel.setMethodCallHandler(qrMobileVisionPlugin);
-        if (isVersion1Embedding) {
-            registrar.addRequestPermissionsResultListener(qrMobileVisionPlugin);
-        } else {
-            activityPluginBinding.addRequestPermissionsResultListener(qrMobileVisionPlugin);
-        }
+        channel.setMethodCallHandler(this);
     }
 
     @Override
