@@ -54,6 +54,7 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
   @override
   dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    QrMobileVision.stop();
     super.dispose();
   }
 
@@ -102,12 +103,6 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
     (() async {
       await QrMobileVision.stop();
     })();
-  }
-
-  @override
-  deactivate() {
-    super.deactivate();
-    QrMobileVision.stop();
   }
 
   @override
