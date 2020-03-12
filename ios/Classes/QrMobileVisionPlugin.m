@@ -135,14 +135,6 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     [_captureSession stopRunning];
 }
 
-// This returns a CGImageRef that needs to be released!
-- (CGImageRef)cgImageRefFromCMSampleBufferRef:(CMSampleBufferRef)sampleBuffer {
-    CIContext *ciContext = [CIContext contextWithOptions:nil];
-    CVPixelBufferRef newBuffer1 = CMSampleBufferGetImageBuffer(sampleBuffer);
-    CIImage *ciImage = [CIImage imageWithCVPixelBuffer:newBuffer1];
-    return [ciContext createCGImage:ciImage fromRect:ciImage.extent];
-}
-
 - (void)heartBeat {
     // TODO: implement
 }
