@@ -15,7 +15,7 @@
 }
 @end
 
-@interface QrReader: NSObject<FlutterTexture, AVCaptureMetadataOutputObjectsDelegate>
+@interface QrReader: NSObject<FlutterTexture, AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureMetadataOutputObjectsDelegate>
 @property(readonly, nonatomic) int64_t textureId;
 @property(nonatomic, copy) void (^onFrameAvailable)(void);
 @property(nonatomic) FlutterEventChannel *eventChannel;
