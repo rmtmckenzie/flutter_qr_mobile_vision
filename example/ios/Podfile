@@ -45,7 +45,6 @@ target 'Runner' do
         pod p[:name], :path => File.expand_path("ios",p[:path])
     }
     
-  pod 'GoogleMobileVision/BarcodeDetector'
 end
 
 post_install do |installer|

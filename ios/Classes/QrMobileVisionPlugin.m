@@ -2,7 +2,6 @@
 
 #import "QrMobileVisionPlugin.h"
 #import <libkern/OSAtomic.h>
-#import "GoogleMobileVision/GoogleMobileVision.h"
 
 @interface NSError (FlutterError)
 @property(readonly, nonatomic) FlutterError *flutterError;
@@ -16,7 +15,7 @@
 }
 @end
 
-@interface QrReader: NSObject<FlutterTexture, AVCaptureVideoDataOutputSampleBufferDelegate>
+@interface QrReader: NSObject<FlutterTexture, AVCaptureMetadataOutputObjectsDelegate>
 @property(readonly, nonatomic) int64_t textureId;
 @property(nonatomic, copy) void (^onFrameAvailable)(void);
 @property(nonatomic) FlutterEventChannel *eventChannel;
@@ -27,7 +26,6 @@
 @property(readonly, nonatomic) CMVideoDimensions previewSize;
 @property(readonly, nonatomic) dispatch_queue_t mainQueue;
 
-@property(nonatomic, strong) GMVDetector *barcodeDetector;
 @property(nonatomic, copy) void (^onCodeAvailable)(NSString *);
 
 - (instancetype)initWithErrorRef:(NSError **)error;
@@ -76,14 +74,55 @@
     AVCaptureConnection *connection =
     [AVCaptureConnection connectionWithInputPorts:input.ports output:output];
     connection.videoOrientation = AVCaptureVideoOrientationPortrait;
-    
+	
     [_captureSession addInputWithNoConnections:input];
     [_captureSession addOutputWithNoConnections:output];
     [_captureSession addConnection:connection];
-    
-    _barcodeDetector = [GMVDetector detectorOfType:GMVDetectorTypeBarcode options:nil];
-    
+	
+	AVCaptureMetadataOutput *metadataOutput = [AVCaptureMetadataOutput new];
+	
+	if ([_captureSession canAddOutput:metadataOutput]) {
+		[_captureSession addOutput:metadataOutput];
+		
+		[metadataOutput setMetadataObjectsDelegate:self queue: _mainQueue];
+		[metadataOutput setMetadataObjectTypes:@[AVMetadataObjectTypeQRCode]];
+	}
+	
     return self;
+}
+
+
+- (void)captureOutput:(AVCaptureOutput *)output didOutputMetadataObjects:(NSArray<__kindof AVMetadataObject *> *)metadataObjects fromConnection:(AVCaptureConnection *)connection {
+	AVMetadataMachineReadableCodeObject *firstCode = metadataObjects.firstObject;
+	if (firstCode != nil) {
+		NSString *value = [firstCode stringValue];
+		if (value != nil) {
+			NSLog(@"Detected barcode: %@", value);
+			dispatch_async(_mainQueue, ^{
+				self->_onCodeAvailable(value);
+			});
+		}
+	}
+}
+
+- (void)captureOutput:(AVCaptureOutput *)output
+didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
+       fromConnection:(AVCaptureConnection *)connection {
+    // runs on main queue
+    CVPixelBufferRef newBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
+    
+    CFRetain(newBuffer);
+    CVPixelBufferRef old = _latestPixelBuffer;
+    while (!OSAtomicCompareAndSwapPtrBarrier(old, newBuffer, (void **)&_latestPixelBuffer)) {
+        old = _latestPixelBuffer;
+    }
+    if (old != nil) {
+        CFRelease(old);
+    }
+    
+    dispatch_sync(_mainQueue, ^{
+        self.onFrameAvailable();
+    });
 }
 
 - (void)start {
@@ -102,57 +141,6 @@
     CVPixelBufferRef newBuffer1 = CMSampleBufferGetImageBuffer(sampleBuffer);
     CIImage *ciImage = [CIImage imageWithCVPixelBuffer:newBuffer1];
     return [ciContext createCGImage:ciImage fromRect:ciImage.extent];
-}
-
-
-- (void)captureOutput:(AVCaptureOutput *)output
-didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
-       fromConnection:(AVCaptureConnection *)connection {
-    // runs on main queue
-
-    // create a new buffer in the form of a CGImage containing the image.
-    // NOTE: it must be released manually!
-    CGImageRef cgImageRef = [self cgImageRefFromCMSampleBufferRef:sampleBuffer];
-    
-    CVPixelBufferRef newBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
-    
-    CFRetain(newBuffer);
-    CVPixelBufferRef old = _latestPixelBuffer;
-    while (!OSAtomicCompareAndSwapPtrBarrier(old, newBuffer, (void **)&_latestPixelBuffer)) {
-        old = _latestPixelBuffer;
-    }
-    if (old != nil) {
-        CFRelease(old);
-    }
-    
-    dispatch_sync(_mainQueue, ^{
-        self.onFrameAvailable();
-    });
-    
-    ///////// TODO: dispatch this to a background thread (or at least later on main thread?)!
-    /// process the frame with GMV
-    AVCaptureDevicePosition devicePosition = AVCaptureDevicePositionBack;
-    UIDeviceOrientation deviceOrientation = [[UIDevice currentDevice] orientation];
-    // TODO: last known orientation?
-    GMVImageOrientation orientation = [GMVUtility imageOrientationFromOrientation:deviceOrientation withCaptureDevicePosition:devicePosition defaultDeviceOrientation:UIDeviceOrientationPortrait];
-    
-    NSDictionary *options = @{
-        GMVDetectorImageOrientation: @(orientation)
-    };
-    
-    UIImage *image = [UIImage imageWithCGImage:cgImageRef];
-    NSArray<GMVBarcodeFeature *> *barcodes = [_barcodeDetector featuresInImage:image options:options];
-    image = nil;
-    CGImageRelease(cgImageRef);
-
-    if (barcodes.count > 0) {
-        GMVBarcodeFeature *barcode0 = barcodes[0];
-        NSString * value = [barcode0 rawValue];
-        NSLog(@"Detected barcode: %@", value);
-        dispatch_async(_mainQueue, ^{
-            self->_onCodeAvailable(value);
-        });
-    }
 }
 
 - (void)heartBeat {
