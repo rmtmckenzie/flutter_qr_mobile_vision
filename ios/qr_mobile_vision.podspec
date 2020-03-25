@@ -21,5 +21,5 @@ Plugin for reading QR codes using Google&#x27;s Mobile Vision API.
   s.dependency 'Firebase/MLVision'
   s.dependency 'Firebase/MLVisionBarcodeModel'
   
-#   s.static_framework = true
+  s.static_framework = true
 end
