@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
   s.name             = 'qr_mobile_vision'
   s.version          = '0.0.1'
-  s.summary          = 'Plugin for reading QR codes using Google&#x27;s Mobile Vision API.'
+  s.summary          = 'Plugin for reading QR codes using Firebase&#x27;s Mobile Vision API.'
   s.description      = <<-DESC
 Plugin for reading QR codes using Google&#x27;s Mobile Vision API.
                        DESC
@@ -14,8 +14,9 @@ Plugin for reading QR codes using Google&#x27;s Mobile Vision API.
   s.dependency 'Flutter'
   
   s.ios.deployment_target = '8.0'
-  
-  s.dependency 'GoogleMobileVision/BarcodeDetector'
+
+  s.dependency 'Firebase/MLVision'
+  s.dependency 'Firebase/MLVisionBarcodeModel'
   
   s.static_framework = true
 end

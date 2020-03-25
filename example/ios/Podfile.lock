@@ -1,37 +1,76 @@
 PODS:
+  - Firebase/CoreOnly (5.11.0):
+    - FirebaseCore (= 5.1.6)
+  - Firebase/MLVision (5.11.0):
+    - Firebase/CoreOnly
+    - FirebaseMLVision (= 0.12.1)
+  - Firebase/MLVisionBarcodeModel (5.11.0):
+    - Firebase/CoreOnly
+    - FirebaseMLVisionBarcodeModel (= 0.12.0)
+  - FirebaseCore (5.1.6):
+    - GoogleUtilities/Logger (~> 5.2)
+  - FirebaseMLCommon (0.12.1):
+    - FirebaseCore (~> 5.1)
+  - FirebaseMLVision (0.12.1):
+    - FirebaseCore (~> 5.1)
+    - FirebaseMLCommon (~> 0.12)
+    - GoogleAPIClientForREST/Core (~> 1.3)
+    - GoogleAPIClientForREST/Vision (~> 1.3)
+    - GoogleMobileVision/Detector (~> 1.4)
+  - FirebaseMLVisionBarcodeModel (0.12.0):
+    - GoogleMobileVision/BarcodeDetector (~> 1.4)
   - Flutter (1.0.0)
-  - GoogleInterchangeUtilities (1.2.2):
-    - GoogleSymbolUtilities (~> 1.1)
-  - GoogleMobileVision/BarcodeDetector (1.1.0):
-    - GoogleMobileVision/Detector
-  - GoogleMobileVision/Detector (1.1.0):
-    - GoogleInterchangeUtilities (~> 1.2)
-    - GoogleNetworkingUtilities (~> 1.2)
-    - GoogleUtilities (~> 1.3)
-  - GoogleNetworkingUtilities (1.2.2):
-    - GoogleSymbolUtilities (~> 1.1)
-  - GoogleSymbolUtilities (1.1.2)
-  - GoogleUtilities (1.3.2):
-    - GoogleSymbolUtilities (~> 1.1)
+  - GoogleAPIClientForREST/Core (1.3.11):
+    - GTMSessionFetcher (>= 1.1.7)
+  - GoogleAPIClientForREST/Vision (1.3.11):
+    - GoogleAPIClientForREST/Core
+    - GTMSessionFetcher (>= 1.1.7)
+  - GoogleMobileVision/BarcodeDetector (1.6.0):
+    - GoogleMobileVision/Detector (~> 1.6)
+  - GoogleMobileVision/Detector (1.6.0):
+    - GoogleToolboxForMac/Logger (~> 2.1)
+    - "GoogleToolboxForMac/NSData+zlib (~> 2.1)"
+    - GTMSessionFetcher/Core (~> 1.1)
+    - Protobuf (~> 3.1)
+  - GoogleToolboxForMac/Defines (2.2.2)
+  - GoogleToolboxForMac/Logger (2.2.2):
+    - GoogleToolboxForMac/Defines (= 2.2.2)
+  - "GoogleToolboxForMac/NSData+zlib (2.2.2)":
+    - GoogleToolboxForMac/Defines (= 2.2.2)
+  - GoogleUtilities/Environment (5.8.0)
+  - GoogleUtilities/Logger (5.8.0):
+    - GoogleUtilities/Environment
+  - GTMSessionFetcher (1.3.1):
+    - GTMSessionFetcher/Full (= 1.3.1)
+  - GTMSessionFetcher/Core (1.3.1)
+  - GTMSessionFetcher/Full (1.3.1):
+    - GTMSessionFetcher/Core (= 1.3.1)
   - native_device_orientation (0.0.1):
     - Flutter
+  - Protobuf (3.11.4)
   - qr_mobile_vision (0.0.1):
+    - Firebase/MLVision
+    - Firebase/MLVisionBarcodeModel
     - Flutter
-    - GoogleMobileVision/BarcodeDetector
 
 DEPENDENCIES:
   - Flutter (from `/Users/morgan/devtools/flutter/bin/cache/artifacts/engine/ios`)
-  - GoogleMobileVision/BarcodeDetector
   - native_device_orientation (from `/Users/morgan/devtools/flutter/.pub-cache/hosted/pub.dartlang.org/native_device_orientation-0.3.0/ios`)
   - qr_mobile_vision (from `/Users/morgan/Programming/opensource/flutter_qr_mobile_vision/ios`)
 
 SPEC REPOS:
-  https://github.com/CocoaPods/Specs.git:
-    - GoogleInterchangeUtilities
+  trunk:
+    - Firebase
+    - FirebaseCore
+    - FirebaseMLCommon
+    - FirebaseMLVision
+    - FirebaseMLVisionBarcodeModel
+    - GoogleAPIClientForREST
     - GoogleMobileVision
-    - GoogleNetworkingUtilities
-    - GoogleSymbolUtilities
+    - GoogleToolboxForMac
     - GoogleUtilities
+    - GTMSessionFetcher
+    - Protobuf
 
 EXTERNAL SOURCES:
   Flutter:
@@ -42,15 +81,21 @@ EXTERNAL SOURCES:
     :path: "/Users/morgan/Programming/opensource/flutter_qr_mobile_vision/ios"
 
 SPEC CHECKSUMS:
+  Firebase: b48f9e653da971ecce5b8c749684bc8bb2d26bd3
+  FirebaseCore: d16552f06821489ce1affe2e5e3e5593402ddfe3
+  FirebaseMLCommon: 5fb0152dc0e4de69f86ec37e813fb2555566ebbd
+  FirebaseMLVision: 7e9a7f2f81117be2796196f3901c36ad893366b1
+  FirebaseMLVisionBarcodeModel: 1956b7b0ae267b67571260e00cc0429a6a5e3091
   Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
-  GoogleInterchangeUtilities: d5bc4d88d5b661ab72f9d70c58d02ca8c27ad1f7
-  GoogleMobileVision: d344d69c8987ee239c8a47257e2039084682d181
-  GoogleNetworkingUtilities: 3edd3a8161347494f2da60ea0deddc8a472d94cb
-  GoogleSymbolUtilities: 631ee17048aa5e9ab133470d768ea997a5ef9b96
-  GoogleUtilities: 8bbc733218aad26306f9d4a253823986110e3358
+  GoogleAPIClientForREST: 0f19a8280dfe6471f76016645d26eb5dae305101
+  GoogleMobileVision: 31cfb4319fd0c03d80105680abd9eae9da5e3b47
+  GoogleToolboxForMac: 800648f8b3127618c1b59c7f97684427630c5ea3
+  GoogleUtilities: 04fce34bcd5620c1ee76fb79172105c74a4df335
+  GTMSessionFetcher: cea130bbfe5a7edc8d06d3f0d17288c32ffe9925
   native_device_orientation: e24d00be281de72996640885d80e706142707660
-  qr_mobile_vision: be1c3c9f00796683610e8bab9bbab2920dd4ffca
+  Protobuf: 176220c526ad8bd09ab1fb40a978eac3fef665f7
+  qr_mobile_vision: 28ab780e69a917aa4e23f9daec379348b433bfb8
 
-PODFILE CHECKSUM: f7ea81b8ea6ff333387d1e924f8c2e073394c24b
+PODFILE CHECKSUM: 947ae1464d44bc366b2342292b37bb37eb71c605
 
 COCOAPODS: 1.8.4

@@ -6,10 +6,10 @@ import 'package:flutter/services.dart';
 class PreviewDetails {
   num width;
   num height;
-  num orientation;
+  num sensorOrientation;
   int textureId;
 
-  PreviewDetails(this.width, this.height, this.orientation, this.textureId);
+  PreviewDetails(this.width, this.height, this.sensorOrientation, this.textureId);
 }
 
 enum BarcodeFormats {

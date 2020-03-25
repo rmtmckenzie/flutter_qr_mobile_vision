@@ -8,6 +8,8 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOptions;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,9 +44,6 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
     private boolean permissionDenied;
     private ReadingInstance readingInstance;
     private FlutterPluginBinding flutterPluginBinding;
-
-    public QrMobileVisionPlugin() {
-    }
 
     /**
      * Plugin registration.
@@ -94,6 +93,12 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
     }
 
     private void performRegistration(boolean isVersion1Embedding, Registrar registrar, FlutterPluginBinding flutterPluginBinding, ActivityPluginBinding activityPluginBinding) {
+        Log.i(TAG, "Plugin Registration being performed: " +
+            "isVersion1Embedding " + isVersion1Embedding +
+            ", registrar " + registrar +
+            ", flutterPluginBinding " + flutterPluginBinding +
+            ", activityPluginBinding " + activityPluginBinding);
+
         BinaryMessenger messenger;
         if (isVersion1Embedding) {
             messenger = registrar.messenger();
@@ -161,10 +166,10 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
                         break;
                     }
 
-                    int barcodeFormats = BarcodeFormats.intFromStringList(formatStrings);
+                    FirebaseVisionBarcodeDetectorOptions options = BarcodeFormats.optionsFromStringList(formatStrings);
 
                     TextureRegistry.SurfaceTextureEntry textureEntry = textures.createSurfaceTexture();
-                    QrReader reader = new QrReader(targetWidth, targetHeight, activity, barcodeFormats,
+                    QrReader reader = new QrReader(targetWidth, targetHeight, activity, options,
                         this, this, textureEntry.surfaceTexture());
 
                     readingInstance = new ReadingInstance(reader, textureEntry, result);

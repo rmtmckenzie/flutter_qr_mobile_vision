@@ -266,7 +266,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     [_reader start];
 
     ///////// texture, width, height
-    completedCallback(_reader.previewSize.width, _reader.previewSize.height, 0, textureId);
+    completedCallback(_reader.previewSize.width, _reader.previewSize.height, 270, textureId);
 }
 
 - (void)stop {
