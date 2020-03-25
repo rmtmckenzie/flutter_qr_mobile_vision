@@ -14,7 +14,7 @@ Plugin for reading QR codes using Google&#x27;s Mobile Vision API.
   s.dependency 'Flutter'
   
   s.ios.deployment_target = '8.0'
-
+  
   s.dependency 'Firebase/MLVision'
   s.dependency 'Firebase/MLVisionBarcodeModel'
   

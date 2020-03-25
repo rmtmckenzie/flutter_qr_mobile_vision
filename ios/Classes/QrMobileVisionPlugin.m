@@ -1,8 +1,8 @@
 @import AVFoundation;
+@import FirebaseMLVision;
 
 #import "QrMobileVisionPlugin.h"
 #import <libkern/OSAtomic.h>
-#import "GoogleMobileVision/GoogleMobileVision.h"
 
 @interface NSError (FlutterError)
 @property(readonly, nonatomic) FlutterError *flutterError;
@@ -27,7 +27,7 @@
 @property(readonly, nonatomic) CMVideoDimensions previewSize;
 @property(readonly, nonatomic) dispatch_queue_t mainQueue;
 
-@property(nonatomic, strong) GMVDetector *barcodeDetector;
+@property(nonatomic, strong) FIRVisionBarcodeDetector *barcodeDetector;
 @property(nonatomic, copy) void (^onCodeAvailable)(NSString *);
 
 - (instancetype)initWithErrorRef:(NSError **)error;
@@ -81,8 +81,13 @@
     [_captureSession addOutputWithNoConnections:output];
     [_captureSession addConnection:connection];
     
-    _barcodeDetector = [GMVDetector detectorOfType:GMVDetectorTypeBarcode options:nil];
-    
+    FIRVisionBarcodeDetectorOptions *options =
+      [[FIRVisionBarcodeDetectorOptions alloc]
+       initWithFormats: FIRVisionBarcodeFormatQRCode];
+
+    FIRVision *vision = [FIRVision vision];
+    _barcodeDetector = [vision barcodeDetectorWithOptions:options];
+
     return self;
 }
 
@@ -110,9 +115,9 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
        fromConnection:(AVCaptureConnection *)connection {
     // runs on main queue
 
-    // create a new buffer in the form of a CGImage containing the image.
-    // NOTE: it must be released manually!
-    CGImageRef cgImageRef = [self cgImageRefFromCMSampleBufferRef:sampleBuffer];
+//    // create a new buffer in the form of a CGImage containing the image.
+//    // NOTE: it must be released manually!
+//    CGImageRef cgImageRef = [self cgImageRefFromCMSampleBufferRef:sampleBuffer];
     
     CVPixelBufferRef newBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
     
@@ -129,34 +134,107 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         self.onFrameAvailable();
     });
     
-    ///////// TODO: dispatch this to a background thread (or at least later on main thread?)!
-    /// process the frame with GMV
-    AVCaptureDevicePosition devicePosition = AVCaptureDevicePositionBack;
-    UIDeviceOrientation deviceOrientation = [[UIDevice currentDevice] orientation];
-    // TODO: last known orientation?
-    GMVImageOrientation orientation = [GMVUtility imageOrientationFromOrientation:deviceOrientation withCaptureDevicePosition:devicePosition defaultDeviceOrientation:UIDeviceOrientationPortrait];
-    
-    NSDictionary *options = @{
-        GMVDetectorImageOrientation: @(orientation)
-    };
-    
-    UIImage *image = [UIImage imageWithCGImage:cgImageRef];
-    NSArray<GMVBarcodeFeature *> *barcodes = [_barcodeDetector featuresInImage:image options:options];
-    image = nil;
-    CGImageRelease(cgImageRef);
+    FIRVisionImageMetadata *metadata = [[FIRVisionImageMetadata alloc] init];
+    AVCaptureDevicePosition cameraPosition = AVCaptureDevicePositionBack;  // Set to the capture device you used.
+    metadata.orientation =
+        [self imageOrientationFromDeviceOrientation:UIDevice.currentDevice.orientation
+                                     cameraPosition:cameraPosition
+                                 defaultOrientation:FIRVisionDetectorImageOrientationRightTop];
 
-    if (barcodes.count > 0) {
-        GMVBarcodeFeature *barcode0 = barcodes[0];
-        NSString * value = [barcode0 rawValue];
-        NSLog(@"Detected barcode: %@", value);
-        dispatch_async(_mainQueue, ^{
-            self->_onCodeAvailable(value);
+    FIRVisionImage *image = [[FIRVisionImage alloc] initWithBuffer:sampleBuffer];
+    image.metadata = metadata;
+
+    NSLog(@"Detecting in frame...");
+
+    ///////// TODO: dispatch this to a background thread (or at least later on main thread?)!
+    /// process the frame with FMV
+    [_barcodeDetector detectInImage:image
+                        completion:^(NSArray<FIRVisionBarcode *> *barcodes,
+                                     NSError *error) {
+      if(error != nil) {
+        NSLog(@"Error reading barcode %@", error);
+        dispatch_async(self->_mainQueue, ^{
+            self->_onCodeAvailable(@"reading failed");
         });
-    }
+      } else if (barcodes == nil) {
+        dispatch_async(self->_mainQueue, ^{
+            self->_onCodeAvailable(@"barcodes nil");
+        });
+      } else if (barcodes.count == 0) {
+        dispatch_async(self->_mainQueue, ^{
+            self->_onCodeAvailable(@"barcodes empty");
+        });
+      } else {
+        for (FIRVisionBarcode* barcode in barcodes) {
+          NSString * value = [barcode rawValue];
+          NSLog(@"Detected barcode: %@", value);
+          dispatch_async(self->_mainQueue, ^{
+              self->_onCodeAvailable(value);
+          });
+        }
+      }
+    }];
+
+//    AVCaptureDevicePosition devicePosition = AVCaptureDevicePositionBack;
+//    UIDeviceOrientation deviceOrientation = [[UIDevice currentDevice] orientation];
+//    // TODO: last known orientation?
+//    GMVImageOrientation orientation = [GMVUtility imageOrientationFromOrientation:deviceOrientation withCaptureDevicePosition:devicePosition defaultDeviceOrientation:UIDeviceOrientationPortrait];
+//
+//    NSDictionary *options = @{
+//        GMVDetectorImageOrientation: @(orientation)
+//    };
+//
+//    UIImage *image = [UIImage imageWithCGImage:cgImageRef];
+//    NSArray<GMVBarcodeFeature *> *barcodes = [_barcodeDetector featuresInImage:image options:options];
+//    image = nil;
+//    CGImageRelease(cgImageRef);
+//
+//    if (barcodes.count > 0) {
+//        GMVBarcodeFeature *barcode0 = barcodes[0];
+//        NSString * value = [barcode0 rawValue];
+//        NSLog(@"Detected barcode: %@", value);
+//        dispatch_async(_mainQueue, ^{
+//            self->_onCodeAvailable(value);
+//        });
+//    }
 }
 
 - (void)heartBeat {
-    // TODO: implement
+  // TODO: implement
+}
+
+- (FIRVisionDetectorImageOrientation)
+    imageOrientationFromDeviceOrientation:(UIDeviceOrientation)deviceOrientation
+                           cameraPosition:(AVCaptureDevicePosition)cameraPosition
+                       defaultOrientation:(FIRVisionDetectorImageOrientation)defaultOrientation{
+  switch (deviceOrientation) {
+    case UIDeviceOrientationPortrait:
+      if (cameraPosition == AVCaptureDevicePositionFront) {
+        return FIRVisionDetectorImageOrientationLeftTop;
+      } else {
+        return FIRVisionDetectorImageOrientationRightTop;
+      }
+    case UIDeviceOrientationLandscapeLeft:
+      if (cameraPosition == AVCaptureDevicePositionFront) {
+        return FIRVisionDetectorImageOrientationBottomLeft;
+      } else {
+        return FIRVisionDetectorImageOrientationTopLeft;
+      }
+    case UIDeviceOrientationPortraitUpsideDown:
+      if (cameraPosition == AVCaptureDevicePositionFront) {
+        return FIRVisionDetectorImageOrientationRightBottom;
+      } else {
+        return FIRVisionDetectorImageOrientationLeftBottom;
+      }
+    case UIDeviceOrientationLandscapeRight:
+      if (cameraPosition == AVCaptureDevicePositionFront) {
+        return FIRVisionDetectorImageOrientationTopRight;
+      } else {
+        return FIRVisionDetectorImageOrientationBottomRight;
+      }
+    default:
+      return defaultOrientation;
+  }
 }
 
 - (CVPixelBufferRef)copyPixelBuffer {
@@ -209,6 +287,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         // NSNumber *heartbeatTimeout = call.arguments[@"heartbeatTimeout"];
         NSNumber *targetWidth = call.arguments[@"targetWidth"];
         NSNumber *targetHeight = call.arguments[@"targetHeight"];
+        //TODO: add format support
         
         if (targetWidth == nil || targetHeight == nil) {
             result([FlutterError errorWithCode:@"INVALID_ARGS"
