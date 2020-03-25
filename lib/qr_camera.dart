@@ -205,7 +205,6 @@ class Preview extends StatelessWidget {
         }
 
         int rotationCompensation = ((nativeRotation + sensorOrientation + 270) % 360) ~/ 90;
-        print("rotationCompensation $rotationCompensation = ((nativeRotation $nativeRotation + sensorOrientation   $sensorOrientation + 270) % 360) ~/ 90;");
 
         double frameHeight = width;
         double frameWidth = height;
