@@ -85,7 +85,20 @@
 		[_captureSession addOutput:metadataOutput];
 		
 		[metadataOutput setMetadataObjectsDelegate:self queue: _mainQueue];
-		[metadataOutput setMetadataObjectTypes:@[AVMetadataObjectTypeQRCode]];
+		
+		[metadataOutput setMetadataObjectTypes:@[
+			AVMetadataObjectTypeQRCode,
+			AVMetadataObjectTypeAztecCode,
+			AVMetadataObjectTypeCode128Code,
+			AVMetadataObjectTypeCode39Code,
+			AVMetadataObjectTypeCode93Code,
+			AVMetadataObjectTypeDataMatrixCode,
+			AVMetadataObjectTypeEAN13Code,
+			AVMetadataObjectTypeEAN8Code,
+			AVMetadataObjectTypeITF14Code,
+			AVMetadataObjectTypePDF417Code,
+			AVMetadataObjectTypeUPCECode,
+		]];
 	}
 	
     return self;
