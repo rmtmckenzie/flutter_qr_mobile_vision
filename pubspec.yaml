@@ -5,12 +5,16 @@ homepage: https://github.com/rmtmckenzie/flutter_qr_mobile_vision
 
 environment:
   sdk: ">=2.0.0-dev.28.0 <3.0.0"
-  flutter: ">=0.10.15 <2.0.0"
+  flutter: ">=1.10.0 <2.0.0"
 
 flutter:
   plugin:
-    androidPackage: com.github.rmtmckenzie.qrmobilevision
-    pluginClass: QrMobileVisionPlugin
+    platforms:
+      android:
+        package: com.github.rmtmckenzie.qrmobilevision
+        pluginClass: QrMobileVisionPlugin
+      ios:
+        pluginClass: QrMobileVisionPlugin
 
 dependencies:
   flutter:
