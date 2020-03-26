@@ -29,9 +29,12 @@ class TextureHandler: NSObject, FlutterTexture {
   func copyPixelBuffer() -> Unmanaged<CVPixelBuffer>? {
     // need to never block here, as we don't realy know which thread this is coming from
     // (quite likely the UI thread)
+    guard let buffer = buffer else {
+      return nil
+    }
     
     // assume if this being called we're good to go...?
-    let pixBuffer = CMSampleBufferGetImageBuffer(buffer!)!
+    let pixBuffer = CMSampleBufferGetImageBuffer(buffer)!
     
     // for now we're just returning this as retained, but no idea if
     // that's right. Fun on a bun!
@@ -39,10 +42,10 @@ class TextureHandler: NSObject, FlutterTexture {
   }
   
   func clear() {
-    buffer = nil
     if let textureId = textureId {
       textureRegistry.unregisterTexture(textureId)
     }
+    buffer = nil
     textureId = nil
   }
   
