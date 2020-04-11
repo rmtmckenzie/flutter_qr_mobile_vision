@@ -1,3 +1,6 @@
+## [1.0.0+2]
+* typo in readme
+
 ## [1.0.0-1]
 * lower SDK constraint for pub.dev.
 

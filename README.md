@@ -4,7 +4,7 @@
 
 _Reading QR codes and other barcodes using Firebase's Mobile Vision API._
 
-# UPDATE - Now using Firebase since apps using GoogleMobileVision has become unreleaseable on iOS.
+# UPDATE - Now using Firebase since apps using GoogleMobileVision have become unreleaseable on iOS.
 
 
 This plugin uses Android & iOS native APIs for reading images from the device's camera.
