@@ -1,3 +1,13 @@
+## [1.0.0]
+* _Breaking change!_
+* Switch to using Firebase Mobile Vision
+* Update to AndroidX
+* Fix dependency compilation issues
+* Handle formats choice properly on iOS
+* Improved performance significantly esp. on iOS
+    * moved processing to background
+    * skip frames when necessary
+
 ## [0.3.1] - December 24, 2019
 * Fix NPE on sms permission acceptance
 

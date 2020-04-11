@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import FirebaseMLVision
 
 class MapArgumentReader {
   
@@ -15,6 +16,10 @@ class MapArgumentReader {
   
   func int(key: String) -> Int? {
     return (args?[key] as? NSNumber)?.intValue
+  }
+
+  func stringArray(key: String) -> [String]? {
+    return args?[key] as? [String]
   }
   
 }
@@ -46,21 +51,25 @@ public class SwiftQrMobileVisionPlugin: NSObject, FlutterPlugin {
         result(FlutterError(code: "ALREADY_RUNNING", message: "Start cannot be called when already running", details: ""))
         return
       }
-      
+
       //      let heartBeatTimeout = argReader.int(key: "heartBeatTimeout")
       
       guard let targetWidth = argReader.int(key: "targetWidth"),
-            let targetHeight = argReader.int(key: "targetHeight") else {
-          result(FlutterError(code: "INVALID_ARGUMENT", message: "Missing a required argument", details: "Expecting targetWidth, targetHeight, and optionally heartbeatTimeout"))
+            let targetHeight = argReader.int(key: "targetHeight"),
+            let formatStrings = argReader.stringArray(key: "formats") else {
+          result(FlutterError(code: "INVALID_ARGUMENT", message: "Missing a required argument", details: "Expecting targetWidth, targetHeight, formats, and optionally heartbeatTimeout"))
           return
       }
+
+      let options = VisionBarcodeDetectorOptions(formatStrings: formatStrings)
       
       let texture = TextureHandler(registry: textureRegistry)
       
       reader = QrReader(
         targetWidth: targetWidth,
         targetHeight: targetHeight,
-        textureHandler: texture) { [unowned self] qr in
+        textureHandler: texture,
+        options: options) { [unowned self] qr in
           self.channel.invokeMethod("qrRead", arguments: qr)
       }
       

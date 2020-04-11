@@ -4,6 +4,53 @@ import FirebaseMLVision
 import os.log
 
 
+extension VisionBarcodeDetectorOptions {
+  convenience init(formatStrings: [String]) {
+    let formats = formatStrings.map { (format) -> VisionBarcodeFormat? in
+      switch format  {
+      case "ALL_FORMATS":
+        return .all
+      case "AZTEC":
+        return .aztec
+      case "CODE_128":
+        return .code128
+      case "CODE_39":
+        return .code39
+      case "CODE_93":
+        return .code93
+      case "CODABAR":
+        return .codaBar
+      case "DATA_MATRIX":
+        return .dataMatrix
+      case "EAN_13":
+        return .EAN13
+      case "EAN_8":
+        return .EAN8
+      case "ITF":
+        return .ITF
+      case "PDF417":
+        return .PDF417
+      case "QR_CODE":
+        return .qrCode
+      case "UPC_A":
+        return .UPCA
+      case "UPC_E":
+        return .UPCE
+      default:
+        // ignore any unknown values
+        return nil
+      }
+    }.reduce([]) { (result, format) -> VisionBarcodeFormat in
+      guard let format = format else {
+        return result
+      }
+      return result.union(format)
+    }
+    
+    self.init(formats: formats)
+  }
+}
+
 class OrientationHandler {
   
   var lastKnownOrientation: UIDeviceOrientation!
@@ -61,16 +108,14 @@ class QrReader: NSObject {
   let cameraPosition = AVCaptureDevice.Position.back
   let qrCallback: (_:String) -> Void
   
-  init(targetWidth: Int, targetHeight: Int, textureHandler: TextureHandler, qrCallback: @escaping (_:String) -> Void) {
+  init(targetWidth: Int, targetHeight: Int, textureHandler: TextureHandler, options: VisionBarcodeDetectorOptions, qrCallback: @escaping (_:String) -> Void) {
     self.targetWidth = targetWidth
     self.targetHeight = targetHeight
     self.textureHandler = textureHandler
     self.qrCallback = qrCallback
     
-    let format = VisionBarcodeFormat.all
-    let barcodeOptions = VisionBarcodeDetectorOptions(formats: format)
     let vision = Vision.vision()
-    self.barcodeDetector = vision.barcodeDetector(options: barcodeOptions)
+    self.barcodeDetector = vision.barcodeDetector(options: options)
     
     super.init()
     

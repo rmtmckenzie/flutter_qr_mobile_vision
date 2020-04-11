@@ -2,14 +2,35 @@
 
 ![pub package][version_badge]
 
-_Reading QR codes and other barcodes using Google's Mobile Vision API._
+_Reading QR codes and other barcodes using Firebase's Mobile Vision API._
+
+# UPDATE - Now using Firebase since apps using GoogleMobileVision has become unreleaseable on iOS.
+
 
 This plugin uses Android & iOS native APIs for reading images from the device's camera.
-It then pipes these images both to the Mobile Vision API which detects barcodes/qrcodes etc, 
-outputs a preview image to be shown on a flutter texture.
+It then pipes these images both to the Firebase Mobile Vision API which detects barcodes/qrcodes etc, 
+and outputs a preview image to be shown on a flutter texture.
 
 The plugin includes a widget which performs all needed transformations on the camera
 output to show within the defined area.
+
+If you are only targeting android and don't want to switch to Firebase Mobile Vision from Google Mobile Vision, use
+a 0.* version of the plugin.
+
+If you target iOS as well but don't want to integrate Firebase (and like this plugin over other ones available on pub.dev)
+please head over to [this issue](https://github.com/rmtmckenzie/flutter_qr_mobile_vision/issues/121) and give it a +1, as 
+that will tell the developer how much interest there is in it.
+
+## Setting up Firebase
+
+If you're using firebase elsewhere in your app, you should be able to simply use this plugin. However, if you're not,
+you'll have to follow steps 1, 2, and 3 from [Firebase's Flutter instructions](https://firebase.google.com/docs/flutter/setup), 
+which include setting up projects in Firebase and 
+
+For android, that's all you need to do - the library doesn't seem to actually need initialization.
+
+For iOS, you need to make sure that `FirebaseApp.configure()` is called somewhere before the plugin is used - 
+for instance, in your app's AppDelegate. The example app does this.
 
 ## Usage
 
@@ -79,7 +100,7 @@ i.e. when the app is paused. May or may not show up in preview of app.
 
 Callback for if there's an error.
 
-### 'formats'
+### `formats`
 
 A list of supported formats, all by default. If you use all, you shouldn't define any others.
 
@@ -117,8 +138,7 @@ This has been tested on:
 
 - Nexus 5x
 - Nexus 4
-- Alcatel Idol X Plus
-- Essential Phone
+- Pixel 3a
 - iPhone 6
 
 
