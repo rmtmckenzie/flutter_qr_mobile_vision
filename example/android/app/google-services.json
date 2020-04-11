@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "764765102680",
+    "firebase_url": "https://flutter-qr-mobile-vision.firebaseio.com",
+    "project_id": "flutter-qr-mobile-vision",
+    "storage_bucket": "flutter-qr-mobile-vision.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:764765102680:android:1b8e34a4ad3bf6c2d4202d",
+        "android_client_info": {
+          "package_name": "com.github.rmtmckenzie.qrmobilevisionexample"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "764765102680-hjtu21f2gtbpl98d1j1samhdgjbsvhee.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBxv0UbZf5h_Kf9KaBzOFNdhgvNfbgUvE4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "764765102680-hjtu21f2gtbpl98d1j1samhdgjbsvhee.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

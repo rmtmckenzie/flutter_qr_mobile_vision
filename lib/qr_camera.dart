@@ -165,7 +165,7 @@ class Preview extends StatelessWidget {
   final double width, height;
   final double targetWidth, targetHeight;
   final int textureId;
-  final int orientation;
+  final int sensorOrientation;
   final BoxFit fit;
 
   Preview({
@@ -177,46 +177,42 @@ class Preview extends StatelessWidget {
         textureId = previewDetails.textureId,
         width = previewDetails.width.toDouble(),
         height = previewDetails.height.toDouble(),
-        orientation = previewDetails.orientation;
+        sensorOrientation = previewDetails.sensorOrientation;
 
   @override
   Widget build(BuildContext context) {
-    double frameHeight, frameWidth;
-
     return new NativeDeviceOrientationReader(
       builder: (context) {
         var nativeOrientation = NativeDeviceOrientationReader.orientation(context);
 
-        int baseOrientation = 0;
-        if (orientation != 0 && (width > height)) {
-          baseOrientation = orientation ~/ 90;
-          frameWidth = width;
-          frameHeight = height;
-        } else {
-          frameHeight = width;
-          frameWidth = height;
-        }
-
-        int nativeOrientationInt;
+        int nativeRotation = 0;
         switch (nativeOrientation) {
-          case NativeDeviceOrientation.landscapeLeft:
-            nativeOrientationInt = 3;
-            break;
-          case NativeDeviceOrientation.landscapeRight:
-            nativeOrientationInt = 1;
+          case NativeDeviceOrientation.portraitUp:
+            nativeRotation = 180;
             break;
           case NativeDeviceOrientation.portraitDown:
-            nativeOrientationInt = 2;
+            nativeRotation = 0;
             break;
-          case NativeDeviceOrientation.portraitUp:
+          case NativeDeviceOrientation.landscapeRight:
+            nativeRotation = 270;
+            break;
+          case NativeDeviceOrientation.landscapeLeft:
+            nativeRotation = 90;
+            break;
           case NativeDeviceOrientation.unknown:
-            nativeOrientationInt = 0;
+          default:
+            break;
         }
+
+        int rotationCompensation = ((nativeRotation + sensorOrientation + 270) % 360) ~/ 90;
+
+        double frameHeight = width;
+        double frameWidth = height;
 
         return new FittedBox(
           fit: fit,
           child: new RotatedBox(
-            quarterTurns: baseOrientation + nativeOrientationInt,
+            quarterTurns: rotationCompensation,
             child: new SizedBox(
               width: frameWidth,
               height: frameHeight,

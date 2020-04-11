@@ -1,6 +1,8 @@
 name: qr_mobile_vision_example
 description: Demonstrates how to use the qr_mobile_vision plugin.
 
+version: 1.0.0+0
+
 dependencies:
   flutter:
     sdk: flutter

@@ -1,27 +1,31 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
-import com.google.android.gms.vision.barcode.Barcode;
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode;
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOptions;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public enum BarcodeFormats {
 
-    ALL_FORMATS(Barcode.ALL_FORMATS),
-    CODE_128(Barcode.CODE_128),
-    CODE_39(Barcode.CODE_39),
-    CODE_93(Barcode.CODE_93),
-    CODABAR(Barcode.CODABAR),
-    DATA_MATRIX(Barcode.DATA_MATRIX),
-    EAN_13(Barcode.EAN_13),
-    EAN_8(Barcode.EAN_8),
-    ITF(Barcode.ITF),
-    QR_CODE(Barcode.QR_CODE),
-    UPC_A(Barcode.UPC_A),
-    UPC_E(Barcode.UPC_E),
-    PDF417(Barcode.PDF417),
-    AZTEC(Barcode.AZTEC);
+    ALL_FORMATS(FirebaseVisionBarcode.FORMAT_ALL_FORMATS),
+    CODE_128(FirebaseVisionBarcode.FORMAT_CODE_128),
+    CODE_39(FirebaseVisionBarcode.FORMAT_CODE_39),
+    CODE_93(FirebaseVisionBarcode.FORMAT_CODE_93),
+    CODABAR(FirebaseVisionBarcode.FORMAT_CODABAR),
+    DATA_MATRIX(FirebaseVisionBarcode.FORMAT_DATA_MATRIX),
+    EAN_13(FirebaseVisionBarcode.FORMAT_EAN_13),
+    EAN_8(FirebaseVisionBarcode.FORMAT_EAN_8),
+    ITF(FirebaseVisionBarcode.FORMAT_ITF),
+    QR_CODE(FirebaseVisionBarcode.FORMAT_QR_CODE),
+    UPC_A(FirebaseVisionBarcode.FORMAT_UPC_A),
+    UPC_E(FirebaseVisionBarcode.FORMAT_UPC_E),
+    PDF417(FirebaseVisionBarcode.FORMAT_PDF417),
+    AZTEC(FirebaseVisionBarcode.FORMAT_AZTEC);
 
     BarcodeFormats(int intValue) {
         this.intValue = intValue;
@@ -59,6 +63,39 @@ public enum BarcodeFormats {
             }
         }
         return val;
+    }
+
+    static FirebaseVisionBarcodeDetectorOptions optionsFromStringList(List<String> strings) {
+        if (strings == null) {
+            return new FirebaseVisionBarcodeDetectorOptions.Builder().setBarcodeFormats(ALL_FORMATS.intValue).build();
+        }
+
+        List<Integer> ints = new ArrayList<>(strings.size());
+        for (int i = 0, l = strings.size(); i < l; ++i) {
+            Integer integer = BarcodeFormats.formatsMap.get(strings.get(i));
+            if (integer != null) {
+                ints.add(integer);
+            }
+        }
+
+        if (ints.size() == 0) {
+            return new FirebaseVisionBarcodeDetectorOptions.Builder().setBarcodeFormats(ALL_FORMATS.intValue).build();
+        }
+
+        if (ints.size() == 1) {
+            return new FirebaseVisionBarcodeDetectorOptions.Builder().setBarcodeFormats(ints.get(0)).build();
+        }
+
+        int first = ints.get(0);
+        int[] rest = new int[ints.size() - 1];
+        int i = 1;
+        for (Integer e : ints.subList(1, ints.size())) {
+            rest[i++] = e;
+        }
+
+
+        return new FirebaseVisionBarcodeDetectorOptions.Builder()
+            .setBarcodeFormats(first, rest).build();
     }
 
 
