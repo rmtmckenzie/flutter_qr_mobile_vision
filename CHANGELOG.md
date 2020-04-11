@@ -1,3 +1,6 @@
+## [1.0.0+3]
+* code cleanup
+
 ## [1.0.0+2]
 * typo in readme
 
