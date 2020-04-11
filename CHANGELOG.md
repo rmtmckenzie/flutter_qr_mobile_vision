@@ -1,3 +1,6 @@
+## [1.0.0-1]
+* lower SDK constraint for pub.dev.
+
 ## [1.0.0]
 * _Breaking change!_
 * Switch to using Firebase Mobile Vision
