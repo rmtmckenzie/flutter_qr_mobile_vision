@@ -8,6 +8,7 @@ import android.util.Log;
 import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.WindowManager;
+import android.hardware.Camera.Parameters;
 
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
@@ -177,6 +178,29 @@ class QrCameraC1 implements QrCamera {
     @Override
     public int getOrientation() {
         return (info.orientation + 270) % 360;
+    }
+
+    @Override
+    public void toggleFlash() {
+        Parameters p = camera.getParameters();
+
+        if(p.getFlashMode() == Parameters.FLASH_MODE_ON){
+            p.setFlashMode(Parameters.FLASH_MODE_OFF);
+        }
+        else if(p.getFlashMode() == Parameters.FLASH_MODE_OFF){
+            p.setFlashMode(Parameters.FLASH_MODE_TORCH);
+        }
+        else if(p.getFlashMode() == Parameters.FLASH_MODE_AUTO){
+            p.setFlashMode(Parameters.FLASH_MODE_ON);
+        }
+        else if(p.getFlashMode() == Parameters.FLASH_MODE_TORCH){
+            p.setFlashMode(Parameters.FLASH_MODE_OFF);
+        }
+        else{
+            p.setFlashMode(Parameters.FLASH_MODE_AUTO);
+        }
+
+        camera.setParameters(p);
     }
 
     @Override

@@ -84,6 +84,10 @@ class QrReader {
         }
         qrCamera.stop();
     }
+    
+    void toggleFlash() {
+        qrCamera.toggleFlash();
+    }
 
     void heartBeat() {
         if (heartbeat != null) {

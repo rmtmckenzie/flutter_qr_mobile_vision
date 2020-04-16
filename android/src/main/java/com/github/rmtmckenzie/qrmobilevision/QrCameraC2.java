@@ -66,6 +66,7 @@ class QrCameraC2 implements QrCamera {
     private int sensorOrientation;
     private CameraDevice cameraDevice;
     private CameraCharacteristics cameraCharacteristics;
+    private boolean isFlashOn = false;
 
     QrCameraC2(int width, int height, SurfaceTexture texture, Context context, QrDetector detector) {
         this.targetWidth = width;
@@ -88,6 +89,44 @@ class QrCameraC2 implements QrCamera {
     @Override
     public int getOrientation() {
         return sensorOrientation;
+    }
+
+    public void turnOnFlashLight()
+    {
+        try
+        {
+            previewBuilder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_TORCH);
+            previewSession.setRepeatingRequest(previewBuilder.build(), null, null);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public void turnOffFlashLight()
+    {
+        try
+        {
+            previewBuilder.set(CaptureRequest.FLASH_MODE, CameraMetadata.FLASH_MODE_OFF);
+            previewSession.setRepeatingRequest(previewBuilder.build(), null, null);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void toggleFlash() {
+        if(isFlashOn) {
+            turnOffFlashLight();
+            isFlashOn = false;
+        }
+        else {
+            turnOnFlashLight();
+            isFlashOn = true;
+        }
     }
 
     private int getFirebaseOrientation() {
