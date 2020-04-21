@@ -71,7 +71,6 @@ class QrDetector implements OnSuccessListener<List<FirebaseVisionBarcode>>, OnFa
         } catch (IllegalStateException ex) {
             // ignore state exception from making frame to image
             // as the image may be closed already.
-            Log.d(TAG, "Making frame to image caused exception", ex);
             return;
         }
 

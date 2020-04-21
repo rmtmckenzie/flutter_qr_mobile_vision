@@ -1,3 +1,6 @@
+## [1.0.1+1]
+* Remove log statement from image close
+
 ## [1.0.1]
 * Fix android crashing issue
 * Fix preview upside down on android
@@ -11,8 +14,8 @@
 ## [1.0.0-1]
 * lower SDK constraint for pub.dev.
 
-## [1.0.0]
-* _Breaking change!_
+## [1.0.0] 
+_Breaking change!_
 * Switch to using Firebase Mobile Vision
 * Update to AndroidX
 * Fix dependency compilation issues
