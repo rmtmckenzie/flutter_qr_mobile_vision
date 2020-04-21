@@ -187,23 +187,25 @@ class Preview extends StatelessWidget {
         int nativeRotation = 0;
         switch (nativeOrientation) {
           case NativeDeviceOrientation.portraitUp:
-            nativeRotation = 180;
-            break;
-          case NativeDeviceOrientation.portraitDown:
             nativeRotation = 0;
             break;
           case NativeDeviceOrientation.landscapeRight:
-            nativeRotation = 270;
+            nativeRotation = 90;
+            break;
+          case NativeDeviceOrientation.portraitDown:
+            nativeRotation = 180;
             break;
           case NativeDeviceOrientation.landscapeLeft:
-            nativeRotation = 90;
+            nativeRotation = 270;
             break;
           case NativeDeviceOrientation.unknown:
           default:
             break;
         }
 
-        int rotationCompensation = ((nativeRotation + sensorOrientation + 270) % 360) ~/ 90;
+        print("Native orientation: $nativeRotation, sensorOrientation: $sensorOrientation");
+
+        int rotationCompensation = ((nativeRotation - sensorOrientation + 450) % 360) ~/ 90;
 
         double frameHeight = width;
         double frameWidth = height;

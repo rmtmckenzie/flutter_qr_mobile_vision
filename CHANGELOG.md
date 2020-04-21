@@ -1,3 +1,7 @@
+## [1.0.1]
+* Fix android crashing issue
+* Fix preview upside down on android
+
 ## [1.0.0+3]
 * code cleanup
 

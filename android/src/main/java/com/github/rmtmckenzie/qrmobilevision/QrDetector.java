@@ -28,10 +28,10 @@ class QrDetector implements OnSuccessListener<List<FirebaseVisionBarcode>>, OnFa
     private static final String TAG = "cgr.qrmv.QrDetector";
     private final QrReaderCallbacks communicator;
     private final FirebaseVisionBarcodeDetector detector;
-    private Context context;
 
     public interface Frame {
         FirebaseVisionImage toImage();
+
         void close();
     }
 
@@ -41,26 +41,10 @@ class QrDetector implements OnSuccessListener<List<FirebaseVisionBarcode>>, OnFa
     @GuardedBy("this")
     private Frame processingFrame;
 
-    QrDetector(QrReaderCallbacks communicator, Context context, FirebaseVisionBarcodeDetectorOptions options) {
+    QrDetector(QrReaderCallbacks communicator, FirebaseVisionBarcodeDetectorOptions options) {
         this.communicator = communicator;
-        this.context = context;
         this.detector = FirebaseVision.getInstance().getVisionBarcodeDetector(options);
     }
-//
-//    private static class Frame {
-//        final byte[] bytes;
-//        final FirebaseVisionImageMetadata metadata;
-//
-//        Frame(byte[] bytes, FirebaseVisionImageMetadata metadata) {
-//            this.bytes = bytes;
-//            this.metadata = metadata;
-//        }
-//
-//        FirebaseVisionImage toImage() {
-//            return FirebaseVisionImage.fromByteArray(bytes, metadata);
-//        }
-//    }
-
 
     void detect(Frame frame) {
         if (latestFrame != null) latestFrame.close();
@@ -81,7 +65,17 @@ class QrDetector implements OnSuccessListener<List<FirebaseVisionBarcode>>, OnFa
     }
 
     private void processFrame(Frame frame) {
-        detector.detectInImage(frame.toImage())
+        FirebaseVisionImage image;
+        try {
+            image = frame.toImage();
+        } catch (IllegalStateException ex) {
+            // ignore state exception from making frame to image
+            // as the image may be closed already.
+            Log.d(TAG, "Making frame to image caused exception", ex);
+            return;
+        }
+
+        detector.detectInImage(image)
             .addOnSuccessListener(this)
             .addOnFailureListener(this);
     }
