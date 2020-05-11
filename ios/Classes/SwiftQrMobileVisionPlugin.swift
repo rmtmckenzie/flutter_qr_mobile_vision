@@ -63,22 +63,26 @@ public class SwiftQrMobileVisionPlugin: NSObject, FlutterPlugin {
 
       let options = VisionBarcodeDetectorOptions(formatStrings: formatStrings)
             
-      reader = QrReader(
-        targetWidth: targetWidth,
-        targetHeight: targetHeight,
-        textureRegistry: textureRegistry,
-        options: options) { [unowned self] qr in
-          self.channel.invokeMethod("qrRead", arguments: qr)
+      do {
+        reader = try QrReader(
+          targetWidth: targetWidth,
+          targetHeight: targetHeight,
+          textureRegistry: textureRegistry,
+          options: options) { [unowned self] qr in
+            self.channel.invokeMethod("qrRead", arguments: qr)
+        }
+        
+        reader!.start();
+        
+        result([
+          "surfaceWidth": reader!.previewSize.height,
+          "surfaceHeight": reader!.previewSize.width,
+          "surfaceOrientation": 0, //TODO: check on iPAD
+          "textureId": reader!.textureId!
+        ])
+      } catch {
+        result(FlutterError(code: "PERMISSION_DENIED", message: "QrReader initialization threw an exception", details: error.localizedDescription))
       }
-      
-      reader!.start();
-      
-      result([
-        "surfaceWidth": reader!.previewSize.height,
-        "surfaceHeight": reader!.previewSize.width,
-        "surfaceOrientation": 0, //TODO: check on iPAD
-        "textureId": reader!.textureId!
-      ])
     case "stop":
       reader?.stop();
       reader = nil
