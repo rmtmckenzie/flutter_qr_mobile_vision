@@ -349,12 +349,18 @@ class QrCameraC2 implements QrCamera {
 
     @Override
     public void stop() {
-        if (cameraDevice != null) {
+        try {
+                     if (cameraDevice != null) {
             cameraDevice.close();
         }
         if (reader != null) {
+            detector.close();
             reader.close();
         }
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
+       
     }
 
     private Size getAppropriateSize(Size[] sizes) {

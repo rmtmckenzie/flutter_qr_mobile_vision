@@ -90,6 +90,11 @@ class QrDetector implements OnSuccessListener<List<FirebaseVisionBarcode>>, OnFa
         }
     }
 
+    public void close() {
+        if (processingFrame != null) processingFrame.close();
+        if (latestFrame != null) latestFrame.close();
+    }
+
     @Override
     public void onSuccess(List<FirebaseVisionBarcode> firebaseVisionBarcodes) {
         for (FirebaseVisionBarcode barcode : firebaseVisionBarcodes) {
