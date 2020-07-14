@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'qr_mobile_vision'
-  s.version          = '0.0.1'
+  s.version          = '0.0.2'
   s.summary          = 'Plugin for reading QR codes using Firebase&#x27;s Mobile Vision API.'
   s.description      = <<-DESC
 Plugin for reading QR codes using Google&#x27;s Mobile Vision API.

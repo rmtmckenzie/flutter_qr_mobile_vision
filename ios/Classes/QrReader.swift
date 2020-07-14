@@ -98,20 +98,22 @@ protocol QrReaderResponses {
 class QrReader: NSObject {
   let targetWidth: Int
   let targetHeight: Int
-  let textureHandler: TextureHandler
+  let textureRegistry: FlutterTextureRegistry
   let isProcessing = Atomic<Bool>(false)
   
   var captureDevice: AVCaptureDevice!
   var captureSession: AVCaptureSession!
   var previewSize: CMVideoDimensions!
+  var textureId: Int64!
+  var pixelBuffer : CVPixelBuffer?
   let barcodeDetector: VisionBarcodeDetector
   let cameraPosition = AVCaptureDevice.Position.back
   let qrCallback: (_:String) -> Void
   
-  init(targetWidth: Int, targetHeight: Int, textureHandler: TextureHandler, options: VisionBarcodeDetectorOptions, qrCallback: @escaping (_:String) -> Void) {
+  init(targetWidth: Int, targetHeight: Int, textureRegistry: FlutterTextureRegistry, options: VisionBarcodeDetectorOptions, qrCallback: @escaping (_:String) -> Void) {
     self.targetWidth = targetWidth
     self.targetHeight = targetHeight
-    self.textureHandler = textureHandler
+    self.textureRegistry = textureRegistry
     self.qrCallback = qrCallback
     
     let vision = Vision.vision()
@@ -143,29 +145,47 @@ class QrReader: NSObject {
     let output = AVCaptureVideoDataOutput()
     output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
     output.alwaysDiscardsLateVideoFrames = true
+    let connection = AVCaptureConnection(inputPorts: input.ports, output: output)
+    connection.videoOrientation = .portrait
+    
     
     let queue = DispatchQueue.global(qos: DispatchQoS.QoSClass.default)
     output.setSampleBufferDelegate(self, queue: queue)
     
-    captureSession.addInput(input)
-    captureSession.addOutput(output)
+    captureSession.addInputWithNoConnections(input)
+    captureSession.addOutputWithNoConnections(output)
+    captureSession.addConnection(connection)
   }
   
   func start() {
     captureSession.startRunning()
+    self.textureId = textureRegistry.register(self)
   }
   
   func stop() {
     captureSession.stopRunning()
+    pixelBuffer = nil
+    textureRegistry.unregisterTexture(textureId)
+    textureId = nil
   }
-  
+}
+
+extension QrReader : FlutterTexture {
+    func copyPixelBuffer() -> Unmanaged<CVPixelBuffer>? {
+        if(pixelBuffer == nil){
+            return nil
+        }
+        return  .passRetained(pixelBuffer!)
+    }
 }
 
 extension QrReader: AVCaptureVideoDataOutputSampleBufferDelegate {
   func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
     // runs on dispatch queue
     
-    textureHandler.setImageBuffer(buffer: sampleBuffer)
+    pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)!
+    textureRegistry.textureFrameAvailable(self.textureId)
+    
     let metadata = VisionImageMetadata()
     metadata.orientation = imageOrientation(
       deviceOrientation: UIDevice.current.orientation,
