@@ -88,7 +88,9 @@ class QrCameraC2 implements QrCamera {
 
     @Override
     public int getOrientation() {
-        return sensorOrientation;
+        // ignore sensor orientation of devices with 'reverse landscape' orientation of sensor
+        // as camera2 api seems to already rotate the output.
+        return sensorOrientation == 270 ? 90 : sensorOrientation;
     }
 
     public void turnOnFlashLight()
@@ -187,8 +189,8 @@ class QrCameraC2 implements QrCamera {
         try {
             cameraCharacteristics = manager.getCameraCharacteristics(cameraId);
             StreamConfigurationMap map = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            // it seems as though the orientation is already corrected, so setting to 0
-            sensorOrientation = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+            Integer sensorOrientationInteger = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+            sensorOrientation = sensorOrientationInteger == null ? 0 : sensorOrientationInteger;
 
             size = getAppropriateSize(map.getOutputSizes(SurfaceTexture.class));
             jpegSizes = map.getOutputSizes(ImageFormat.JPEG);
@@ -227,10 +229,10 @@ class QrCameraC2 implements QrCamera {
             modes.add(afMode);
         }
 
-        if (modes.contains(CONTROL_AF_MODE_CONTINUOUS_PICTURE)) {
-            return CONTROL_AF_MODE_CONTINUOUS_PICTURE;
-        } else if (modes.contains(CONTROL_AF_MODE_CONTINUOUS_VIDEO)) {
+        if (modes.contains(CONTROL_AF_MODE_CONTINUOUS_VIDEO)) {
             return CONTROL_AF_MODE_CONTINUOUS_VIDEO;
+        } else if (modes.contains(CONTROL_AF_MODE_CONTINUOUS_PICTURE)) {
+            return CONTROL_AF_MODE_CONTINUOUS_PICTURE;
         } else if (modes.contains(CONTROL_AF_MODE_AUTO)) {
             return CONTROL_AF_MODE_AUTO;
         } else {
@@ -238,7 +240,7 @@ class QrCameraC2 implements QrCamera {
         }
     }
 
-    static class Frame implements QrDetector.Frame{
+    static class Frame implements QrDetector.Frame {
         final Image image;
         final int firebaseOrientation;
 
@@ -297,7 +299,6 @@ class QrCameraC2 implements QrCamera {
 
             if (afMode != null) {
                 previewBuilder.set(CaptureRequest.CONTROL_AF_MODE, afMode);
-                previewBuilder.set(CaptureRequest.CONTROL_AF_MODE, afMode);
                 Log.i(TAG, "Setting af mode to: " + afMode);
                 if (afMode == CONTROL_AF_MODE_AUTO) {
                     previewBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START);
@@ -305,7 +306,6 @@ class QrCameraC2 implements QrCamera {
                     previewBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_CANCEL);
                 }
             }
-
         } catch (java.lang.Exception e) {
             e.printStackTrace();
             return;
@@ -354,7 +354,7 @@ class QrCameraC2 implements QrCamera {
             cameraDevice.close();
         }
         if (reader != null) {
-            detector.close();
+            // detector.close();
             reader.close();
         }
                 } catch (Throwable t) {

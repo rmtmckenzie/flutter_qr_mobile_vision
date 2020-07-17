@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:qr_mobile_vision/qr_camera.dart';
-import 'package:qr_mobile_vision/qr_mobile_vision.dart';
 
 void main() {
   debugPaintSizeEnabled = false;
@@ -53,9 +52,9 @@ class _MyAppState extends State<MyApp> {
                           height: 600.0,
                           child: new QrCamera(
                             onError: (context, error) => Text(
-                                  error.toString(),
-                                  style: TextStyle(color: Colors.red),
-                                ),
+                              error.toString(),
+                              style: TextStyle(color: Colors.red),
+                            ),
                             qrCodeCallback: (code) {
                               setState(() {
                                 qr = code;
@@ -64,7 +63,8 @@ class _MyAppState extends State<MyApp> {
                             child: new Container(
                               decoration: new BoxDecoration(
                                 color: Colors.transparent,
-                                border: Border.all(color: Colors.orange, width: 10.0, style: BorderStyle.solid),
+                                border: Border.all(
+                                    color: Colors.orange, width: 10.0, style: BorderStyle.solid),
                               ),
                             ),
                           ),

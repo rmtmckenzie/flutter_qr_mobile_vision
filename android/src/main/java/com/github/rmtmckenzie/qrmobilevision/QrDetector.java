@@ -28,10 +28,10 @@ class QrDetector implements OnSuccessListener<List<FirebaseVisionBarcode>>, OnFa
     private static final String TAG = "cgr.qrmv.QrDetector";
     private final QrReaderCallbacks communicator;
     private final FirebaseVisionBarcodeDetector detector;
-    private Context context;
 
     public interface Frame {
         FirebaseVisionImage toImage();
+
         void close();
     }
 
@@ -41,26 +41,10 @@ class QrDetector implements OnSuccessListener<List<FirebaseVisionBarcode>>, OnFa
     @GuardedBy("this")
     private Frame processingFrame;
 
-    QrDetector(QrReaderCallbacks communicator, Context context, FirebaseVisionBarcodeDetectorOptions options) {
+    QrDetector(QrReaderCallbacks communicator, FirebaseVisionBarcodeDetectorOptions options) {
         this.communicator = communicator;
-        this.context = context;
         this.detector = FirebaseVision.getInstance().getVisionBarcodeDetector(options);
     }
-//
-//    private static class Frame {
-//        final byte[] bytes;
-//        final FirebaseVisionImageMetadata metadata;
-//
-//        Frame(byte[] bytes, FirebaseVisionImageMetadata metadata) {
-//            this.bytes = bytes;
-//            this.metadata = metadata;
-//        }
-//
-//        FirebaseVisionImage toImage() {
-//            return FirebaseVisionImage.fromByteArray(bytes, metadata);
-//        }
-//    }
-
 
     void detect(Frame frame) {
         if (latestFrame != null) latestFrame.close();
@@ -81,18 +65,18 @@ class QrDetector implements OnSuccessListener<List<FirebaseVisionBarcode>>, OnFa
     }
 
     private void processFrame(Frame frame) {
+        FirebaseVisionImage image;
         try {
-            detector.detectInImage(frame.toImage())
-                .addOnSuccessListener(this)
-                .addOnFailureListener(this);
-        }  catch (Throwable e) {
-            e.printStackTrace();
+            image = frame.toImage();
+        } catch (IllegalStateException ex) {
+            // ignore state exception from making frame to image
+            // as the image may be closed already.
+            return;
         }
-    }
 
-    public void close() {
-        if (processingFrame != null) processingFrame.close();
-        if (latestFrame != null) latestFrame.close();
+        detector.detectInImage(image)
+            .addOnSuccessListener(this)
+            .addOnFailureListener(this);
     }
 
     @Override
