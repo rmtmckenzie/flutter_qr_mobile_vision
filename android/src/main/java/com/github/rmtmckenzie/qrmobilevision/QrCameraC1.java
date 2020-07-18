@@ -205,9 +205,15 @@ class QrCameraC1 implements QrCamera {
 
     @Override
     public void stop() {
-        camera.stopPreview();
-        camera.setPreviewCallback(null);
-        camera.release();
+        try {
+            if (camera != null) {
+                camera.stopPreview();
+                camera.setPreviewCallback(null);
+                camera.release();
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
     }
 
     //Size here is Camera.Size, not android.util.Size as in the QrCameraC2 version of this method
