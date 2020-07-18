@@ -6,11 +6,11 @@ import 'package:flutter/rendering.dart';
 import 'package:native_device_orientation/native_device_orientation.dart';
 import 'package:qr_mobile_vision/qr_mobile_vision.dart';
 
-final WidgetBuilder _defaultNotStartedBuilder = (context) => new Text("Camera Loading ...");
-final WidgetBuilder _defaultOffscreenBuilder = (context) => new Text("Camera Paused.");
+final WidgetBuilder _defaultNotStartedBuilder = (context) => new Container();
+final WidgetBuilder _defaultOffscreenBuilder = (context) => new Container();
 final ErrorCallback _defaultOnError = (BuildContext context, Object error) {
   print("Error reading from camera: $error");
-  return new Text("Error reading from camera...");
+  return new Container();
 };
 
 typedef Widget ErrorCallback(BuildContext context, Object error);
