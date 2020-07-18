@@ -8,7 +8,6 @@ import android.util.Log;
 import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.WindowManager;
-import android.hardware.Camera.Parameters;
 
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
@@ -32,6 +31,8 @@ class QrCameraC1 implements QrCamera {
     private int targetWidth, targetHeight;
     private android.hardware.Camera camera = null;
     private Context context;
+
+    private AutoFocusManager autoFocusManager;
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
 
@@ -134,11 +135,8 @@ class QrCameraC1 implements QrCamera {
             });
             camera.setPreviewTexture(texture);
             camera.startPreview();
-            camera.autoFocus(new android.hardware.Camera.AutoFocusCallback() {
-                @Override
-                public void onAutoFocus(boolean success, android.hardware.Camera camera) {
-                }
-            });
+            autoFocusManager = new AutoFocusManager(camera);
+            autoFocusManager.start();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -182,30 +180,26 @@ class QrCameraC1 implements QrCamera {
 
     @Override
     public void toggleFlash() {
-        Parameters p = camera.getParameters();
-
-        if(p.getFlashMode() == Parameters.FLASH_MODE_ON){
-            p.setFlashMode(Parameters.FLASH_MODE_OFF);
+        boolean wasAutoFocusManager = autoFocusManager != null;
+        if (wasAutoFocusManager) {
+            autoFocusManager.stop();
+            autoFocusManager = null;
         }
-        else if(p.getFlashMode() == Parameters.FLASH_MODE_OFF){
-            p.setFlashMode(Parameters.FLASH_MODE_TORCH);
+        CameraConfigurationUtils.toggleTorch(camera);
+        if (wasAutoFocusManager) {
+            autoFocusManager = new AutoFocusManager(camera);
+            autoFocusManager.start();
         }
-        else if(p.getFlashMode() == Parameters.FLASH_MODE_AUTO){
-            p.setFlashMode(Parameters.FLASH_MODE_ON);
-        }
-        else if(p.getFlashMode() == Parameters.FLASH_MODE_TORCH){
-            p.setFlashMode(Parameters.FLASH_MODE_OFF);
-        }
-        else{
-            p.setFlashMode(Parameters.FLASH_MODE_AUTO);
-        }
-
-        camera.setParameters(p);
     }
 
     @Override
     public void stop() {
         try {
+            if (autoFocusManager != null) {
+                autoFocusManager.stop();
+                autoFocusManager = null;
+            }
+
             if (camera != null) {
                 camera.stopPreview();
                 camera.setPreviewCallback(null);
