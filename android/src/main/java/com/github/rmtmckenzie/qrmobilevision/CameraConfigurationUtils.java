@@ -43,6 +43,7 @@ final class CameraConfigurationUtils {
                 Camera.Parameters.FLASH_MODE_OFF);
         if (flashMode != null && !flashMode.equals(parameters.getFlashMode())) {
             parameters.setFlashMode(flashMode);
+            camera.setParameters(parameters);
         }
     }
 
