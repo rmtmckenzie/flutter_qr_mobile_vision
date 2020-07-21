@@ -1,6 +1,7 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.util.Log;
 import android.view.Display;
 import android.view.Surface;
@@ -40,6 +41,8 @@ class QrDetector implements OnSuccessListener<List<FirebaseVisionBarcode>>, OnFa
 
     @GuardedBy("this")
     private Frame processingFrame;
+    private int width;
+    private int height;
 
     QrDetector(QrReaderCallbacks communicator, FirebaseVisionBarcodeDetectorOptions options) {
         this.communicator = communicator;
@@ -73,7 +76,10 @@ class QrDetector implements OnSuccessListener<List<FirebaseVisionBarcode>>, OnFa
             // as the image may be closed already.
             return;
         }
-
+        if (this.width == 0 && this.height == 0) {
+            this.width = image.getBitmap().getWidth();
+            this.height = image.getBitmap().getHeight();
+        }
         detector.detectInImage(image)
             .addOnSuccessListener(this)
             .addOnFailureListener(this);
@@ -82,7 +88,13 @@ class QrDetector implements OnSuccessListener<List<FirebaseVisionBarcode>>, OnFa
     @Override
     public void onSuccess(List<FirebaseVisionBarcode> firebaseVisionBarcodes) {
         for (FirebaseVisionBarcode barcode : firebaseVisionBarcodes) {
-            communicator.qrRead(barcode.getRawValue());
+            if (processingFrame != null) {
+                Rect rect = barcode.getBoundingBox();
+                Rect center = new Rect(width / 3, height / 3, width * 2 / 3, height * 2 / 3);
+                if (rect.intersect(center)) {
+                    communicator.qrRead(barcode.getRawValue());
+                }
+            }
         }
         processLatest();
     }
