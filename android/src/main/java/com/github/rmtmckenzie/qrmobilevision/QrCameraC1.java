@@ -157,6 +157,15 @@ class QrCameraC1 implements QrCamera {
             return FirebaseVisionImage.fromByteArray(data, metadata);
         }
 
+
+        public int getWidth() {
+            return metadata.getHeight();
+        }
+
+        public int getHeight() {
+            return metadata.getWidth();
+        }
+
         @Override
         public void close() {
             data = null;

@@ -34,6 +34,9 @@ class QrDetector implements OnSuccessListener<List<FirebaseVisionBarcode>>, OnFa
         FirebaseVisionImage toImage();
 
         void close();
+
+        int getWidth();
+        int getHeight();
     }
 
     @GuardedBy("this")
@@ -76,10 +79,12 @@ class QrDetector implements OnSuccessListener<List<FirebaseVisionBarcode>>, OnFa
             // as the image may be closed already.
             return;
         }
+
         if (this.width == 0 && this.height == 0) {
-            this.width = image.getBitmap().getWidth();
-            this.height = image.getBitmap().getHeight();
+            this.width = frame.getWidth();
+            this.height = frame.getHeight();
         }
+
         detector.detectInImage(image)
             .addOnSuccessListener(this)
             .addOnFailureListener(this);

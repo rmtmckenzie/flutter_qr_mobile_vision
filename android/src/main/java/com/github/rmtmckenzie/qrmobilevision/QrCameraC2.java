@@ -259,6 +259,17 @@ class QrCameraC2 implements QrCamera {
             image.close();
         }
 
+
+        @Override
+        public int getWidth() {
+            return image.getWidth();
+        }
+
+        @Override
+        public int getHeight() {
+            return image.getHeight();
+        }
+
     }
 
     private void startCamera() {
