@@ -146,7 +146,7 @@ class QrReader: NSObject {
     output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
     output.alwaysDiscardsLateVideoFrames = true
     let connection = AVCaptureConnection(inputPorts: input.ports, output: output)
-    connection.videoOrientation = .portrait
+//    connection.videoOrientation = .portrait
     
     
     let queue = DispatchQueue.global(qos: DispatchQoS.QoSClass.default)
