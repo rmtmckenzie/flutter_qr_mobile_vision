@@ -6,6 +6,8 @@ import 'package:flutter/rendering.dart';
 import 'package:native_device_orientation/native_device_orientation.dart';
 import 'package:qr_mobile_vision/qr_mobile_vision.dart';
 
+import 'qr_mobile_vision.dart';
+
 final WidgetBuilder _defaultNotStartedBuilder =
     (context) => new Text("Camera Loading ...");
 final WidgetBuilder _defaultOffscreenBuilder =
@@ -59,6 +61,17 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
   dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(QrCamera oldWidget) {
+    if (oldWidget.cameraDirection != widget.cameraDirection) {
+      QrMobileVision.stop();
+      setState(() {
+        _asyncInitOnce = null;
+      });
+    }
+    super.didUpdateWidget(oldWidget);
   }
 
   @override

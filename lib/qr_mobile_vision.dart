@@ -60,14 +60,14 @@ class QrMobileVision {
         .toList(growable: false);
 
     channelReader.setQrCodeHandler(qrCodeHandler);
+
     var details = await _channel.invokeMethod('start', {
       'targetWidth': width,
       'targetHeight': height,
       'heartbeatTimeout': 0,
+      'cameraDirection': (cameraDirection == CameraDirection.FRONT ? 0 : 1),
       'formats': formatStrings
     });
-    var details = await _channel.invokeMethod(
-        'start', {'targetWidth': width, 'targetHeight': height, 'heartbeatTimeout': 0, 'cameraDirection': (cameraDirection == CameraDirection.FRONT ? 0 : 1), 'formats': formatStrings});
 
     // invokeMethod returns Map<dynamic,...> in dart 2.0
     assert(details is Map<dynamic, dynamic>);

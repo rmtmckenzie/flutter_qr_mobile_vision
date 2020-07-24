@@ -28,6 +28,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String qr;
   bool camState = false;
+  bool dir = false;
 
   @override
   initState() {
@@ -45,6 +46,18 @@ class _MyAppState extends State<MyApp> {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            new FloatingActionButton(
+                child: new Text(
+                  "press me to change camera",
+                  textAlign: TextAlign.center,
+                ),
+                onPressed: () {
+                  setState(() {
+                    dir = !dir;
+                  }
+                  );
+                  print(dir);
+                }),
             new Expanded(
                 child: camState
                     ? new Center(
@@ -56,6 +69,7 @@ class _MyAppState extends State<MyApp> {
                                   error.toString(),
                                   style: TextStyle(color: Colors.red),
                                 ),
+                            cameraDirection: dir ? CameraDirection.BACK : CameraDirection.FRONT,
                             qrCodeCallback: (code) {
                               setState(() {
                                 qr = code;
