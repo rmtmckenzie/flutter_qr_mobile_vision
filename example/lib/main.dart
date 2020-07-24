@@ -28,6 +28,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String qr;
   bool camState = false;
+  bool dirState = false;
 
   @override
   initState() {
@@ -45,6 +46,13 @@ class _MyAppState extends State<MyApp> {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            RaisedButton(onPressed: () {
+              setState(() {
+                dirState = !dirState;
+              });
+            },
+              child: Text('Direction'),
+            ),
             new Expanded(
                 child: camState
                     ? new Center(
@@ -56,6 +64,7 @@ class _MyAppState extends State<MyApp> {
                                   error.toString(),
                                   style: TextStyle(color: Colors.red),
                                 ),
+                            cameraDirection: dirState ? CameraDirection.FRONT : CameraDirection.BACK,
                             qrCodeCallback: (code) {
                               setState(() {
                                 qr = code;

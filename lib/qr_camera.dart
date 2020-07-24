@@ -62,6 +62,17 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
   }
 
   @override
+  void didUpdateWidget(QrCamera oldWidget) {
+    if (oldWidget.cameraDirection != widget.cameraDirection) {
+      QrMobileVision.stop();
+      setState(() {
+        _asyncInitOnce = null;
+      });
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       setState(() => onScreen = true);
