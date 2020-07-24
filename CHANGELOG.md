@@ -1,3 +1,32 @@
+## [1.0.1+1]
+* Remove log statement from image close
+
+## [1.0.1]
+* Fix android crashing issue
+* Fix preview upside down on android
+
+## [1.0.0+3]
+* code cleanup
+
+## [1.0.0+2]
+* typo in readme
+
+## [1.0.0-1]
+* lower SDK constraint for pub.dev.
+
+## [1.0.0] 
+_Breaking change!_
+* Switch to using Firebase Mobile Vision
+* Update to AndroidX
+* Fix dependency compilation issues
+* Handle formats choice properly on iOS
+* Improved performance significantly esp. on iOS
+    * moved processing to background
+    * skip frames when necessary
+
+## [0.3.1] - December 24, 2019
+* Fix NPE on sms permission acceptance
+
 ## [0.3.0] - November 6, 2019
 * Small maintenance upgrade because dependency wouldn't compile"
 

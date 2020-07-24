@@ -1,45 +1,88 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
-import android.hardware.Camera;
-import android.hardware.Camera.Size;
 import android.util.Log;
+import android.util.SparseIntArray;
+import android.view.Surface;
+import android.view.WindowManager;
+
+import com.google.firebase.ml.vision.common.FirebaseVisionImage;
+import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
 
 import java.io.IOException;
 import java.util.List;
 
 /**
  * Implements QrCamera using Deprecated Camera API
+ * NOTE: uses fully qualified names for android.hardware.Camera
+ * so that deprecation warnings can be avoided.
  */
 @TargetApi(16)
-@SuppressWarnings("deprecation")
 class QrCameraC1 implements QrCamera {
 
     private static final String TAG = "cgr.qrmv.QrCameraC1";
     private static final int IMAGEFORMAT = ImageFormat.NV21;
     private final SurfaceTexture texture;
     private final QrDetector detector;
-    private Camera.CameraInfo info = new Camera.CameraInfo();
+    private android.hardware.Camera.CameraInfo info = new android.hardware.Camera.CameraInfo();
     private int targetWidth, targetHeight;
-    private Camera camera = null;
+    private android.hardware.Camera camera = null;
+    private Context context;
 
-    QrCameraC1(int width, int height, SurfaceTexture texture, QrDetector detector) {
+    private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
+
+    static {
+        ORIENTATIONS.append(Surface.ROTATION_0, 90);
+        ORIENTATIONS.append(Surface.ROTATION_90, 0);
+        ORIENTATIONS.append(Surface.ROTATION_180, 270);
+        ORIENTATIONS.append(Surface.ROTATION_270, 180);
+    }
+
+    QrCameraC1(int width, int height, SurfaceTexture texture, Context context, QrDetector detector) {
         this.texture = texture;
         targetHeight = height;
         targetWidth = width;
         this.detector = detector;
+        this.context = context;
     }
 
+    private int getFirebaseOrientation() {
+        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        int deviceRotation = windowManager.getDefaultDisplay().getRotation();
+        int rotationCompensation = (ORIENTATIONS.get(deviceRotation) + info.orientation + 270) % 360;
+
+        // Return the corresponding FirebaseVisionImageMetadata rotation value.
+        int result;
+        switch (rotationCompensation) {
+            case 0:
+                result = FirebaseVisionImageMetadata.ROTATION_0;
+                break;
+            case 90:
+                result = FirebaseVisionImageMetadata.ROTATION_90;
+                break;
+            case 180:
+                result = FirebaseVisionImageMetadata.ROTATION_180;
+                break;
+            case 270:
+                result = FirebaseVisionImageMetadata.ROTATION_270;
+                break;
+            default:
+                result = FirebaseVisionImageMetadata.ROTATION_0;
+                Log.e(TAG, "Bad rotation value: " + rotationCompensation);
+        }
+        return result;
+    }
     @Override
     public void start(final int cameraDirection) throws QrReader.Exception {
-        int numberOfCameras = Camera.getNumberOfCameras();
-        info = new Camera.CameraInfo();
+        int numberOfCameras = android.hardware.Camera.getNumberOfCameras();
+        info = new android.hardware.Camera.CameraInfo();
         for (int i = 0; i < numberOfCameras; i++) {
-            Camera.getCameraInfo(i, info);
-            if (info.facing == (cameraDirection == 0 ? Camera.CameraInfo.CAMERA_FACING_FRONT : Camera.CameraInfo.CAMERA_FACING_BACK)) {
-                camera = Camera.open(i);
+            android.hardware.Camera.getCameraInfo(i, info);
+            if (info.facing == (cameraDirection == 0 ? android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT : android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK)) {
+                camera = android.hardware.Camera.open(i);
                 break;
             }
         }
@@ -48,18 +91,18 @@ class QrCameraC1 implements QrCamera {
             throw new QrReader.Exception(QrReader.Exception.Reason.noBackCamera);
         }
 
-        final Camera.Parameters parameters = camera.getParameters();
+        final android.hardware.Camera.Parameters parameters = camera.getParameters();
 
         List<String> focusModes = parameters.getSupportedFocusModes();
-        if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+        if (focusModes.contains(android.hardware.Camera.Parameters.FOCUS_MODE_AUTO)) {
             Log.i(TAG, "Initializing with autofocus on.");
-            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+            parameters.setFocusMode(android.hardware.Camera.Parameters.FOCUS_MODE_AUTO);
         } else {
             Log.i(TAG, "Initializing with autofocus off as not supported.");
         }
 
-        List<Size> supportedSizes = parameters.getSupportedPreviewSizes();
-        Size size = getAppropriateSize(supportedSizes);
+        List<android.hardware.Camera.Size> supportedSizes = parameters.getSupportedPreviewSizes();
+        android.hardware.Camera.Size size = getAppropriateSize(supportedSizes);
 
         parameters.setPreviewSize(size.width, size.height);
         texture.setDefaultBufferSize(size.width, size.height);
@@ -67,12 +110,21 @@ class QrCameraC1 implements QrCamera {
         parameters.setPreviewFormat(IMAGEFORMAT);
 
         try {
-            camera.setPreviewCallback(new Camera.PreviewCallback() {
+            camera.setPreviewCallback(new android.hardware.Camera.PreviewCallback() {
                 @Override
-                public void onPreviewFrame(byte[] data, Camera camera) {
-                    Size previewSize = camera.getParameters().getPreviewSize();
+                public void onPreviewFrame(byte[] data, android.hardware.Camera camera) {
+                    android.hardware.Camera.Size previewSize = camera.getParameters().getPreviewSize();
+
                     if (data != null) {
-                        detector.detect(data, previewSize.width, previewSize.height, IMAGEFORMAT);
+
+                        QrDetector.Frame frame = new Frame(data, new FirebaseVisionImageMetadata.Builder()
+                            .setFormat(IMAGEFORMAT)
+                            .setWidth(previewSize.width)
+                            .setHeight(previewSize.height)
+                            .setRotation(getFirebaseOrientation())
+                            .build());
+
+                        detector.detect(frame);
                     } else {
                         //TODO: something better here?
                         System.out.println("It's NULL!");
@@ -81,9 +133,9 @@ class QrCameraC1 implements QrCamera {
             });
             camera.setPreviewTexture(texture);
             camera.startPreview();
-            camera.autoFocus(new Camera.AutoFocusCallback() {
+            camera.autoFocus(new android.hardware.Camera.AutoFocusCallback() {
                 @Override
-                public void onAutoFocus(boolean success, Camera camera) {
+                public void onAutoFocus(boolean success, android.hardware.Camera camera) {
                 }
             });
         } catch (IOException e) {
@@ -92,19 +144,39 @@ class QrCameraC1 implements QrCamera {
 
     }
 
-    @Override
-    public int getWidth() {
-        return camera.getParameters().getPreviewSize().width;
+    static class Frame implements QrDetector.Frame {
+        private byte[] data;
+        private final FirebaseVisionImageMetadata metadata;
+
+        Frame(byte[] data, FirebaseVisionImageMetadata metadata) {
+            this.data = data;
+            this.metadata = metadata;
+        }
+
+        @Override
+        public FirebaseVisionImage toImage() {
+            return FirebaseVisionImage.fromByteArray(data, metadata);
+        }
+
+        @Override
+        public void close() {
+            data = null;
+        }
     }
 
     @Override
-    public int getHeight() {
+    public int getWidth() {
         return camera.getParameters().getPreviewSize().height;
     }
 
     @Override
+    public int getHeight() {
+        return camera.getParameters().getPreviewSize().width;
+    }
+
+    @Override
     public int getOrientation() {
-        return info.orientation;
+        return (info.orientation + 270) % 360;
     }
 
     @Override
@@ -115,26 +187,26 @@ class QrCameraC1 implements QrCamera {
     }
 
     //Size here is Camera.Size, not android.util.Size as in the QrCameraC2 version of this method
-    private Size getAppropriateSize(List<Size> sizes) {
+    private android.hardware.Camera.Size getAppropriateSize(List<android.hardware.Camera.Size> sizes) {
         // assume sizes is never 0
         if (sizes.size() == 1) {
             return sizes.get(0);
         }
 
-        Size s = sizes.get(0);
-        Size s1 = sizes.get(1);
+        android.hardware.Camera.Size s = sizes.get(0);
+        android.hardware.Camera.Size s1 = sizes.get(1);
 
         if (s1.width > s.width || s1.height > s.height) {
             // ascending
             if (info.orientation % 180 == 0) {
-                for (Size size : sizes) {
+                for (android.hardware.Camera.Size size : sizes) {
                     s = size;
                     if (size.height > targetHeight && size.width > targetWidth) {
                         break;
                     }
                 }
             } else {
-                for (Size size : sizes) {
+                for (android.hardware.Camera.Size size : sizes) {
                     s = size;
                     if (size.height > targetWidth && size.width > targetHeight) {
                         break;
@@ -144,14 +216,14 @@ class QrCameraC1 implements QrCamera {
         } else {
             // descending
             if (info.orientation % 180 == 0) {
-                for (Size size : sizes) {
+                for (android.hardware.Camera.Size size : sizes) {
                     if (size.height < targetHeight || size.width < targetWidth) {
                         break;
                     }
                     s = size;
                 }
             } else {
-                for (Size size : sizes) {
+                for (android.hardware.Camera.Size size : sizes) {
                     if (size.height < targetWidth || size.width < targetHeight) {
                         break;
                     }

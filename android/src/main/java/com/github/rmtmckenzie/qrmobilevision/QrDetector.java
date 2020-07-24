@@ -1,94 +1,94 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
 import android.content.Context;
-import android.os.AsyncTask;
 import android.util.Log;
-import android.util.SparseArray;
+import android.view.Display;
+import android.view.Surface;
+import android.view.WindowManager;
 
-import com.google.android.gms.vision.Detector;
-import com.google.android.gms.vision.Frame;
-import com.google.android.gms.vision.barcode.Barcode;
-import com.google.android.gms.vision.barcode.BarcodeDetector;
+import androidx.annotation.GuardedBy;
+import androidx.annotation.NonNull;
 
-import java.lang.ref.WeakReference;
-import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicInteger;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.ml.vision.FirebaseVision;
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode;
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetector;
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOptions;
+import com.google.firebase.ml.vision.common.FirebaseVisionImage;
+import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
+
+import java.util.List;
 
 /**
  * Allows QrCamera classes to send frames to a Detector
  */
 
-class QrDetector {
+class QrDetector implements OnSuccessListener<List<FirebaseVisionBarcode>>, OnFailureListener {
     private static final String TAG = "cgr.qrmv.QrDetector";
     private final QrReaderCallbacks communicator;
-    private final Detector<Barcode> detector;
-    private AtomicInteger atomicCounter = new AtomicInteger();
-    private boolean isNV21 = false;
+    private final FirebaseVisionBarcodeDetector detector;
 
-    QrDetector(QrReaderCallbacks communicator, Context context, int formats) {
+    public interface Frame {
+        FirebaseVisionImage toImage();
+
+        void close();
+    }
+
+    @GuardedBy("this")
+    private Frame latestFrame;
+
+    @GuardedBy("this")
+    private Frame processingFrame;
+
+    QrDetector(QrReaderCallbacks communicator, FirebaseVisionBarcodeDetectorOptions options) {
         this.communicator = communicator;
-        this.detector = new BarcodeDetector.Builder(context.getApplicationContext()).setBarcodeFormats(formats).build();
+        this.detector = FirebaseVision.getInstance().getVisionBarcodeDetector(options);
     }
 
-    /**
-     * Detect a frame.
-     * @param bytes
-     * @param width
-     * @param height
-     * @param format can be ImageFormat.NV21, ImageFormat.NV16, ImageFormat.YV12
-     */
-    void detect(byte[] bytes, int width, int height, int format) {
-        Frame.Builder frameBuilder = new Frame.Builder();
-        Frame frame = frameBuilder.setImageData(ByteBuffer.wrap(bytes), width, height, format).build();
-        new QrTask(frame, atomicCounter.incrementAndGet(), this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-    }
+    void detect(Frame frame) {
+        if (latestFrame != null) latestFrame.close();
+        latestFrame = frame;
 
-    private static class QrTask extends AsyncTask<Void, Void, SparseArray<Barcode>> {
-
-        final Frame frame;
-        final int count;
-        final WeakReference<QrDetector> qrDetector;
-
-        QrTask(Frame frame, int count, QrDetector qrDetector) {
-            this.frame = frame;
-            this.count = count;
-            this.qrDetector = new WeakReference<>(qrDetector);
-        }
-
-        @Override
-        protected SparseArray<Barcode> doInBackground(Void... voids) {
-            QrDetector qrDetector = this.qrDetector.get();
-            if (qrDetector == null) return null;
-
-            if (count < qrDetector.atomicCounter.get()) {
-                return null;
-            }
-
-            return qrDetector.detector.detect(frame);
-        }
-
-        @Override
-        protected void onPostExecute(SparseArray<Barcode> detectedItems) {
-            QrDetector qrDetector = this.qrDetector.get();
-            if (qrDetector == null) return;
-
-            if (detectedItems == null) return;
-            for (int i = 0; i < detectedItems.size(); ++i) {
-                Barcode barcode = detectedItems.valueAt(i);
-                Log.i(TAG, "Item read: " + barcode.rawValue + ", " + barcode.displayValue);
-                qrDetector.communicator.qrRead(barcode.displayValue);
-            }
+        if (processingFrame == null) {
+            processLatest();
         }
     }
 
-    private class ImageFrame {
-        final byte[] bytes;
-        //final ByteBuffer bytes;
-        final int count;
-
-        ImageFrame(byte[] bytes, int count) {
-            this.bytes = bytes;
-            this.count = count;
+    private synchronized void processLatest() {
+        if (processingFrame != null) processingFrame.close();
+        processingFrame = latestFrame;
+        latestFrame = null;
+        if (processingFrame != null) {
+            processFrame(processingFrame);
         }
+    }
+
+    private void processFrame(Frame frame) {
+        FirebaseVisionImage image;
+        try {
+            image = frame.toImage();
+        } catch (IllegalStateException ex) {
+            // ignore state exception from making frame to image
+            // as the image may be closed already.
+            return;
+        }
+
+        detector.detectInImage(image)
+            .addOnSuccessListener(this)
+            .addOnFailureListener(this);
+    }
+
+    @Override
+    public void onSuccess(List<FirebaseVisionBarcode> firebaseVisionBarcodes) {
+        for (FirebaseVisionBarcode barcode : firebaseVisionBarcodes) {
+            communicator.qrRead(barcode.getRawValue());
+        }
+        processLatest();
+    }
+
+    @Override
+    public void onFailure(@NonNull Exception e) {
+        Log.w(TAG, "Barcode Reading Failure: ", e);
     }
 }
