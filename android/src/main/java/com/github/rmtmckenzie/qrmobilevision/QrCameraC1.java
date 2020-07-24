@@ -76,12 +76,12 @@ class QrCameraC1 implements QrCamera {
         return result;
     }
     @Override
-    public void start() throws QrReader.Exception {
+    public void start(final int cameraDirection) throws QrReader.Exception {
         int numberOfCameras = android.hardware.Camera.getNumberOfCameras();
         info = new android.hardware.Camera.CameraInfo();
         for (int i = 0; i < numberOfCameras; i++) {
             android.hardware.Camera.getCameraInfo(i, info);
-            if (info.facing == android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK) {
+            if (info.facing == (cameraDirection == 0 ? android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT : android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK)) {
                 camera = android.hardware.Camera.open(i);
                 break;
             }

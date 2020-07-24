@@ -34,6 +34,7 @@ import java.util.List;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_AUTO;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE;
 import static android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO;
+import static android.hardware.camera2.CameraMetadata.LENS_FACING_FRONT;
 import static android.hardware.camera2.CameraMetadata.LENS_FACING_BACK;
 
 /**
@@ -120,7 +121,7 @@ class QrCameraC2 implements QrCamera {
     }
 
     @Override
-    public void start() throws QrReader.Exception {
+    public void start(final int cameraDirection) throws QrReader.Exception {
         CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
 
         if (manager == null) {
@@ -133,7 +134,7 @@ class QrCameraC2 implements QrCamera {
             for (String id : cameraIdList) {
                 CameraCharacteristics cameraCharacteristics = manager.getCameraCharacteristics(id);
                 Integer integer = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING);
-                if (integer != null && integer == LENS_FACING_BACK) {
+                if (integer != null && integer == (cameraDirection == 0 ? LENS_FACING_FRONT : LENS_FACING_BACK)) {
                     cameraId = id;
                     break;
                 }
