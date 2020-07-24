@@ -193,11 +193,34 @@ class QrCameraC2 implements QrCamera {
 
         if (modes.contains(CONTROL_AF_MODE_CONTINUOUS_VIDEO)) {
             return CONTROL_AF_MODE_CONTINUOUS_VIDEO;
+        } else if (modes.contains(CONTROL_AF_MODE_CONTINUOUS_PICTURE)) {
+            return CONTROL_AF_MODE_CONTINUOUS_PICTURE;
         } else if (modes.contains(CONTROL_AF_MODE_AUTO)) {
             return CONTROL_AF_MODE_AUTO;
         } else {
             return null;
         }
+    }
+
+    static class Frame implements QrDetector.Frame {
+        final Image image;
+        final int firebaseOrientation;
+
+        Frame(Image image, int firebaseOrientation) {
+            this.image = image;
+            this.firebaseOrientation = firebaseOrientation;
+        }
+
+        @Override
+        public FirebaseVisionImage toImage() {
+            return FirebaseVisionImage.fromMediaImage(image, firebaseOrientation);
+        }
+
+        @Override
+        public void close() {
+            image.close();
+        }
+
     }
 
     private void startCamera() {
@@ -213,9 +236,10 @@ class QrCameraC2 implements QrCamera {
         ImageReader.OnImageAvailableListener imageAvailableListener = new ImageReader.OnImageAvailableListener() {
             @Override
             public void onImageAvailable(ImageReader reader) {
-                try (Image image = reader.acquireLatestImage()) {
+                try {
+                    Image image = reader.acquireLatestImage();
                     if (image == null) return;
-                    detector.detect(image);
+                    detector.detect(new Frame(image, getFirebaseOrientation()));
                 } catch (Throwable t) {
                     t.printStackTrace();
                 }
@@ -244,7 +268,6 @@ class QrCameraC2 implements QrCamera {
                     previewBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_CANCEL);
                 }
             }
-
         } catch (java.lang.Exception e) {
             e.printStackTrace();
             return;
@@ -280,7 +303,6 @@ class QrCameraC2 implements QrCamera {
         if (cameraDevice == null) return;
 
         try {
-
             previewSession.setRepeatingRequest(previewBuilder.build(), listener, null);
         } catch (java.lang.Exception e) {
             e.printStackTrace();
@@ -308,7 +330,7 @@ class QrCameraC2 implements QrCamera {
 
         if (s1.getWidth() > s.getWidth() || s1.getHeight() > s.getHeight()) {
             // ascending
-            if (orientation % 180 == 0) {
+            if (sensorOrientation % 180 == 0) {
                 for (Size size : sizes) {
                     s = size;
                     if (size.getHeight() > targetHeight && size.getWidth() > targetWidth) {
@@ -325,7 +347,7 @@ class QrCameraC2 implements QrCamera {
             }
         } else {
             // descending
-            if (orientation % 180 == 0) {
+            if (sensorOrientation % 180 == 0) {
                 for (Size size : sizes) {
                     if (size.getHeight() < targetHeight || size.getWidth() < targetWidth) {
                         break;
@@ -343,6 +365,4 @@ class QrCameraC2 implements QrCamera {
         }
         return s;
     }
-
-
 }
