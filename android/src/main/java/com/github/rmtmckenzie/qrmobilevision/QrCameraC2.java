@@ -239,6 +239,7 @@ class QrCameraC2 implements QrCamera {
                     Image image = reader.acquireLatestImage();
                     if (image == null) return;
                     detector.detect(new Frame(image, getFirebaseOrientation()));
+                    image.close();
                 } catch (Throwable t) {
                     t.printStackTrace();
                 }
