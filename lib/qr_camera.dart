@@ -226,7 +226,12 @@ class Preview extends StatelessWidget {
             }
             break;
           case NativeDeviceOrientation.landscapeRight:
-            nativeRotation = 90;
+          case NativeDeviceOrientation.portraitUp:
+            if (sdkInt == 23) {
+              nativeRotation = 270;
+            } else {
+              nativeRotation = 90;
+            }
             break;
           case NativeDeviceOrientation.portraitDown:
             if (sdkInt == 23) {
@@ -236,7 +241,12 @@ class Preview extends StatelessWidget {
             }
             break;
           case NativeDeviceOrientation.landscapeLeft:
-            nativeRotation = 270;
+          case NativeDeviceOrientation.portraitUp:
+            if (sdkInt == 23) {
+              nativeRotation = 90;
+            } else {
+              nativeRotation = 270;
+            }
             break;
           case NativeDeviceOrientation.unknown:
           default:
