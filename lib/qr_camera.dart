@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:device_info/device_info.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -137,6 +138,8 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
         return widget.offscreenBuilder(context);
       }
 
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+
       return new FutureBuilder(
         future: _asyncInitOnce,
         builder: (BuildContext context, AsyncSnapshot<PreviewDetails> details) {
@@ -152,12 +155,18 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
               Widget preview = new SizedBox(
                 width: constraints.maxWidth,
                 height: constraints.maxHeight,
-                child: Preview(
-                  previewDetails: details.data,
-                  targetWidth: constraints.maxWidth,
-                  targetHeight: constraints.maxHeight,
-                  fit: widget.fit,
-                ),
+                child: FutureBuilder<AndroidDeviceInfo>(
+                    future: deviceInfo.androidInfo,
+                    builder: (context, snapshot) {
+                      return Preview(
+                        previewDetails: details.data,
+                        targetWidth: constraints.maxWidth,
+                        targetHeight: constraints.maxHeight,
+                        fit: widget.fit,
+                        sdkInt:
+                            snapshot.hasData ? snapshot.data.version.sdkInt : 0,
+                      );
+                    }),
               );
 
               if (widget.child != null) {
@@ -186,13 +195,15 @@ class Preview extends StatelessWidget {
   final int textureId;
   final int sensorOrientation;
   final BoxFit fit;
+  final int sdkInt;
 
-  Preview({
-    @required PreviewDetails previewDetails,
-    @required this.targetWidth,
-    @required this.targetHeight,
-    @required this.fit,
-  })  : assert(previewDetails != null),
+  Preview(
+      {@required PreviewDetails previewDetails,
+      @required this.targetWidth,
+      @required this.targetHeight,
+      @required this.fit,
+      @required this.sdkInt})
+      : assert(previewDetails != null),
         textureId = previewDetails.textureId,
         width = previewDetails.width.toDouble(),
         height = previewDetails.height.toDouble(),
@@ -208,13 +219,21 @@ class Preview extends StatelessWidget {
         int nativeRotation = 0;
         switch (nativeOrientation) {
           case NativeDeviceOrientation.portraitUp:
-            nativeRotation = 0;
+            if (sdkInt == 23) {
+              nativeRotation = 180;
+            } else {
+              nativeRotation = 0;
+            }
             break;
           case NativeDeviceOrientation.landscapeRight:
             nativeRotation = 90;
             break;
           case NativeDeviceOrientation.portraitDown:
-            nativeRotation = 180;
+            if (sdkInt == 23) {
+              nativeRotation = 0;
+            } else {
+              nativeRotation = 180;
+            }
             break;
           case NativeDeviceOrientation.landscapeLeft:
             nativeRotation = 270;
