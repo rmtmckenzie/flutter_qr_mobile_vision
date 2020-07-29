@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:device_info/device_info.dart';
 import 'package:flutter/foundation.dart';
@@ -241,7 +242,6 @@ class Preview extends StatelessWidget {
             }
             break;
           case NativeDeviceOrientation.landscapeLeft:
-          case NativeDeviceOrientation.portraitUp:
             if (sdkInt == 23) {
               nativeRotation = 90;
             } else {
