@@ -1,55 +1,41 @@
 import Foundation
 import AVFoundation
-import FirebaseMLVision
+
 import os.log
 
-
-extension VisionBarcodeDetectorOptions {
-  convenience init(formatStrings: [String]) {
-    let formats = formatStrings.map { (format) -> VisionBarcodeFormat? in
-      switch format  {
-      case "ALL_FORMATS":
-        return .all
-      case "AZTEC":
-        return .aztec
-      case "CODE_128":
-        return .code128
-      case "CODE_39":
-        return .code39
-      case "CODE_93":
-        return .code93
-      case "CODABAR":
-        return .codaBar
-      case "DATA_MATRIX":
-        return .dataMatrix
-      case "EAN_13":
-        return .EAN13
-      case "EAN_8":
-        return .EAN8
-      case "ITF":
-        return .ITF
-      case "PDF417":
-        return .PDF417
-      case "QR_CODE":
-        return .qrCode
-      case "UPC_A":
-        return .UPCA
-      case "UPC_E":
-        return .UPCE
-      default:
-        // ignore any unknown values
-        return nil
-      }
-    }.reduce([]) { (result, format) -> VisionBarcodeFormat in
-      guard let format = format else {
-        return result
-      }
-      return result.union(format)
+extension UIImage {
+    func resizeCI(size:CGSize) -> UIImage? {
+        let scale = (Double)(size.width) / (Double)(self.size.width)
+        guard let image = self.ciImage else { return nil}
+            
+        let filter = CIFilter(name: "CILanczosScaleTransform")!
+        filter.setValue(image, forKey: kCIInputImageKey)
+        filter.setValue(NSNumber(value:scale), forKey: kCIInputScaleKey)
+        filter.setValue(1.0, forKey:kCIInputAspectRatioKey)
+        let outputImage = filter.value(forKey: kCIOutputImageKey) as! UIKit.CIImage
+            
+        let context = CIContext(options: [CIContextOption.useSoftwareRenderer: false])
+        guard let cgImage = context.createCGImage(outputImage, from: outputImage.extent) else { return nil }
+        return UIImage(cgImage: cgImage)
     }
     
-    self.init(formats: formats)
-  }
+    func parseQR() -> [String] {
+        guard let image = CIImage(image: self) else {
+            return []
+        }
+
+        let detector = CIDetector(ofType: CIDetectorTypeQRCode,
+                                  context: nil,
+                                  options: [CIDetectorAccuracy: CIDetectorAccuracyHigh])
+
+        let features = detector?.features(in: image) ?? []
+
+        return features.compactMap { feature in
+            return (feature as? CIQRCodeFeature)?.messageString
+        }
+    }
 }
+
 
 class OrientationHandler {
   
@@ -100,24 +86,22 @@ class QrReader: NSObject {
   let targetHeight: Int
   let textureRegistry: FlutterTextureRegistry
   let isProcessing = Atomic<Bool>(false)
-  
+  var captureFrame: CGRect = CGRect(x: 77, y: 296, width: 221, height: 221)
   var captureDevice: AVCaptureDevice!
   var captureSession: AVCaptureSession!
   var previewSize: CMVideoDimensions!
   var textureId: Int64!
   var pixelBuffer : CVPixelBuffer?
-  let barcodeDetector: VisionBarcodeDetector
   let cameraPosition = AVCaptureDevice.Position.back
   let qrCallback: (_:String) -> Void
   
-  init(targetWidth: Int, targetHeight: Int, textureRegistry: FlutterTextureRegistry, options: VisionBarcodeDetectorOptions, qrCallback: @escaping (_:String) -> Void) {
+  init(targetWidth: Int, targetHeight: Int, textureRegistry: FlutterTextureRegistry, options: Any, qrCallback: @escaping (_:String) -> Void) {
     self.targetWidth = targetWidth
     self.targetHeight = targetHeight
     self.textureRegistry = textureRegistry
     self.qrCallback = qrCallback
     
-    let vision = Vision.vision()
-    self.barcodeDetector = vision.barcodeDetector(options: options)
+
     
     super.init()
     
@@ -135,7 +119,11 @@ class QrReader: NSObject {
     }
     
     if captureDevice == nil {
-      captureDevice = AVCaptureDevice.default(for: AVMediaType.video)!
+      captureDevice = AVCaptureDevice.default(for: AVMediaType.video)
+    }
+    
+    if (captureDevice == nil) {
+        return
     }
     
     // catch?
@@ -180,67 +168,36 @@ extension QrReader : FlutterTexture {
 }
 
 extension QrReader: AVCaptureVideoDataOutputSampleBufferDelegate {
-  func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
     // runs on dispatch queue
     
-    pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)!
-    textureRegistry.textureFrameAvailable(self.textureId)
-    
-    let metadata = VisionImageMetadata()
-    metadata.orientation = imageOrientation(
-      deviceOrientation: UIDevice.current.orientation,
-      defaultOrientation: .portrait
-    )
-    
-    guard !isProcessing.swap(true) else {
-      return
-    }
-    
-    let image = VisionImage(buffer: sampleBuffer)
-    image.metadata = metadata
-    
-    DispatchQueue.global(qos: DispatchQoS.QoSClass.utility).async {
-      self.barcodeDetector.detect(in: image) { features, error in
-        self.isProcessing.value = false
+        pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)!
+        textureRegistry.textureFrameAvailable(self.textureId)
         
-        guard error == nil else {
-          if #available(iOS 10.0, *) {
-            os_log("Error decoding barcode %@", error!.localizedDescription)
-          } else {
-            // Fallback on earlier versions
-            NSLog("Error decoding barcode %@", error!.localizedDescription)
-          }
+        guard !isProcessing.swap(true) else {
           return
         }
-        
-        guard let features = features, !features.isEmpty else {
-          return
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+            return
         }
-                
-        for feature in features {
-          self.qrCallback(feature.rawValue!)
+        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+        let imgRect = ciImage.extent
+        let cropRect = CGRect(
+            x: imgRect.width * 0.2 ,
+            y: imgRect.height * 0.2,
+            width: imgRect.width * 0.6,
+            height: imgRect.height * 0.6
+        )
+        let crop = ciImage.cropped(to:cropRect)
+        let img = UIImage(ciImage: crop).resizeCI(size: cropRect.size)
+        DispatchQueue.global(qos: DispatchQoS.QoSClass.utility).async {
+            if let qrs = img?.parseQR() {
+                self.isProcessing.value = false
+                print(qrs)
+                for qr in qrs {
+                    self.qrCallback(qr)
+                }
+            }
         }
-      }
     }
-  }
-  
-  func imageOrientation(
-    deviceOrientation: UIDeviceOrientation,
-    defaultOrientation: UIDeviceOrientation
-  ) -> VisionDetectorImageOrientation {
-    switch deviceOrientation {
-    case .portrait:
-      return cameraPosition == .front ? .leftTop : .rightTop
-    case .landscapeLeft:
-      return cameraPosition == .front ? .bottomLeft : .topLeft
-    case .portraitUpsideDown:
-      return cameraPosition == .front ? .rightBottom : .leftBottom
-    case .landscapeRight:
-      return cameraPosition == .front ? .topRight : .bottomRight
-    case .faceDown, .faceUp, .unknown:
-      fallthrough
-    @unknown default:
-      return imageOrientation(deviceOrientation: defaultOrientation, defaultOrientation: .portrait)
-    }
-  }
 }
