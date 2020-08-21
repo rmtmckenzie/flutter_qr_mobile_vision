@@ -88,7 +88,7 @@ public enum BarcodeFormats {
 
         int first = ints.get(0);
         int[] rest = new int[ints.size() - 1];
-        int i = 1;
+        int i = 0;
         for (Integer e : ints.subList(1, ints.size())) {
             rest[i++] = e;
         }
