@@ -1,6 +1,6 @@
 name: qr_mobile_vision
 description: "Plugin for reading QR codes using Firebase's Mobile Vision API."
-version: 1.0.1+1
+version: 1.0.2
 homepage: https://github.com/rmtmckenzie/flutter_qr_mobile_vision
 
 environment:
