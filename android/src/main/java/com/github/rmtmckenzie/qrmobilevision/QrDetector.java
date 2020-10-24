@@ -74,9 +74,11 @@ class QrDetector implements OnSuccessListener<List<FirebaseVisionBarcode>>, OnFa
             return;
         }
 
+        if (image != null)
         detector.detectInImage(image)
             .addOnSuccessListener(this)
             .addOnFailureListener(this);
+        frame.close();
     }
 
     @Override

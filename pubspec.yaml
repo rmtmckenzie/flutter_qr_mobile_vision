@@ -19,4 +19,6 @@ flutter:
 dependencies:
   flutter:
     sdk: flutter
-  native_device_orientation: "^0.3.0"
+  native_device_orientation: ^0.4.3
+  device_info: ^0.4.2+4
+

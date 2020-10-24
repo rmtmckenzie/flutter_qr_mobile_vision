@@ -159,6 +159,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
                     lastHeartbeatTimeout = methodCall.argument("heartbeatTimeout");
                     Integer targetWidth = methodCall.argument("targetWidth");
                     Integer targetHeight = methodCall.argument("targetHeight");
+                    Integer cameraDirection = methodCall.argument("cameraDirection");
                     List<String> formatStrings = methodCall.argument("formats");
 
                     if (targetWidth == null || targetHeight == null) {
@@ -175,7 +176,8 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
                     readingInstance = new ReadingInstance(reader, textureEntry, result);
                     try {
                         reader.start(
-                            lastHeartbeatTimeout == null ? 0 : lastHeartbeatTimeout
+                            lastHeartbeatTimeout == null ? 0 : lastHeartbeatTimeout,
+                            cameraDirection == null ? 0 : cameraDirection
                         );
                     } catch (IOException e) {
                         e.printStackTrace();

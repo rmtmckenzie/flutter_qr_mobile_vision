@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:device_info/device_info.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -27,6 +29,7 @@ class QrCamera extends StatefulWidget {
     WidgetBuilder offscreenBuilder,
     ErrorCallback onError,
     this.formats,
+    this.cameraDirection,
   })  : notStartedBuilder = notStartedBuilder ?? _defaultNotStartedBuilder,
         offscreenBuilder =
             offscreenBuilder ?? notStartedBuilder ?? _defaultOffscreenBuilder,
@@ -41,6 +44,7 @@ class QrCamera extends StatefulWidget {
   final WidgetBuilder offscreenBuilder;
   final ErrorCallback onError;
   final List<BarcodeFormats> formats;
+  final CameraDirection cameraDirection;
 
   @override
   QrCameraState createState() => new QrCameraState();
@@ -57,6 +61,17 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
   dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(QrCamera oldWidget) {
+    if (oldWidget.cameraDirection != widget.cameraDirection) {
+      QrMobileVision.stop();
+      setState(() {
+        _asyncInitOnce = null;
+      });
+    }
+    super.didUpdateWidget(oldWidget);
   }
 
   @override
@@ -83,6 +98,7 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
       height: height.toInt(),
       qrCodeHandler: widget.qrCodeCallback,
       formats: widget.formats,
+      cameraDirection: widget.cameraDirection,
     );
     return previewDetails;
   }
@@ -123,6 +139,8 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
         return widget.offscreenBuilder(context);
       }
 
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+
       return new FutureBuilder(
         future: _asyncInitOnce,
         builder: (BuildContext context, AsyncSnapshot<PreviewDetails> details) {
@@ -138,12 +156,18 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
               Widget preview = new SizedBox(
                 width: constraints.maxWidth,
                 height: constraints.maxHeight,
-                child: Preview(
-                  previewDetails: details.data,
-                  targetWidth: constraints.maxWidth,
-                  targetHeight: constraints.maxHeight,
-                  fit: widget.fit,
-                ),
+                child: FutureBuilder<AndroidDeviceInfo>(
+                    future: deviceInfo.androidInfo,
+                    builder: (context, snapshot) {
+                      return Preview(
+                        previewDetails: details.data,
+                        targetWidth: constraints.maxWidth,
+                        targetHeight: constraints.maxHeight,
+                        fit: widget.fit,
+                        sdkInt:
+                            snapshot.hasData ? snapshot.data.version.sdkInt : 0,
+                      );
+                    }),
               );
 
               if (widget.child != null) {
@@ -172,13 +196,15 @@ class Preview extends StatelessWidget {
   final int textureId;
   final int sensorOrientation;
   final BoxFit fit;
+  final int sdkInt;
 
-  Preview({
-    @required PreviewDetails previewDetails,
-    @required this.targetWidth,
-    @required this.targetHeight,
-    @required this.fit,
-  })  : assert(previewDetails != null),
+  Preview(
+      {@required PreviewDetails previewDetails,
+      @required this.targetWidth,
+      @required this.targetHeight,
+      @required this.fit,
+      @required this.sdkInt})
+      : assert(previewDetails != null),
         textureId = previewDetails.textureId,
         width = previewDetails.width.toDouble(),
         height = previewDetails.height.toDouble(),
@@ -194,13 +220,21 @@ class Preview extends StatelessWidget {
         int nativeRotation = 0;
         switch (nativeOrientation) {
           case NativeDeviceOrientation.portraitUp:
-            nativeRotation = 0;
+            if (sdkInt == 23) {
+              nativeRotation = 180;
+            } else {
+              nativeRotation = 0;
+            }
             break;
           case NativeDeviceOrientation.landscapeRight:
             nativeRotation = 90;
             break;
           case NativeDeviceOrientation.portraitDown:
-            nativeRotation = 180;
+            if (sdkInt == 23) {
+              nativeRotation = 0;
+            } else {
+              nativeRotation = 180;
+            }
             break;
           case NativeDeviceOrientation.landscapeLeft:
             nativeRotation = 270;
