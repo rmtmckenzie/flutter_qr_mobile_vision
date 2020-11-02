@@ -1,31 +1,29 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
-import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode;
-import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOptions;
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 public enum BarcodeFormats {
 
-    ALL_FORMATS(FirebaseVisionBarcode.FORMAT_ALL_FORMATS),
-    CODE_128(FirebaseVisionBarcode.FORMAT_CODE_128),
-    CODE_39(FirebaseVisionBarcode.FORMAT_CODE_39),
-    CODE_93(FirebaseVisionBarcode.FORMAT_CODE_93),
-    CODABAR(FirebaseVisionBarcode.FORMAT_CODABAR),
-    DATA_MATRIX(FirebaseVisionBarcode.FORMAT_DATA_MATRIX),
-    EAN_13(FirebaseVisionBarcode.FORMAT_EAN_13),
-    EAN_8(FirebaseVisionBarcode.FORMAT_EAN_8),
-    ITF(FirebaseVisionBarcode.FORMAT_ITF),
-    QR_CODE(FirebaseVisionBarcode.FORMAT_QR_CODE),
-    UPC_A(FirebaseVisionBarcode.FORMAT_UPC_A),
-    UPC_E(FirebaseVisionBarcode.FORMAT_UPC_E),
-    PDF417(FirebaseVisionBarcode.FORMAT_PDF417),
-    AZTEC(FirebaseVisionBarcode.FORMAT_AZTEC);
+    ALL_FORMATS(com.google.mlkit.vision.barcode.Barcode.FORMAT_ALL_FORMATS),
+    CODE_128(com.google.mlkit.vision.barcode.Barcode.FORMAT_CODE_128),
+    CODE_39(com.google.mlkit.vision.barcode.Barcode.FORMAT_CODE_39),
+    CODE_93(com.google.mlkit.vision.barcode.Barcode.FORMAT_CODE_93),
+    CODABAR(com.google.mlkit.vision.barcode.Barcode.FORMAT_CODABAR),
+    DATA_MATRIX(com.google.mlkit.vision.barcode.Barcode.FORMAT_DATA_MATRIX),
+    EAN_13(com.google.mlkit.vision.barcode.Barcode.FORMAT_EAN_13),
+    EAN_8(com.google.mlkit.vision.barcode.Barcode.FORMAT_EAN_8),
+    ITF(com.google.mlkit.vision.barcode.Barcode.FORMAT_ITF),
+    QR_CODE(com.google.mlkit.vision.barcode.Barcode.FORMAT_QR_CODE),
+    UPC_A(com.google.mlkit.vision.barcode.Barcode.FORMAT_UPC_A),
+    UPC_E(com.google.mlkit.vision.barcode.Barcode.FORMAT_UPC_E),
+    PDF417(com.google.mlkit.vision.barcode.Barcode.FORMAT_PDF417),
+    AZTEC(com.google.mlkit.vision.barcode.Barcode.FORMAT_AZTEC);
 
     BarcodeFormats(int intValue) {
         this.intValue = intValue;
@@ -65,9 +63,9 @@ public enum BarcodeFormats {
         return val;
     }
 
-    static FirebaseVisionBarcodeDetectorOptions optionsFromStringList(List<String> strings) {
+    static BarcodeScannerOptions optionsFromStringList(List<String> strings) {
         if (strings == null) {
-            return new FirebaseVisionBarcodeDetectorOptions.Builder().setBarcodeFormats(ALL_FORMATS.intValue).build();
+            return new BarcodeScannerOptions.Builder().setBarcodeFormats(ALL_FORMATS.intValue).build();
         }
 
         List<Integer> ints = new ArrayList<>(strings.size());
@@ -79,22 +77,22 @@ public enum BarcodeFormats {
         }
 
         if (ints.size() == 0) {
-            return new FirebaseVisionBarcodeDetectorOptions.Builder().setBarcodeFormats(ALL_FORMATS.intValue).build();
+            return new BarcodeScannerOptions.Builder().setBarcodeFormats(ALL_FORMATS.intValue).build();
         }
 
         if (ints.size() == 1) {
-            return new FirebaseVisionBarcodeDetectorOptions.Builder().setBarcodeFormats(ints.get(0)).build();
+            return new BarcodeScannerOptions.Builder().setBarcodeFormats(ints.get(0)).build();
         }
 
         int first = ints.get(0);
         int[] rest = new int[ints.size() - 1];
-        int i = 1;
+        int i = 0;
         for (Integer e : ints.subList(1, ints.size())) {
             rest[i++] = e;
         }
 
 
-        return new FirebaseVisionBarcodeDetectorOptions.Builder()
+        return new BarcodeScannerOptions.Builder()
             .setBarcodeFormats(first, rest).build();
     }
 

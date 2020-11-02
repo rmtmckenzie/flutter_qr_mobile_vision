@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
-import FirebaseMLVision
+import MLKitVision
+import MLKitBarcodeScanning
 
 class MapArgumentReader {
   
@@ -61,7 +62,7 @@ public class SwiftQrMobileVisionPlugin: NSObject, FlutterPlugin {
           return
       }
 
-      let options = VisionBarcodeDetectorOptions(formatStrings: formatStrings)
+      let options = BarcodeScannerOptions(formatStrings: formatStrings)
             
       do {
         reader = try QrReader(

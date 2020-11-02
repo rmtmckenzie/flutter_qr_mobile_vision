@@ -1,3 +1,6 @@
+## [1.0.2]
+* Fix for android exception when specify more than one type
+
 ## [1.0.1+1]
 * Remove log statement from image close
 

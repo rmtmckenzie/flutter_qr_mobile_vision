@@ -24,8 +24,7 @@ import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
-import com.google.firebase.ml.vision.common.FirebaseVisionImage;
-import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
+import com.google.mlkit.vision.common.InputImage;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -66,6 +65,7 @@ class QrCameraC2 implements QrCamera {
     private int sensorOrientation;
     private CameraDevice cameraDevice;
     private CameraCharacteristics cameraCharacteristics;
+    private Frame latestFrame;
 
     QrCameraC2(int width, int height, SurfaceTexture texture, Context context, QrDetector detector) {
         this.targetWidth = width;
@@ -101,19 +101,19 @@ class QrCameraC2 implements QrCamera {
         int result;
         switch (rotationCompensation) {
             case 0:
-                result = FirebaseVisionImageMetadata.ROTATION_0;
+                result = Surface.ROTATION_0;
                 break;
             case 90:
-                result = FirebaseVisionImageMetadata.ROTATION_90;
+                result = Surface.ROTATION_90;
                 break;
             case 180:
-                result = FirebaseVisionImageMetadata.ROTATION_180;
+                result = Surface.ROTATION_180;
                 break;
             case 270:
-                result = FirebaseVisionImageMetadata.ROTATION_270;
+                result = Surface.ROTATION_270;
                 break;
             default:
-                result = FirebaseVisionImageMetadata.ROTATION_0;
+                result = Surface.ROTATION_0;
                 Log.e(TAG, "Bad rotation value: " + rotationCompensation);
         }
         return result;
@@ -211,8 +211,8 @@ class QrCameraC2 implements QrCamera {
         }
 
         @Override
-        public FirebaseVisionImage toImage() {
-            return FirebaseVisionImage.fromMediaImage(image, firebaseOrientation);
+        public InputImage toImage() {
+            return InputImage.fromMediaImage(image, firebaseOrientation);
         }
 
         @Override
@@ -238,7 +238,8 @@ class QrCameraC2 implements QrCamera {
                 try {
                     Image image = reader.acquireLatestImage();
                     if (image == null) return;
-                    detector.detect(new Frame(image, getFirebaseOrientation()));
+                    latestFrame = new Frame(image, getFirebaseOrientation());
+                    detector.detect(latestFrame);
                 } catch (Throwable t) {
                     t.printStackTrace();
                 }
@@ -314,6 +315,8 @@ class QrCameraC2 implements QrCamera {
             cameraDevice.close();
         }
         if (reader != null) {
+            if (latestFrame != null) latestFrame.close();
+            latestFrame = null;
             reader.close();
         }
     }
