@@ -58,16 +58,16 @@ class QrCameraC1 implements QrCamera {
         int result;
         switch (rotationCompensation) {
             case 0:
-                result = Surface.ROTATION_0;
+                result = 0;
                 break;
             case 90:
-                result = Surface.ROTATION_90;
+                result = 90;
                 break;
             case 180:
-                result = Surface.ROTATION_180;
+                result = 180;
                 break;
             case 270:
-                result = Surface.ROTATION_270;
+                result = 270;
                 break;
             default:
                 result = Surface.ROTATION_0;
@@ -185,9 +185,12 @@ class QrCameraC1 implements QrCamera {
 
     @Override
     public void stop() {
-        camera.stopPreview();
-        camera.setPreviewCallback(null);
-        camera.release();
+        if (camera != null) {
+            camera.stopPreview();
+            camera.setPreviewCallback(null);
+            camera.release();
+            camera = null;
+        }
     }
 
     //Size here is Camera.Size, not android.util.Size as in the QrCameraC2 version of this method
