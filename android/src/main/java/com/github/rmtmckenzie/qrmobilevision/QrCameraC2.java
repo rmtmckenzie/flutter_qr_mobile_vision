@@ -65,6 +65,7 @@ class QrCameraC2 implements QrCamera {
     private int sensorOrientation;
     private CameraDevice cameraDevice;
     private CameraCharacteristics cameraCharacteristics;
+    private Frame latestFrame;
 
     QrCameraC2(int width, int height, SurfaceTexture texture, Context context, QrDetector detector) {
         this.targetWidth = width;
@@ -237,7 +238,8 @@ class QrCameraC2 implements QrCamera {
                 try {
                     Image image = reader.acquireLatestImage();
                     if (image == null) return;
-                    detector.detect(new Frame(image, getFirebaseOrientation()));
+                    latestFrame = new Frame(image, getFirebaseOrientation());
+                    detector.detect(latestFrame);
                 } catch (Throwable t) {
                     t.printStackTrace();
                 }
@@ -313,6 +315,8 @@ class QrCameraC2 implements QrCamera {
             cameraDevice.close();
         }
         if (reader != null) {
+            if (latestFrame != null) latestFrame.close();
+            latestFrame = null;
             reader.close();
         }
     }
