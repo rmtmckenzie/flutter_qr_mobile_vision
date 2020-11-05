@@ -70,7 +70,7 @@ public class SwiftQrMobileVisionPlugin: NSObject, FlutterPlugin {
         reader = try QrReader(
           targetWidth: targetWidth,
           targetHeight: targetHeight,
-          cameraDirection: cameraDirection == 1 ? .back : .front,
+          cameraDirection:  AVCaptureDevice.Position(rawValue: cameraDirection == 1 ? .back : .front),
           textureRegistry: textureRegistry,
           options: options) { [unowned self] qr in
             self.channel.invokeMethod("qrRead", arguments: qr)
