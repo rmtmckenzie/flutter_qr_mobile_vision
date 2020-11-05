@@ -1,4 +1,5 @@
 import Flutter
+import AVFoundation
 import UIKit
 import MLKitVision
 import MLKitBarcodeScanning
@@ -69,6 +70,7 @@ public class SwiftQrMobileVisionPlugin: NSObject, FlutterPlugin {
         reader = try QrReader(
           targetWidth: targetWidth,
           targetHeight: targetHeight,
+          cameraDirection: cameraDirection == 1 ? .back : .front,
           textureRegistry: textureRegistry,
           options: options) { [unowned self] qr in
             self.channel.invokeMethod("qrRead", arguments: qr)
