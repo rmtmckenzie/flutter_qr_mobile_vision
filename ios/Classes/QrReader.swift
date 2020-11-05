@@ -99,7 +99,6 @@ protocol QrReaderResponses {
 class QrReader: NSObject {
   let targetWidth: Int
   let targetHeight: Int
-  let cameraDirection: Int
   let textureRegistry: FlutterTextureRegistry
   let isProcessing = Atomic<Bool>(false)
   
@@ -112,15 +111,14 @@ class QrReader: NSObject {
   let barcodeDetector: BarcodeScanner
   let qrCallback: (_:String) -> Void
   
-  init(targetWidth: Int, targetHeight: Int, cameraDirection: Int, textureRegistry: FlutterTextureRegistry, options: BarcodeScannerOptions, qrCallback: @escaping (_:String) -> Void) throws {
+  init(targetWidth: Int, targetHeight: Int, cameraDirection: AVCaptureDevice.Position, textureRegistry: FlutterTextureRegistry, options: BarcodeScannerOptions, qrCallback: @escaping (_:String) -> Void) throws {
     self.targetWidth = targetWidth
     self.targetHeight = targetHeight
-    self.cameraDirection = cameraDirection
     self.textureRegistry = textureRegistry
     self.qrCallback = qrCallback
     
+    self.position = cameraDirection
     self.barcodeDetector = BarcodeScanner.barcodeScanner()
-    self.position = AVCaptureDevice.Position(rawValue: cameraDirection) ?? AVCaptureDevice.Position.back
     super.init()
     
     captureSession = AVCaptureSession()
@@ -130,7 +128,7 @@ class QrReader: NSObject {
         captureDevice = AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInWideAngleCamera, for: AVMediaType.video, position: position)
     } else {
       for device in AVCaptureDevice.devices(for: AVMediaType.video) {
-        if device.position.rawValue == cameraDirection {
+        if device.position == cameraDirection {
           captureDevice = device
           break
         }
