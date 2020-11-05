@@ -108,6 +108,7 @@ class QrReader: NSObject {
   var previewSize: CMVideoDimensions!
   var textureId: Int64!
   var pixelBuffer : CVPixelBuffer?
+  let position: AVCaptureDevice.Position
   let barcodeDetector: BarcodeScanner
   let qrCallback: (_:String) -> Void
   
@@ -119,16 +120,17 @@ class QrReader: NSObject {
     self.qrCallback = qrCallback
     
     self.barcodeDetector = BarcodeScanner.barcodeScanner()
-    
+    self.position = AVCaptureDevice.Position(rawValue: cameraDirection) ?? AVCaptureDevice.Position.back
     super.init()
     
     captureSession = AVCaptureSession()
-
+    
+    
     if #available(iOS 10.0, *) {
-      captureDevice = AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInWideAngleCamera, for: AVMediaType.video, position: cameraDirection)
+        captureDevice = AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInWideAngleCamera, for: AVMediaType.video, position: position)
     } else {
       for device in AVCaptureDevice.devices(for: AVMediaType.video) {
-        if device.position == cameraDirection {
+        if device.position.rawValue == cameraDirection {
           captureDevice = device
           break
         }
@@ -225,13 +227,13 @@ extension QrReader: AVCaptureVideoDataOutputSampleBufferDelegate {
     ) -> UIImage.Orientation {
       switch deviceOrientation {
       case .portrait:
-        return cameraDirection == .front ? .leftMirrored : .right
+        return position == .front ? .leftMirrored : .right
       case .landscapeLeft:
-        return cameraDirection == .front ? .downMirrored : .up
+        return position == .front ? .downMirrored : .up
       case .portraitUpsideDown:
-        return cameraDirection == .front ? .rightMirrored : .left
+        return position == .front ? .rightMirrored : .left
       case .landscapeRight:
-        return cameraDirection == .front ? .upMirrored : .down
+        return position == .front ? .upMirrored : .down
       case .faceDown, .faceUp, .unknown:
         return .up
       @unknown default:
