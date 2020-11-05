@@ -1,12 +1,13 @@
 import Foundation
 import AVFoundation
-import FirebaseMLVision
+import MLKitVision
+import MLKitBarcodeScanning
 import os.log
 
 
-extension VisionBarcodeDetectorOptions {
+extension BarcodeScannerOptions {
   convenience init(formatStrings: [String]) {
-    let formats = formatStrings.map { (format) -> VisionBarcodeFormat? in
+    let formats = formatStrings.map { (format) -> BarcodeFormat? in
       switch format  {
       case "ALL_FORMATS":
         return .all
@@ -40,7 +41,7 @@ extension VisionBarcodeDetectorOptions {
         // ignore any unknown values
         return nil
       }
-    }.reduce([]) { (result, format) -> VisionBarcodeFormat in
+    }.reduce([]) { (result, format) -> BarcodeFormat in
       guard let format = format else {
         return result
       }
@@ -106,18 +107,17 @@ class QrReader: NSObject {
   var previewSize: CMVideoDimensions!
   var textureId: Int64!
   var pixelBuffer : CVPixelBuffer?
-  let barcodeDetector: VisionBarcodeDetector
+  let barcodeDetector: BarcodeScanner
   let cameraPosition = AVCaptureDevice.Position.back
   let qrCallback: (_:String) -> Void
   
-  init(targetWidth: Int, targetHeight: Int, textureRegistry: FlutterTextureRegistry, options: VisionBarcodeDetectorOptions, qrCallback: @escaping (_:String) -> Void) {
+  init(targetWidth: Int, targetHeight: Int, textureRegistry: FlutterTextureRegistry, options: VisionBarcodeDetectorOptions, qrCallback: @escaping (_:String) -> Void) throws {
     self.targetWidth = targetWidth
     self.targetHeight = targetHeight
     self.textureRegistry = textureRegistry
     self.qrCallback = qrCallback
     
-    let vision = Vision.vision()
-    self.barcodeDetector = vision.barcodeDetector(options: options)
+    self.barcodeDetector = BarcodeScanner.barcodeScanner()
     
     super.init()
     
@@ -138,8 +138,7 @@ class QrReader: NSObject {
       captureDevice = AVCaptureDevice.default(for: AVMediaType.video)!
     }
     
-    // catch?
-    let input = try! AVCaptureDeviceInput.init(device: captureDevice)
+    let input = try AVCaptureDeviceInput.init(device: captureDevice)
     previewSize = CMVideoFormatDescriptionGetDimensions(captureDevice.activeFormat.formatDescription)
     
     let output = AVCaptureVideoDataOutput()
@@ -181,22 +180,19 @@ extension QrReader: AVCaptureVideoDataOutputSampleBufferDelegate {
     
     pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)!
     textureRegistry.textureFrameAvailable(self.textureId)
-    
-    let metadata = VisionImageMetadata()
-    metadata.orientation = imageOrientation(
-      deviceOrientation: UIDevice.current.orientation,
-      defaultOrientation: .portrait
-    )
-    
+ 
     guard !isProcessing.swap(true) else {
       return
     }
     
     let image = VisionImage(buffer: sampleBuffer)
-    image.metadata = metadata
+    image.orientation = imageOrientation(
+      deviceOrientation: UIDevice.current.orientation,
+      defaultOrientation: .portrait
+    )
     
     DispatchQueue.global(qos: DispatchQoS.QoSClass.utility).async {
-      self.barcodeDetector.detect(in: image) { features, error in
+      self.barcodeDetector.process(image) { features, error in
         self.isProcessing.value = false
         
         guard error == nil else {
@@ -219,24 +215,27 @@ extension QrReader: AVCaptureVideoDataOutputSampleBufferDelegate {
       }
     }
   }
-  
-  func imageOrientation(
-    deviceOrientation: UIDeviceOrientation,
-    defaultOrientation: UIDeviceOrientation
-  ) -> VisionDetectorImageOrientation {
-    switch deviceOrientation {
-    case .portrait:
-      return cameraPosition == .front ? .leftTop : .rightTop
-    case .landscapeLeft:
-      return cameraPosition == .front ? .bottomLeft : .topLeft
-    case .portraitUpsideDown:
-      return cameraPosition == .front ? .rightBottom : .leftBottom
-    case .landscapeRight:
-      return cameraPosition == .front ? .topRight : .bottomRight
-    case .faceDown, .faceUp, .unknown:
-      fallthrough
-    @unknown default:
-      return imageOrientation(deviceOrientation: defaultOrientation, defaultOrientation: .portrait)
+    
+    
+
+    func imageOrientation(
+      deviceOrientation: UIDeviceOrientation,
+      defaultOrientation: UIDeviceOrientation
+    ) -> UIImage.Orientation {
+      switch deviceOrientation {
+      case .portrait:
+        return cameraPosition == .front ? .leftMirrored : .right
+      case .landscapeLeft:
+        return cameraPosition == .front ? .downMirrored : .up
+      case .portraitUpsideDown:
+        return cameraPosition == .front ? .rightMirrored : .left
+      case .landscapeRight:
+        return cameraPosition == .front ? .upMirrored : .down
+      case .faceDown, .faceUp, .unknown:
+        return .up
+      @unknown default:
+        return imageOrientation(deviceOrientation: defaultOrientation, defaultOrientation: .portrait)
+        }
     }
-  }
+
 }
