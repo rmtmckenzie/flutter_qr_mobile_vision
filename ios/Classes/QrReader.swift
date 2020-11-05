@@ -99,6 +99,7 @@ protocol QrReaderResponses {
 class QrReader: NSObject {
   let targetWidth: Int
   let targetHeight: Int
+  let cameraDirection: Int
   let textureRegistry: FlutterTextureRegistry
   let isProcessing = Atomic<Bool>(false)
   
@@ -111,9 +112,10 @@ class QrReader: NSObject {
   let cameraPosition = AVCaptureDevice.Position.back
   let qrCallback: (_:String) -> Void
   
-  init(targetWidth: Int, targetHeight: Int, textureRegistry: FlutterTextureRegistry, options: BarcodeScannerOptions, qrCallback: @escaping (_:String) -> Void) throws {
+  init(targetWidth: Int, targetHeight: Int, cameraDirection: Int, textureRegistry: FlutterTextureRegistry, options: BarcodeScannerOptions, qrCallback: @escaping (_:String) -> Void) throws {
     self.targetWidth = targetWidth
     self.targetHeight = targetHeight
+    self.cameraDirection = cameraDirection
     self.textureRegistry = textureRegistry
     self.qrCallback = qrCallback
     
