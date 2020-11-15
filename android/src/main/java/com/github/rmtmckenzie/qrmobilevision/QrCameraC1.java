@@ -117,10 +117,12 @@ class QrCameraC1 {
 
     }
 
+    // portrait orientation
     public int getWidth() {
         return camera.getParameters().getPreviewSize().height;
     }
 
+    // portrait orientation
     public int getHeight() {
         return camera.getParameters().getPreviewSize().width;
     }
