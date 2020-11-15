@@ -9,8 +9,8 @@ import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.WindowManager;
 
-import com.google.firebase.ml.vision.common.FirebaseVisionImage;
-import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
+import com.google.android.gms.vision.Frame;
+import com.google.mlkit.vision.common.InputImage;
 
 import java.io.IOException;
 import java.util.List;
@@ -21,7 +21,7 @@ import java.util.List;
  * so that deprecation warnings can be avoided.
  */
 @TargetApi(16)
-class QrCameraC1 implements QrCamera {
+class QrCameraC1 {
 
     private static final String TAG = "cgr.qrmv.QrCameraC1";
     private static final int IMAGEFORMAT = ImageFormat.NV21;
@@ -57,27 +57,9 @@ class QrCameraC1 implements QrCamera {
         int rotationCompensation = (ORIENTATIONS.get(deviceRotation) + info.orientation + 270) % 360;
 
         // Return the corresponding FirebaseVisionImageMetadata rotation value.
-        int result;
-        switch (rotationCompensation) {
-            case 0:
-                result = FirebaseVisionImageMetadata.ROTATION_0;
-                break;
-            case 90:
-                result = FirebaseVisionImageMetadata.ROTATION_90;
-                break;
-            case 180:
-                result = FirebaseVisionImageMetadata.ROTATION_180;
-                break;
-            case 270:
-                result = FirebaseVisionImageMetadata.ROTATION_270;
-                break;
-            default:
-                result = FirebaseVisionImageMetadata.ROTATION_0;
-                Log.e(TAG, "Bad rotation value: " + rotationCompensation);
-        }
-        return result;
+        return rotationCompensation;
     }
-    @Override
+
     public void start() throws QrReader.Exception {
         int numberOfCameras = android.hardware.Camera.getNumberOfCameras();
         info = new android.hardware.Camera.CameraInfo();
@@ -118,15 +100,7 @@ class QrCameraC1 implements QrCamera {
                     android.hardware.Camera.Size previewSize = camera.getParameters().getPreviewSize();
 
                     if (data != null) {
-
-                        QrDetector.Frame frame = new Frame(data, new FirebaseVisionImageMetadata.Builder()
-                            .setFormat(IMAGEFORMAT)
-                            .setWidth(previewSize.width)
-                            .setHeight(previewSize.height)
-                            .setRotation(getFirebaseOrientation())
-                            .build());
-
-                        detector.detect(frame);
+                        detector.detect(InputImage.fromByteArray(data, previewSize.width, previewSize.height, getFirebaseOrientation(), IMAGEFORMAT));
                     } else {
                         //TODO: something better here?
                         System.out.println("It's NULL!");
@@ -143,51 +117,18 @@ class QrCameraC1 implements QrCamera {
 
     }
 
-    static class Frame implements QrDetector.Frame {
-        private byte[] data;
-        private final FirebaseVisionImageMetadata metadata;
-
-        Frame(byte[] data, FirebaseVisionImageMetadata metadata) {
-            this.data = data;
-            this.metadata = metadata;
-        }
-
-        @Override
-        public FirebaseVisionImage toImage() {
-            return FirebaseVisionImage.fromByteArray(data, metadata);
-        }
-
-
-        public int getWidth() {
-            return metadata.getHeight();
-        }
-
-        public int getHeight() {
-            return metadata.getWidth();
-        }
-
-        @Override
-        public void close() {
-            data = null;
-        }
-    }
-
-    @Override
     public int getWidth() {
         return camera.getParameters().getPreviewSize().height;
     }
 
-    @Override
     public int getHeight() {
         return camera.getParameters().getPreviewSize().width;
     }
 
-    @Override
     public int getOrientation() {
         return (info.orientation + 270) % 360;
     }
 
-    @Override
     public void toggleFlash() {
         boolean wasAutoFocusManager = autoFocusManager != null;
         if (wasAutoFocusManager) {
@@ -201,7 +142,6 @@ class QrCameraC1 implements QrCamera {
         }
     }
 
-    @Override
     public void stop() {
         try {
             if (autoFocusManager != null) {

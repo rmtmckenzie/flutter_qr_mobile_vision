@@ -8,7 +8,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 
-import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOptions;
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,7 +32,7 @@ import io.flutter.view.TextureRegistry;
 /**
  * QrMobileVisionPlugin
  */
-public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallbacks, QrReader.QRReaderStartedCallback, PluginRegistry.RequestPermissionsResultListener, FlutterPlugin, ActivityAware {
+public class QrMobileVisionPlugin implements MethodCallHandler, QrReader.QRReaderStartedCallback, PluginRegistry.RequestPermissionsResultListener, FlutterPlugin, ActivityAware {
 
     private static final String TAG = "cgr.qrmv.QrMobVisPlugin";
     private static final int REQUEST_PERMISSION = 1;
@@ -166,7 +166,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
                         break;
                     }
 
-                    FirebaseVisionBarcodeDetectorOptions options = BarcodeFormats.optionsFromStringList(formatStrings);
+                    BarcodeScannerOptions options = BarcodeFormats.optionsFromStringList(formatStrings);
 
                     TextureRegistry.SurfaceTextureEntry textureEntry = textures.createSurfaceTexture();
                     QrReader reader = new QrReader(targetWidth, targetHeight, activity, options,
@@ -217,7 +217,6 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
         }
     }
 
-    @Override
     public void qrRead(String data) {
         channel.invokeMethod("qrRead", data);
     }

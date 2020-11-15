@@ -10,20 +10,20 @@ import android.os.Build;
 import android.util.Log;
 
 import com.google.android.gms.vision.CameraSource;
-import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOptions;
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 
 import java.io.IOException;
 
 class QrReader {
     private static final String TAG = "cgr.qrmv.QrReader";
-    final QrCamera qrCamera;
+    final QrCameraC1 qrCamera;
     private final Activity context;
     private final QRReaderStartedCallback startedCallback;
     private Heartbeat heartbeat;
     private CameraSource camera;
 
-    QrReader(int width, int height, Activity context, FirebaseVisionBarcodeDetectorOptions options,
-             final QRReaderStartedCallback startedCallback, final QrReaderCallbacks communicator,
+    QrReader(int width, int height, Activity context, BarcodeScannerOptions options,
+             final QRReaderStartedCallback startedCallback, final QrMobileVisionPlugin communicator,
              final SurfaceTexture texture) {
         this.context = context;
         this.startedCallback = startedCallback;
