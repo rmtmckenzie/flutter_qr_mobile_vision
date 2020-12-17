@@ -81,6 +81,8 @@ public class SwiftQrMobileVisionPlugin: NSObject, FlutterPlugin {
           "surfaceOrientation": 0, //TODO: check on iPAD
           "textureId": reader!.textureId!
         ])
+      } catch QrReaderError.noCamera {
+        result(FlutterError(code: "CAMERA_ERROR", message: "QrReader couldn't open camera", details: nil))
       } catch {
         result(FlutterError(code: "PERMISSION_DENIED", message: "QrReader initialization threw an exception", details: error.localizedDescription))
       }
