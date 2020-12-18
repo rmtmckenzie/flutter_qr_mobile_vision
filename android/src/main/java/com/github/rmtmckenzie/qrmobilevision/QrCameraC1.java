@@ -120,8 +120,8 @@ class QrCameraC1 implements QrCamera {
 
                         QrDetector.Frame frame = new Frame(data,
                             previewSize.width, previewSize.height, getFirebaseOrientation(), IMAGEFORMAT);
-
                         detector.detect(frame);
+                        frame.close();
                     } else {
                         //TODO: something better here?
                         System.out.println("It's NULL!");

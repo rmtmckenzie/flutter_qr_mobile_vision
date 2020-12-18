@@ -23,8 +23,4 @@ Plugin for reading QR codes using Google&#x27;s Mobile Vision API.
   s.dependency 'GoogleMLKit/BarcodeScanning'
   
   s.static_framework = true
-endHome
-   Explore
-   Library
-   jerusalem berlin new york
-
+end
