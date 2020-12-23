@@ -96,6 +96,10 @@ protocol QrReaderResponses {
   func qrReceived(code: String)
 }
 
+enum QrReaderError: Error {
+  case noCamera
+}
+
 class QrReader: NSObject {
   let targetWidth: Int
   let targetHeight: Int
@@ -111,7 +115,7 @@ class QrReader: NSObject {
   let cameraPosition = AVCaptureDevice.Position.back
   let qrCallback: (_:String) -> Void
   
-  init(targetWidth: Int, targetHeight: Int, textureRegistry: FlutterTextureRegistry, options: VisionBarcodeDetectorOptions, qrCallback: @escaping (_:String) -> Void) throws {
+  init(targetWidth: Int, targetHeight: Int, textureRegistry: FlutterTextureRegistry, options: BarcodeScannerOptions, qrCallback: @escaping (_:String) -> Void) throws {
     self.targetWidth = targetWidth
     self.targetHeight = targetHeight
     self.textureRegistry = textureRegistry
@@ -135,7 +139,11 @@ class QrReader: NSObject {
     }
     
     if captureDevice == nil {
-      captureDevice = AVCaptureDevice.default(for: AVMediaType.video)!
+      captureDevice = AVCaptureDevice.default(for: AVMediaType.video)
+      
+      guard captureDevice != nil else {
+        throw QrReaderError.noCamera
+      }
     }
     
     let input = try AVCaptureDeviceInput.init(device: captureDevice)

@@ -1,3 +1,7 @@
+## [2.0.0]
+* Switch to using ML Kit without firebase
+* Fix a few small bugs that users reported
+
 ## [1.0.2]
 * Fix for android exception when specify more than one type
 

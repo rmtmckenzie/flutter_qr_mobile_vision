@@ -101,19 +101,19 @@ class QrCameraC2 implements QrCamera {
         int result;
         switch (rotationCompensation) {
             case 0:
-                result = Surface.ROTATION_0;
+                result = 0;
                 break;
             case 90:
-                result = Surface.ROTATION_90;
+                result = 90;
                 break;
             case 180:
-                result = Surface.ROTATION_180;
+                result = 180;
                 break;
             case 270:
-                result = Surface.ROTATION_270;
+                result = 270;
                 break;
             default:
-                result = Surface.ROTATION_0;
+                result = 0;
                 Log.e(TAG, "Bad rotation value: " + rotationCompensation);
         }
         return result;
@@ -288,7 +288,6 @@ class QrCameraC2 implements QrCamera {
             }, null);
         } catch (Throwable t) {
             t.printStackTrace();
-
         }
     }
 
