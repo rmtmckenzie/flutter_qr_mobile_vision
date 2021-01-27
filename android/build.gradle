@@ -33,7 +33,7 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.mlkit:barcode-scanning:16.0.3'
+    implementation 'com.google.mlkit:barcode-scanning:16.1.0'
 }
 
 
