@@ -127,22 +127,28 @@ class QrReader: NSObject {
     }
     
     // catch?
-    let input = try! AVCaptureDeviceInput.init(device: captureDevice)
-    previewSize = CMVideoFormatDescriptionGetDimensions(captureDevice.activeFormat.formatDescription)
+    do {
+        let input = try AVCaptureDeviceInput.init(device: captureDevice)
+        previewSize = CMVideoFormatDescriptionGetDimensions(captureDevice.activeFormat.formatDescription)
+        
+        let output = AVCaptureVideoDataOutput()
+        output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
+        output.alwaysDiscardsLateVideoFrames = true
+        let connection = AVCaptureConnection(inputPorts: input.ports, output: output)
+    //    connection.videoOrientation = .portrait
+        
+        
+        let queue = DispatchQueue.global(qos: DispatchQoS.QoSClass.default)
+        output.setSampleBufferDelegate(self, queue: queue)
+        
+        captureSession.addInputWithNoConnections(input)
+        captureSession.addOutputWithNoConnections(output)
+        captureSession.addConnection(connection)
+    }
+    catch {
+        return
+    }
     
-    let output = AVCaptureVideoDataOutput()
-    output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
-    output.alwaysDiscardsLateVideoFrames = true
-    let connection = AVCaptureConnection(inputPorts: input.ports, output: output)
-//    connection.videoOrientation = .portrait
-    
-    
-    let queue = DispatchQueue.global(qos: DispatchQoS.QoSClass.default)
-    output.setSampleBufferDelegate(self, queue: queue)
-    
-    captureSession.addInputWithNoConnections(input)
-    captureSession.addOutputWithNoConnections(output)
-    captureSession.addConnection(connection)
   }
   
   func start() {

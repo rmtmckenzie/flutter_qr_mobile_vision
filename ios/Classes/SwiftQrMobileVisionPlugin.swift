@@ -61,7 +61,7 @@ public class SwiftQrMobileVisionPlugin: NSObject, FlutterPlugin {
       }
 
       let options = {} //VisionBarcodeDetectorOptions(formatStrings: formatStrings)
-            
+        
       reader = QrReader(
         targetWidth: targetWidth,
         targetHeight: targetHeight,
@@ -70,13 +70,16 @@ public class SwiftQrMobileVisionPlugin: NSObject, FlutterPlugin {
           self.channel.invokeMethod("qrRead", arguments: qr)
       }
       
-      reader!.start();
-      
+      reader?.start();
+      if (reader?.previewSize == nil) {
+        result(FlutterError(code: "CAMERA_NOT_AVAILABLE", message: "Camera not available", details: ""))
+        return
+      }
       result([
-        "surfaceWidth": reader!.previewSize.height,
-        "surfaceHeight": reader!.previewSize.width,
+        "surfaceWidth": reader?.previewSize.height,
+        "surfaceHeight": reader?.previewSize.width,
         "surfaceOrientation": 0, //TODO: check on iPAD
-        "textureId": reader!.textureId!
+        "textureId": reader?.textureId!
       ])
     case "stop":
       reader?.stop();
