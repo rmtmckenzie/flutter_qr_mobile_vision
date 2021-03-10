@@ -41,10 +41,10 @@ class QrMobileVision {
 
   //Set target size before starting
   static Future<PreviewDetails> start({
-    @required int width,
-    @required int height,
-    @required QRCodeHandler qrCodeHandler,
-    List<BarcodeFormats> formats = _defaultBarcodeFormats,
+    required int width,
+    required int height,
+    required QRCodeHandler qrCodeHandler,
+    List<BarcodeFormats>? formats = _defaultBarcodeFormats,
   }) async {
     final _formats = formats ?? _defaultBarcodeFormats;
     assert(_formats.length > 0);
@@ -64,10 +64,10 @@ class QrMobileVision {
     // invokeMethod returns Map<dynamic,...> in dart 2.0
     assert(details is Map<dynamic, dynamic>);
 
-    int textureId = details["textureId"];
-    num orientation = details["surfaceOrientation"];
-    num surfaceHeight = details["surfaceHeight"];
-    num surfaceWidth = details["surfaceWidth"];
+    int textureId = details["textureId"] as int;
+    num orientation = details["surfaceOrientation"] as num;
+    num surfaceHeight = details["surfaceHeight"] as num;
+    num surfaceWidth = details["surfaceWidth"] as num;
 
     return new PreviewDetails(
         surfaceWidth, surfaceHeight, orientation, textureId);
@@ -82,8 +82,9 @@ class QrMobileVision {
     return _channel.invokeMethod('heartbeat').catchError(print);
   }
 
-  static Future<List<List<int>>> getSupportedSizes() {
-    return _channel.invokeMethod('getSupportedSizes').catchError(print);
+  static Future<List<List<int>>?> getSupportedSizes() {
+    return _channel.invokeMethod('getSupportedSizes').catchError(print)
+        as Future<List<List<int>>?>;
   }
 }
 
@@ -98,7 +99,7 @@ class QrChannelReader {
         case 'qrRead':
           if (qrCodeHandler != null) {
             assert(call.arguments is String);
-            qrCodeHandler(call.arguments);
+            qrCodeHandler!(call.arguments);
           }
           break;
         default:
@@ -108,10 +109,10 @@ class QrChannelReader {
     });
   }
 
-  void setQrCodeHandler(QRCodeHandler qrch) {
+  void setQrCodeHandler(QRCodeHandler? qrch) {
     this.qrCodeHandler = qrch;
   }
 
   MethodChannel channel;
-  QRCodeHandler qrCodeHandler;
+  QRCodeHandler? qrCodeHandler;
 }
