@@ -1,28 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:qr_mobile_vision/qr_camera.dart';
-import 'package:qr_mobile_vision/qr_mobile_vision.dart';
 
 void main() {
   debugPaintSizeEnabled = false;
-  runApp(new HomePage());
+  runApp(HomePage());
 }
 
 class HomePage extends StatefulWidget {
   @override
-  HomeState createState() => new HomeState();
+  HomeState createState() => HomeState();
 }
 
 class HomeState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
-    return new MaterialApp(home: new MyApp());
+    return MaterialApp(home: MyApp());
   }
 }
 
 class MyApp extends StatefulWidget {
   @override
-  _MyAppState createState() => new _MyAppState();
+  _MyAppState createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
@@ -36,47 +35,50 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(
-      appBar: new AppBar(
-        title: new Text('Plugin example app'),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Plugin example app'),
       ),
-      body: new Center(
-        child: new Column(
+      body: Center(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            new Expanded(
+            Expanded(
                 child: camState
-                    ? new Center(
-                        child: new SizedBox(
+                    ? Center(
+                        child: SizedBox(
                           width: 300.0,
                           height: 600.0,
-                          child: new QrCamera(
+                          child: QrCamera(
                             onError: (context, error) => Text(
-                                  error.toString(),
-                                  style: TextStyle(color: Colors.red),
-                                ),
+                              error.toString(),
+                              style: TextStyle(color: Colors.red),
+                            ),
                             qrCodeCallback: (code) {
                               setState(() {
                                 qr = code;
                               });
                             },
-                            child: new Container(
-                              decoration: new BoxDecoration(
+                            child: Container(
+                              decoration: BoxDecoration(
                                 color: Colors.transparent,
-                                border: Border.all(color: Colors.orange, width: 10.0, style: BorderStyle.solid),
+                                border: Border.all(
+                                    color: Colors.orange,
+                                    width: 10.0,
+                                    style: BorderStyle.solid),
                               ),
                             ),
                           ),
                         ),
                       )
-                    : new Center(child: new Text("Camera inactive"))),
-            new Text("QRCODE: $qr"),
+                    : Center(child: Text("Camera inactive"))),
+            Text("QRCODE: $qr"),
           ],
         ),
       ),
-      floatingActionButton: new FloatingActionButton(
-          child: new Text(
+      floatingActionButton: FloatingActionButton(
+          child: Text(
             "press me",
             textAlign: TextAlign.center,
           ),
