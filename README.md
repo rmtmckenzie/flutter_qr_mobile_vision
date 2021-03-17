@@ -11,33 +11,42 @@ and outputs a preview image to be shown on a flutter texture.
 The plugin includes a widget which performs all needed transformations on the camera
 output to show within the defined area.
 
-If you are only targeting android and don't want to switch to Firebase Mobile Vision from Google Mobile Vision, use
-a 0.* version of the plugin.
-
-If you want to keep using ML Kit for Firebase (maybe because you need to support 32 bit), use a 1.* version of this plugin.
-
-## Setting up Firebase
-
-Just kidding, you don't need to do that with this version =).
-
 ## Android Models
 
-Youc an choose to include the barcode models directly in your APK. This will increase your code size by ~2.2MB but will
+With this new version of MLKit, there are two seperate models you can use to do the barcode scanning. Currently, this
+apk chooses to use the build-in model.  This will increase your code size by ~2.2MB but will
 result in better scanning and won't require a seperate package to be downloaded in the background for barcode scanning
 to work properly.
 
-To do this, add the following to your android/build.gradle:
+You could also use the Google Play Services and tell your app to download it on install from the play store. See the
+instruction on the [ml-kit barcode-scanning documentation page](https://developers.google.com/ml-kit/vision/barcode-scanning/android)
+for android. You would also have to remove the com.google.mlkit:barcode-scanning dependency; this hasn't been tested
+but would probably go something like this:
 
 ```
+configurations.all {
+    exclude group: "com.google.mlkit", module:"barcode-scanning"
+}
+//  ...
 dependencies {
   // ...
-  // Use this dependency to bundle the model with your app
-  implementation 'com.google.mlkit:barcode-scanning:16.1.1'
+  // Use this dependency to use the dynamically downloaded model in Google Play Services
+  implementation 'com.google.android.gms:play-services-mlkit-barcode-scanning:16.1.4'
 }
+```
 
-You can also use the Google Play Services and tell your app to download it on install from the play store. See the
-instruction on the [ml-kit barcode-scanning documentation page](https://developers.google.com/ml-kit/vision/barcode-scanning/android)
-for android.
+Note that if you do this, you should tell your app to automatically download the model as in the above linked docs.MLKit
+```
+<application ...>
+    ...
+    <meta-data
+        android:name="com.google.mlkit.vision.DEPENDENCIES"
+        android:value="barcode" />
+    <!-- To use multiple models: android:value="barcode,model2,model3" -->
+</application>
+```
+
+If this doesn't work for you please open an issue.
 
 ## 64 Bit Only on iOS
 
