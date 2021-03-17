@@ -1,11 +1,8 @@
 # QR Mobile Vision
 
-![pub package][version_badge]
+[![pub package][version_badge]](https://pub.dartlang.org/packages/qr_mobile_vision)
 
-_Reading QR codes and other barcodes using Firebase's Mobile Vision API._
-
-# ~~UPDATE - Now using Firebase since apps using GoogleMobileVision have become unreleaseable on iOS.~~
-# UPDATE - Now using MLKit because Firebase and GoogleMobileVision are no longer supported.
+_Reading QR codes and other barcodes using Firebase's MLKit._
 
 This plugin uses Android & iOS native APIs for reading images from the device's camera.
 It then pipes these images both to the MLKit Vision Barcode API which detects barcodes/qrcodes etc,
@@ -22,6 +19,25 @@ If you want to keep using ML Kit for Firebase (maybe because you need to support
 ## Setting up Firebase
 
 Just kidding, you don't need to do that with this version =).
+
+## Android Models
+
+Youc an choose to include the barcode models directly in your APK. This will increase your code size by ~2.2MB but will
+result in better scanning and won't require a seperate package to be downloaded in the background for barcode scanning
+to work properly.
+
+To do this, add the following to your android/build.gradle:
+
+```
+dependencies {
+  // ...
+  // Use this dependency to bundle the model with your app
+  implementation 'com.google.mlkit:barcode-scanning:16.1.1'
+}
+
+You can also use the Google Play Services and tell your app to download it on install from the play store. See the
+instruction on the [ml-kit barcode-scanning documentation page](https://developers.google.com/ml-kit/vision/barcode-scanning/android)
+for android.
 
 ## 64 Bit Only on iOS
 
