@@ -75,8 +75,8 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
 
   Future<PreviewDetails> _asyncInit(num width, num height) async {
     var previewDetails = await QrMobileVision.start(
-      width: width.toInt(),
-      height: height.toInt(),
+      width: (MediaQuery.of(context).devicePixelRatio * width.toInt()).ceil(),
+      height: (MediaQuery.of(context).devicePixelRatio * height.toInt()).ceil(),
       qrCodeHandler: widget.qrCodeCallback,
       formats: widget.formats,
     );
