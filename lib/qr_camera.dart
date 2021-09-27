@@ -74,13 +74,13 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
   Future<PreviewDetails>? _asyncInitOnce;
 
   Future<PreviewDetails> _asyncInit(num width, num height) async {
-    var previewDetails = await QrMobileVision.start(
-      width: (MediaQuery.of(context).devicePixelRatio * width.toInt()).ceil(),
-      height: (MediaQuery.of(context).devicePixelRatio * height.toInt()).ceil(),
+    final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+    return await QrMobileVision.start(
+      width: (devicePixelRatio * width.toInt()).ceil(),
+      height: (devicePixelRatio * height.toInt()).ceil(),
       qrCodeHandler: widget.qrCodeCallback,
       formats: widget.formats,
     );
-    return previewDetails;
   }
 
   /// This method can be used to restart scanning
@@ -171,7 +171,7 @@ class Preview extends StatelessWidget {
     required this.targetWidth,
     required this.targetHeight,
     required this.fit,
-  })   : textureId = previewDetails.textureId,
+  })  : textureId = previewDetails.textureId,
         width = previewDetails.width!.toDouble(),
         height = previewDetails.height!.toDouble(),
         sensorOrientation = previewDetails.sensorOrientation as int?;
