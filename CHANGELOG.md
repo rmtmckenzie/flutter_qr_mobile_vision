@@ -1,3 +1,7 @@
+## [3.0.1]
+* Incorporate PRs for fix on iOS when receive null qr data, and to
+  use screen's physical resolution rather than logical resolution.
+
 ## [3.0.0]
 * Null-safety
 
