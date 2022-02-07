@@ -42,6 +42,8 @@ public class SwiftQrMobileVisionPlugin: NSObject, FlutterPlugin {
   }
   
   var reader: QrReader? = nil
+    
+    var torch: Bool = false
   
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     let argReader = MapArgumentReader(call.arguments as? [String: Any])
@@ -93,6 +95,10 @@ public class SwiftQrMobileVisionPlugin: NSObject, FlutterPlugin {
     case "heartBeat":
       //      reader?.heartBeat();
       result(nil)
+    case "toggleFlash":
+        torch = !torch
+        reader?.toggleTorch(on: torch);
+        result(nil)
     default : result(FlutterMethodNotImplemented);
     }
   }
