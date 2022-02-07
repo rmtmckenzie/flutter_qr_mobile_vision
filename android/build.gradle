@@ -25,7 +25,7 @@ android {
     compileSdkVersion 31
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 19
     }
     lintOptions {
         disable 'InvalidPackage'
@@ -33,7 +33,7 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.mlkit:barcode-scanning:16.1.1'
+    implementation 'com.google.mlkit:barcode-scanning:17.0.2'
 }
 
 
