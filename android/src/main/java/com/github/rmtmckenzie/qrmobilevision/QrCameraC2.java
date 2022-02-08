@@ -27,6 +27,8 @@ import androidx.annotation.RequiresApi;
 import com.google.mlkit.vision.common.InputImage;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 
@@ -57,10 +59,10 @@ class QrCameraC2 implements QrCamera {
     private final Context context;
     private final SurfaceTexture texture;
     private Size size;
+    private Size jpegSize;
     private ImageReader reader;
     private CaptureRequest.Builder previewBuilder;
     private CameraCaptureSession previewSession;
-    private Size[] jpegSizes = null;
     private QrDetector detector;
     private int sensorOrientation;
     private CameraDevice cameraDevice;
@@ -153,8 +155,16 @@ class QrCameraC2 implements QrCamera {
             Integer sensorOrientationInteger = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
             sensorOrientation = sensorOrientationInteger == null ? 0 : sensorOrientationInteger;
 
-            size = getAppropriateSize(map.getOutputSizes(SurfaceTexture.class));
-            jpegSizes = map.getOutputSizes(ImageFormat.JPEG);
+            Log.i(TAG, "Device target size: " + targetWidth + "x" + targetHeight);
+            Log.i(TAG, "Camera sensor flipped: " + (sensorOrientation % 180 != 0));
+
+            Size[] sortedSurfaceTextureSizes = sortSizesAscending(map.getOutputSizes(SurfaceTexture.class));
+            size = getAppropriateSize(sortedSurfaceTextureSizes);
+            Log.i(TAG, "Set preview size: " + size);
+
+            Size[] sortedJpegSizes = sortSizesAscending(map.getOutputSizes(ImageFormat.JPEG));
+            jpegSize = getAppropriateSize(sortedJpegSizes);
+            Log.i(TAG, "Set camera size: " + jpegSize);
 
             manager.openCamera(cameraId, new CameraDevice.StateCallback() {
                 @Override
@@ -224,8 +234,6 @@ class QrCameraC2 implements QrCamera {
 
     private void startCamera() {
         List<Surface> list = new ArrayList<>();
-
-        Size jpegSize = getAppropriateSize(jpegSizes);
 
         final int width = jpegSize.getWidth(), height = jpegSize.getHeight();
         reader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, 5);
@@ -320,50 +328,49 @@ class QrCameraC2 implements QrCamera {
         }
     }
 
+    /**
+     * Takes a sorted ascending array of sizes and returns the size closest to targetHeight & targetWidth
+     */
     private Size getAppropriateSize(Size[] sizes) {
+        Size s = sizes[0];
+
         // assume sizes is never 0
         if (sizes.length == 1) {
-            return sizes[0];
+            return s;
         }
 
-        Size s = sizes[0];
-        Size s1 = sizes[1];
-
-        if (s1.getWidth() > s.getWidth() || s1.getHeight() > s.getHeight()) {
-            // ascending
-            if (sensorOrientation % 180 == 0) {
-                for (Size size : sizes) {
-                    s = size;
-                    if (size.getHeight() > targetHeight && size.getWidth() > targetWidth) {
-                        break;
-                    }
-                }
-            } else {
-                for (Size size : sizes) {
-                    s = size;
-                    if (size.getHeight() > targetWidth && size.getWidth() > targetHeight) {
-                        break;
-                    }
+        if (sensorOrientation % 180 == 0) {
+            for (Size size : sizes) {
+                s = size;
+                if (size.getHeight() > targetHeight && size.getWidth() > targetWidth) {
+                    break;
                 }
             }
         } else {
-            // descending
-            if (sensorOrientation % 180 == 0) {
-                for (Size size : sizes) {
-                    if (size.getHeight() < targetHeight || size.getWidth() < targetWidth) {
-                        break;
-                    }
-                    s = size;
-                }
-            } else {
-                for (Size size : sizes) {
-                    if (size.getHeight() < targetWidth || size.getWidth() < targetHeight) {
-                        break;
-                    }
-                    s = size;
+            for (Size size : sizes) {
+                s = size;
+                if (size.getHeight() > targetWidth && size.getWidth() > targetHeight) {
+                    break;
                 }
             }
         }
+
         return s;
+    }
+
+    private Size[] sortSizesAscending(Size[] sizes) {
+        Comparator<Size> compareWidth = new Comparator<Size>() {
+            public int compare(Size a, Size b) {
+                return Integer.compare(a.getWidth(), b.getWidth());
+            }
+        };
+        Comparator<Size> compareHeight = new Comparator<Size>() {
+            public int compare(Size a, Size b) {
+                return Integer.compare(a.getHeight(), b.getHeight());
+            }
+        };
+
+        Arrays.sort(sizes, compareWidth.thenComparing(compareHeight));
+        return sizes;
     }
 }
