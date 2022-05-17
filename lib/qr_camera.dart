@@ -1,8 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart';
 import 'package:native_device_orientation/native_device_orientation.dart';
 import 'package:qr_mobile_vision/qr_mobile_vision.dart';
 
@@ -47,15 +45,18 @@ class QrCamera extends StatefulWidget {
 }
 
 class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
+  // needed for flutter < 3.0 to still be supported
+  T? _ambiguate<T>(T? value) => value;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance!.addObserver(this);
+    _ambiguate(WidgetsBinding.instance)!.addObserver(this);
   }
 
   @override
   dispose() {
-    WidgetsBinding.instance!.removeObserver(this);
+    _ambiguate(WidgetsBinding.instance)!.removeObserver(this);
     super.dispose();
   }
 
