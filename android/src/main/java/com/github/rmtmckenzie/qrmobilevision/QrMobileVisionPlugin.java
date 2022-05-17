@@ -20,13 +20,11 @@ import java.util.Map;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
-import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry;
-import io.flutter.plugin.common.PluginRegistry.Registrar;
 import io.flutter.view.TextureRegistry;
 
 
@@ -44,29 +42,21 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
     private boolean waitingForPermissionResult;
     private boolean permissionDenied;
     private ReadingInstance readingInstance;
-    private FlutterPluginBinding flutterPluginBinding;
-
-    /**
-     * Plugin registration.
-     */
-    public static void registerWith(Registrar registrar) {
-        QrMobileVisionPlugin plugin = new QrMobileVisionPlugin();
-        plugin.performV1Registration(registrar);
-    }
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
-        flutterPluginBinding = binding;
+        textures = binding.getTextureRegistry();
+        channel = new MethodChannel(binding.getBinaryMessenger(), "com.github.rmtmckenzie/qr_mobile_vision");
+        channel.setMethodCallHandler(this);
     }
 
     @Override
-    public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-        flutterPluginBinding = null;
-    }
+    public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {}
 
     @Override
     public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
-        performV2Registration(flutterPluginBinding, binding);
+        binding.addRequestPermissionsResultListener(this);
+        activity = binding.getActivity();
     }
 
     @Override
@@ -81,40 +71,11 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
 
     @Override
     public void onDetachedFromActivity() {
+        activity = null;
         channel.setMethodCallHandler(null);
         channel = null;
     }
 
-    private void performV1Registration(Registrar registrar) {
-        performRegistration(true, registrar, null, null);
-    }
-
-    private void performV2Registration(FlutterPluginBinding flutterPluginBinding, ActivityPluginBinding activityPluginBinding) {
-        performRegistration(false, null, flutterPluginBinding, activityPluginBinding);
-    }
-
-    private void performRegistration(boolean isVersion1Embedding, Registrar registrar, FlutterPluginBinding flutterPluginBinding, ActivityPluginBinding activityPluginBinding) {
-        Log.i(TAG, "Plugin Registration being performed: " +
-            "isVersion1Embedding " + isVersion1Embedding +
-            ", registrar " + registrar +
-            ", flutterPluginBinding " + flutterPluginBinding +
-            ", activityPluginBinding " + activityPluginBinding);
-
-        BinaryMessenger messenger;
-        if (isVersion1Embedding) {
-            messenger = registrar.messenger();
-            activity = registrar.activity();
-            textures = registrar.textures();
-            registrar.addRequestPermissionsResultListener(this);
-        } else {
-            messenger = flutterPluginBinding.getBinaryMessenger();
-            activity = activityPluginBinding.getActivity();
-            textures = flutterPluginBinding.getTextureRegistry();
-            activityPluginBinding.addRequestPermissionsResultListener(this);
-        }
-        channel = new MethodChannel(messenger, "com.github.rmtmckenzie/qr_mobile_vision");
-        channel.setMethodCallHandler(this);
-    }
 
     @Override
     public boolean onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
@@ -251,7 +212,7 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
         }
     }
 
-    private class ReadingInstance {
+    private static class ReadingInstance {
         final QrReader reader;
         final TextureRegistry.SurfaceTextureEntry textureEntry;
         final Result startResult;

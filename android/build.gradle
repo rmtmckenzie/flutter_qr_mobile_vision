@@ -4,28 +4,28 @@ version '1.0-SNAPSHOT'
 buildscript {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.2'
+        classpath 'com.android.tools.build:gradle:7.1.0'
     }
 }
 
 rootProject.allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
 }
 
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 31
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 19
     }
     lintOptions {
         disable 'InvalidPackage'
@@ -33,7 +33,7 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.mlkit:barcode-scanning:16.1.1'
+    implementation 'com.google.mlkit:barcode-scanning:17.0.2'
 }
 
 
