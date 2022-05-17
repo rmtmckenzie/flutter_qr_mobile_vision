@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
 import android.util.Log;
 import android.util.SparseIntArray;
 import android.view.Surface;
@@ -180,6 +181,31 @@ class QrCameraC1 implements QrCamera {
     @Override
     public int getOrientation() {
         return (info.orientation + 270) % 360;
+    }
+
+    @Override
+    public void toggleFlash() {
+        Camera.Parameters p = camera.getParameters();
+
+        switch (p.getFlashMode()) {
+            case Camera.Parameters.FLASH_MODE_ON:
+                p.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+                break;
+            case Camera.Parameters.FLASH_MODE_OFF:
+                p.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+                break;
+            case Camera.Parameters.FLASH_MODE_AUTO:
+                p.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
+                break;
+            case Camera.Parameters.FLASH_MODE_TORCH:
+                p.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+                break;
+            default:
+                p.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
+                break;
+        }
+
+        camera.setParameters(p);
     }
 
     @Override

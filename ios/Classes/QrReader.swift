@@ -159,6 +159,21 @@ class QrReader: NSObject {
     captureSession.addInput(input)
     captureSession.addOutput(output)
   }
+    
+    func toggleTorch(on: Bool) {
+        guard
+            let device = AVCaptureDevice.default(for: AVMediaType.video),
+            device.hasTorch
+        else { return }
+
+        do {
+            try device.lockForConfiguration()
+            device.torchMode = on ? .on : .off
+            device.unlockForConfiguration()
+        } catch {
+            print("Torch could not be used")
+        }
+    }
   
   func start() {
     captureSession.startRunning()

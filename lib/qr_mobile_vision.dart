@@ -67,6 +67,10 @@ class QrMobileVision {
     return PreviewDetails(surfaceWidth, surfaceHeight, orientation, textureId);
   }
 
+  static Future toggleFlash() {
+    return _channel.invokeMethod('toggleFlash').catchError(print);
+  }
+
   static Future stop() {
     channelReader.setQrCodeHandler(null);
     return _channel.invokeMethod('stop').catchError(print);
