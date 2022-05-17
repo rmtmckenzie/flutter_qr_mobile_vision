@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/widgets.dart';
 import 'package:native_device_orientation/native_device_orientation.dart';
 import 'package:qr_mobile_vision/qr_mobile_vision.dart';
@@ -22,6 +24,7 @@ class QrCamera extends StatefulWidget {
     WidgetBuilder? notStartedBuilder,
     WidgetBuilder? offscreenBuilder,
     ErrorCallback? onError,
+    this.cameraDirection = CameraDirection.BACK,
     this.formats,
   })  : notStartedBuilder = notStartedBuilder ?? _defaultNotStartedBuilder,
         offscreenBuilder = offscreenBuilder ?? notStartedBuilder ?? _defaultOffscreenBuilder,
@@ -35,6 +38,7 @@ class QrCamera extends StatefulWidget {
   final WidgetBuilder offscreenBuilder;
   final ErrorCallback onError;
   final List<BarcodeFormats>? formats;
+  final CameraDirection cameraDirection;
 
   static toggleFlash() {
     QrMobileVision.toggleFlash();
@@ -61,6 +65,17 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
   }
 
   @override
+  void didUpdateWidget(QrCamera oldWidget) {
+    if (oldWidget.cameraDirection != widget.cameraDirection) {
+      QrMobileVision.stop();
+      setState(() {
+        _asyncInitOnce = null;
+      });
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       setState(() => onScreen = true);
@@ -80,11 +95,13 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
 
   Future<PreviewDetails> _asyncInit(num width, num height) async {
     final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+    final deviceInfoFut = Platform.isAndroid ? DeviceInfoPlugin().androidInfo : Future.value(null);
     return await QrMobileVision.start(
       width: (devicePixelRatio * width.toInt()).ceil(),
       height: (devicePixelRatio * height.toInt()).ceil(),
       qrCodeHandler: widget.qrCodeCallback,
       formats: widget.formats,
+      cameraDirection: widget.cameraDirection,
     );
   }
 
@@ -170,6 +187,7 @@ class Preview extends StatelessWidget {
   final int? textureId;
   final int? sensorOrientation;
   final BoxFit fit;
+  final int sdkInt;
 
   Preview({
     required PreviewDetails previewDetails,
@@ -177,8 +195,9 @@ class Preview extends StatelessWidget {
     required this.targetHeight,
     required this.fit,
   })  : textureId = previewDetails.textureId,
-        width = previewDetails.width!.toDouble(),
-        height = previewDetails.height!.toDouble(),
+        width = previewDetails.width.toDouble(),
+        height = previewDetails.height.toDouble(),
+        sdkInt = previewDetails.sdkInt,
         sensorOrientation = previewDetails.sensorOrientation as int?;
 
   @override
@@ -190,13 +209,21 @@ class Preview extends StatelessWidget {
         int nativeRotation = 0;
         switch (nativeOrientation) {
           case NativeDeviceOrientation.portraitUp:
-            nativeRotation = 0;
+            if (sdkInt == 23) {
+              nativeRotation = 180;
+            } else {
+              nativeRotation = 0;
+            }
             break;
           case NativeDeviceOrientation.landscapeRight:
             nativeRotation = 90;
             break;
           case NativeDeviceOrientation.portraitDown:
-            nativeRotation = 180;
+            if (sdkInt == 23) {
+              nativeRotation = 0;
+            } else {
+              nativeRotation = 180;
+            }
             break;
           case NativeDeviceOrientation.landscapeLeft:
             nativeRotation = 270;

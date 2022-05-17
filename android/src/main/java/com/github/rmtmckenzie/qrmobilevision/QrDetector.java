@@ -1,17 +1,22 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
+import android.content.Context;
 import android.util.Log;
+import android.view.Display;
+import android.view.Surface;
+import android.view.WindowManager;
 
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.mlkit.vision.barcode.BarcodeScanning;
-import com.google.mlkit.vision.barcode.BarcodeScanner;
-import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
-import com.google.mlkit.vision.barcode.common.Barcode;
-import com.google.mlkit.vision.common.InputImage;
+import com.google.firebase.ml.vision.FirebaseVision;
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode;
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetector;
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOptions;
+import com.google.firebase.ml.vision.common.FirebaseVisionImage;
+import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
 
 import java.util.List;
 
@@ -19,13 +24,13 @@ import java.util.List;
  * Allows QrCamera classes to send frames to a Detector
  */
 
-class QrDetector implements OnSuccessListener<List<Barcode>>, OnFailureListener {
+class QrDetector implements OnSuccessListener<List<FirebaseVisionBarcode>>, OnFailureListener {
     private static final String TAG = "cgr.qrmv.QrDetector";
     private final QrReaderCallbacks communicator;
-    private final BarcodeScanner detector;
+    private final FirebaseVisionBarcodeDetector detector;
 
     public interface Frame {
-        InputImage toImage();
+        FirebaseVisionImage toImage();
 
         void close();
     }
@@ -36,9 +41,9 @@ class QrDetector implements OnSuccessListener<List<Barcode>>, OnFailureListener 
     @GuardedBy("this")
     private Frame processingFrame;
 
-    QrDetector(QrReaderCallbacks communicator, BarcodeScannerOptions options) {
+    QrDetector(QrReaderCallbacks communicator, FirebaseVisionBarcodeDetectorOptions options) {
         this.communicator = communicator;
-        this.detector = BarcodeScanning.getClient(options);
+        this.detector = FirebaseVision.getInstance().getVisionBarcodeDetector(options);
     }
 
     void detect(Frame frame) {
@@ -60,7 +65,7 @@ class QrDetector implements OnSuccessListener<List<Barcode>>, OnFailureListener 
     }
 
     private void processFrame(Frame frame) {
-        InputImage image;
+        FirebaseVisionImage image;
         try {
             image = frame.toImage();
         } catch (IllegalStateException ex) {
@@ -69,14 +74,16 @@ class QrDetector implements OnSuccessListener<List<Barcode>>, OnFailureListener 
             return;
         }
 
-        detector.process(image)
+        if (image != null)
+        detector.detectInImage(image)
             .addOnSuccessListener(this)
             .addOnFailureListener(this);
+        frame.close();
     }
 
     @Override
-    public void onSuccess(List<Barcode> firebaseVisionBarcodes) {
-        for (Barcode barcode : firebaseVisionBarcodes) {
+    public void onSuccess(List<FirebaseVisionBarcode> firebaseVisionBarcodes) {
+        for (FirebaseVisionBarcode barcode : firebaseVisionBarcodes) {
             communicator.qrRead(barcode.getRawValue());
         }
         processLatest();

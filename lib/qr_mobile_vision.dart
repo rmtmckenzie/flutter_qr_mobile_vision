@@ -1,14 +1,33 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/services.dart';
 
-class PreviewDetails {
-  num? width;
-  num? height;
+enum CameraDirection {
+  FRONT,
+  BACK,
+}
+
+class NativePreviewDetails {
+  num width;
+  num height;
   num? sensorOrientation;
   int? textureId;
 
-  PreviewDetails(this.width, this.height, this.sensorOrientation, this.textureId);
+  NativePreviewDetails(this.width, this.height, this.sensorOrientation, this.textureId);
+}
+
+class PreviewDetails {
+  PreviewDetails(this._nativePreviewDetails, this.sdkInt);
+
+  NativePreviewDetails _nativePreviewDetails;
+  int sdkInt;
+
+  num get width => _nativePreviewDetails.width;
+  num get height => _nativePreviewDetails.height;
+  num? get sensorOrientation => _nativePreviewDetails.sensorOrientation;
+  int? get textureId => _nativePreviewDetails.textureId;
 }
 
 enum BarcodeFormats {
@@ -41,6 +60,7 @@ class QrMobileVision {
     required int width,
     required int height,
     required QRCodeHandler qrCodeHandler,
+    CameraDirection cameraDirection = CameraDirection.BACK,
     List<BarcodeFormats>? formats = _defaultBarcodeFormats,
   }) async {
     final _formats = formats ?? _defaultBarcodeFormats;
@@ -48,23 +68,26 @@ class QrMobileVision {
 
     List<String> formatStrings = _formats.map((format) => format.toString().split('.')[1]).toList(growable: false);
 
+    final deviceInfoFut = Platform.isAndroid ? DeviceInfoPlugin().androidInfo : Future.value(null);
+
     channelReader.setQrCodeHandler(qrCodeHandler);
-    var details = await _channel.invokeMethod('start', {
+    final details = (await _channel.invokeMapMethod<String, dynamic>('start', {
       'targetWidth': width,
       'targetHeight': height,
       'heartbeatTimeout': 0,
+      'cameraDirection': (cameraDirection == CameraDirection.FRONT ? 0 : 1),
       'formats': formatStrings,
-    });
-
-    // invokeMethod returns Map<dynamic,...> in dart 2.0
-    assert(details is Map<dynamic, dynamic>);
+    }))!;
 
     int? textureId = details["textureId"];
     num? orientation = details["surfaceOrientation"];
-    num? surfaceHeight = details["surfaceHeight"];
-    num? surfaceWidth = details["surfaceWidth"];
+    num surfaceHeight = details["surfaceHeight"];
+    num surfaceWidth = details["surfaceWidth"];
 
-    return PreviewDetails(surfaceWidth, surfaceHeight, orientation, textureId);
+    final deets = await NativePreviewDetails(surfaceWidth, surfaceHeight, orientation, textureId);
+    final devInfo = await deviceInfoFut;
+
+    return PreviewDetails(deets, devInfo?.version.sdkInt ?? -1);
   }
 
   static Future toggleFlash() {
