@@ -26,7 +26,7 @@ class QrReader {
         this.context = context;
         this.startedCallback = startedCallback;
 
-        if (android.os.Build.VERSION.SDK_INT >= 21) {
+        if (android.os.Build.VERSION.SDK_INT >= 23) {
             Log.i(TAG, "Using new camera API.");
             qrCamera = new QrCameraC2(width, height, texture, context, new QrDetector(communicator, options));
         } else {
@@ -35,7 +35,7 @@ class QrReader {
         }
     }
 
-    void start(final int heartBeatTimeout) throws IOException, NoPermissionException, Exception {
+    void start(final int heartBeatTimeout, final int cameraDirection) throws IOException, NoPermissionException, Exception {
         if (!hasCameraHardware(context)) {
             throw new Exception(Exception.Reason.noHardware);
         }
@@ -43,11 +43,11 @@ class QrReader {
         if (!checkCameraPermission(context)) {
             throw new NoPermissionException();
         } else {
-            continueStarting(heartBeatTimeout);
+            continueStarting(heartBeatTimeout, cameraDirection);
         }
     }
 
-    private void continueStarting(int heartBeatTimeout) throws IOException {
+    private void continueStarting(int heartBeatTimeout, final int cameraDirection) throws IOException {
         try {
             if (heartBeatTimeout > 0) {
                 if (heartbeat != null) {
@@ -61,7 +61,7 @@ class QrReader {
                 });
             }
 
-            qrCamera.start();
+            qrCamera.start(cameraDirection);
             startedCallback.started();
         } catch (Throwable t) {
             startedCallback.startingFailed(t);

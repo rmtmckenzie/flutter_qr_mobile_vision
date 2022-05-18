@@ -100,11 +100,30 @@ enum QrReaderError: Error {
   case noCamera
 }
 
+enum QrCameraDirection {
+  case front
+  case back
+}
+
+extension QrCameraDirection {
+  var cameraPosition: AVCaptureDevice.Position {
+    switch self {
+    case .front:
+      return AVCaptureDevice.Position.front
+    case .back:
+      return AVCaptureDevice.Position.back
+    }
+  }
+}
+
+
+
 class QrReader: NSObject {
   let targetWidth: Int
   let targetHeight: Int
   let textureRegistry: FlutterTextureRegistry
   let isProcessing = Atomic<Bool>(false)
+  let cameraPosition :AVCaptureDevice.Position
   
   var captureDevice: AVCaptureDevice!
   var captureSession: AVCaptureSession!
@@ -112,16 +131,18 @@ class QrReader: NSObject {
   var textureId: Int64!
   var pixelBuffer : CVPixelBuffer?
   let barcodeDetector: BarcodeScanner
-  let cameraPosition = AVCaptureDevice.Position.back
   let qrCallback: (_:String) -> Void
   
-  init(targetWidth: Int, targetHeight: Int, textureRegistry: FlutterTextureRegistry, options: BarcodeScannerOptions, qrCallback: @escaping (_:String) -> Void) throws {
+  
+  
+  init(targetWidth: Int, targetHeight: Int, direction: QrCameraDirection, textureRegistry: FlutterTextureRegistry, options: BarcodeScannerOptions, qrCallback: @escaping (_:String) -> Void) throws {
     self.targetWidth = targetWidth
     self.targetHeight = targetHeight
     self.textureRegistry = textureRegistry
     self.qrCallback = qrCallback
-    
+    self.cameraPosition  = direction.cameraPosition
     self.barcodeDetector = BarcodeScanner.barcodeScanner(options: options)
+    
     
     super.init()
     
@@ -159,21 +180,22 @@ class QrReader: NSObject {
     captureSession.addInput(input)
     captureSession.addOutput(output)
   }
+  
+  
+  func toggleTorch(on: Bool) {
+    guard
+      let device = AVCaptureDevice.default(for: AVMediaType.video),
+      device.hasTorch
+    else { return }
     
-    func toggleTorch(on: Bool) {
-        guard
-            let device = AVCaptureDevice.default(for: AVMediaType.video),
-            device.hasTorch
-        else { return }
-
-        do {
-            try device.lockForConfiguration()
-            device.torchMode = on ? .on : .off
-            device.unlockForConfiguration()
-        } catch {
-            print("Torch could not be used")
-        }
+    do {
+      try device.lockForConfiguration()
+      device.torchMode = on ? .on : .off
+      device.unlockForConfiguration()
+    } catch {
+      print("Torch could not be used")
     }
+  }
   
   func start() {
     captureSession.startRunning()
@@ -189,12 +211,12 @@ class QrReader: NSObject {
 }
 
 extension QrReader : FlutterTexture {
-    func copyPixelBuffer() -> Unmanaged<CVPixelBuffer>? {
-        if(pixelBuffer == nil){
-            return nil
-        }
-        return  .passRetained(pixelBuffer!)
+  func copyPixelBuffer() -> Unmanaged<CVPixelBuffer>? {
+    if(pixelBuffer == nil){
+      return nil
     }
+    return  .passRetained(pixelBuffer!)
+  }
 }
 
 extension QrReader: AVCaptureVideoDataOutputSampleBufferDelegate {
@@ -203,7 +225,7 @@ extension QrReader: AVCaptureVideoDataOutputSampleBufferDelegate {
     
     pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)!
     textureRegistry.textureFrameAvailable(self.textureId)
- 
+    
     guard !isProcessing.swap(true) else {
       return
     }
@@ -231,36 +253,36 @@ extension QrReader: AVCaptureVideoDataOutputSampleBufferDelegate {
         guard let features = features, !features.isEmpty else {
           return
         }
-                
+        
         for feature in features {
-            if let value = feature.rawValue {
-                self.qrCallback(value)
-            }
+          if let value = feature.rawValue {
+            self.qrCallback(value)
+          }
         }
       }
     }
   }
-    
-    
-
-    func imageOrientation(
-      deviceOrientation: UIDeviceOrientation,
-      defaultOrientation: UIDeviceOrientation
-    ) -> UIImage.Orientation {
-      switch deviceOrientation {
-      case .portrait:
-        return cameraPosition == .front ? .leftMirrored : .right
-      case .landscapeLeft:
-        return cameraPosition == .front ? .downMirrored : .up
-      case .portraitUpsideDown:
-        return cameraPosition == .front ? .rightMirrored : .left
-      case .landscapeRight:
-        return cameraPosition == .front ? .upMirrored : .down
-      case .faceDown, .faceUp, .unknown:
-        return .up
-      @unknown default:
-        return imageOrientation(deviceOrientation: defaultOrientation, defaultOrientation: .portrait)
-        }
+  
+  
+  
+  func imageOrientation(
+    deviceOrientation: UIDeviceOrientation,
+    defaultOrientation: UIDeviceOrientation
+  ) -> UIImage.Orientation {
+    switch deviceOrientation {
+    case .portrait:
+      return cameraPosition == .front ? .leftMirrored : .right
+    case .landscapeLeft:
+      return cameraPosition == .front ? .downMirrored : .up
+    case .portraitUpsideDown:
+      return cameraPosition == .front ? .rightMirrored : .left
+    case .landscapeRight:
+      return cameraPosition == .front ? .upMirrored : .down
+    case .faceDown, .faceUp, .unknown:
+      return .up
+    @unknown default:
+      return imageOrientation(deviceOrientation: defaultOrientation, defaultOrientation: .portrait)
     }
-
+  }
+  
 }

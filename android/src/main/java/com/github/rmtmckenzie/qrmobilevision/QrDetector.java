@@ -7,9 +7,9 @@ import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.barcode.BarcodeScanner;
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
+import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.common.InputImage;
 
@@ -69,9 +69,12 @@ class QrDetector implements OnSuccessListener<List<Barcode>>, OnFailureListener 
             return;
         }
 
-        detector.process(image)
-            .addOnSuccessListener(this)
-            .addOnFailureListener(this);
+        if (image != null) {
+            detector.process(image)
+                .addOnSuccessListener(this)
+                .addOnFailureListener(this);
+        }
+        frame.close();
     }
 
     @Override
