@@ -188,6 +188,16 @@ These are the supported types:
   UPC_E
 ```
 
+### `direction`
+
+Whether you want the front or the back camera to be used.
+
+## Toggle flash
+
+When the camera is running, you can use the `QrCamera.toggleFlash()` or `QrMobileVision.toggleFlash()` methods
+to turn the flash on or off. A better solution is in the works for this, but I can't make a commitment for when
+I'll have time to finish it.
+
 ## Push and Pop
 
 If you push a new widget on top of a the current page using the navigator, the camera doesn't

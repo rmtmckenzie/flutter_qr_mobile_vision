@@ -1,3 +1,15 @@
+## [4.0.0-dev.1]
+* Updates to flutter 3.0
+* Adds toggling flash functionality
+* Adds specific fix for Android 6.0 (not sure if this might cause problems for some devices though,
+  it flips orientation for landscape
+* Adds ability to choose front vs back camera
+* Sorts list of resolutions before choosing the appropriate one
+
+_Big thanks to all the PRs that helped with this release!_
+
+_Lots of changes so I'm releasing as dev first - if no big issues pop up in the next couple days, I'll release a non-dev version_
+
 ## [3.0.1]
 * Incorporate PRs for fix on iOS when receive null qr data, and to
   use screen's physical resolution rather than logical resolution.
