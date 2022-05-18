@@ -26,7 +26,7 @@ class QrReader {
         this.context = context;
         this.startedCallback = startedCallback;
 
-        if (android.os.Build.VERSION.SDK_INT >= 21) {
+        if (android.os.Build.VERSION.SDK_INT >= 23) {
             Log.i(TAG, "Using new camera API.");
             qrCamera = new QrCameraC2(width, height, texture, context, new QrDetector(communicator, options));
         } else {

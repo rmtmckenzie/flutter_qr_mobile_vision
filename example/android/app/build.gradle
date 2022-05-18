@@ -29,9 +29,6 @@ apply plugin: 'com.google.gms.google-services'
 android {
     compileSdkVersion 31
 
-    lintOptions {
-        disable 'InvalidPackage'
-    }
 
     defaultConfig {
         applicationId "com.github.rmtmckenzie.qrmobilevisionexample"
@@ -48,6 +45,10 @@ android {
             signingConfig signingConfigs.debug
         }
     }
+    lint {
+        disable 'InvalidPackage'
+    }
+    namespace 'com.github.rmtmckenzie.qrmobilevisionexample'
 }
 
 gradle.projectsEvaluated {

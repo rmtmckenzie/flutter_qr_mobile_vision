@@ -45,13 +45,13 @@ class _MyAppState extends State<MyApp> {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            RaisedButton(
-              onPressed: () {
-                setState(() {
-                  dirState = !dirState;
-                });
-              },
-              child: Text('Direction'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text("Back"),
+                Switch(value: dirState, onChanged: (val) => setState(() => dirState = val)),
+                Text("Front"),
+              ],
             ),
             Expanded(
                 child: camState
@@ -90,7 +90,7 @@ class _MyAppState extends State<MyApp> {
       ),
       floatingActionButton: FloatingActionButton(
           child: Text(
-            "press me",
+            "on/off",
             textAlign: TextAlign.center,
           ),
           onPressed: () {
