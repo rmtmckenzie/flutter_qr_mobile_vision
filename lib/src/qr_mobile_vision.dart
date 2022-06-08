@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -17,7 +18,8 @@ class QrMobileVision {
   static Future<PreviewDetails> start({
     required int width,
     required int height,
-    required ValueChanged<String?> qrCodeHandler,
+    ValueChanged<String?>? qrCodeHandler,
+    ValueChanged<Uint8List?>? qrCodeHandlerBytes,
     CameraDirection cameraDirection = CameraDirection.BACK,
     List<BarcodeFormats>? formats = defaultBarcodeFormats,
   }) async {
@@ -28,7 +30,7 @@ class QrMobileVision {
 
     final deviceInfoFut = Platform.isAndroid ? DeviceInfoPlugin().androidInfo : Future.value(null);
 
-    channelReader.setQrCodeHandler(qrCodeHandler);
+    channelReader.setQrCodeHandler(qrCodeHandler, qrCodeHandlerBytes);
     final details = (await _channel.invokeMapMethod<String, dynamic>('start', {
       'targetWidth': width,
       'targetHeight': height,
@@ -53,7 +55,7 @@ class QrMobileVision {
   }
 
   static Future stop() {
-    channelReader.setQrCodeHandler(null);
+    channelReader.setQrCodeHandler(null, null);
     return _channel.invokeMethod('stop').catchError(print);
   }
 

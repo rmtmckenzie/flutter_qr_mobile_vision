@@ -70,6 +70,10 @@ class _MyAppState extends State<MyApp> {
                                 qr = code;
                               });
                             },
+                            qrCodeCallbackBytes: (code) {
+                              print(code);
+                            },
+
                             child: Container(
                               decoration: BoxDecoration(
                                 color: Colors.transparent,

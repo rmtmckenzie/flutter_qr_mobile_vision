@@ -187,6 +187,11 @@ public class QrMobileVisionPlugin implements MethodCallHandler, QrReaderCallback
     }
 
     @Override
+    public void qrReadBytes(byte[] data) {
+        channel.invokeMethod("qrReadBytes", data);
+    }
+
+    @Override
     public void started() {
         Map<String, Object> response = new HashMap<>();
         response.put("surfaceWidth", readingInstance.reader.qrCamera.getWidth());
