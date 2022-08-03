@@ -1,3 +1,9 @@
+## [4.0.1]
+* Updates device_info_plus dependency
+
+## [4.0.0]
+* Same as 4.0.0-dev.1 but is release package
+
 ## [4.0.0-dev.1]
 * Updates to flutter 3.0
 * Adds toggling flash functionality
