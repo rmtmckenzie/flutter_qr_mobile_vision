@@ -19,7 +19,7 @@ flutter:
 dependencies:
   flutter:
     sdk: flutter
-  native_device_orientation: ^1.0.0
+  native_device_orientation: ^1.1.4
   device_info_plus: '>=3.0.0 <5.0.0'
 
 false_secrets:
