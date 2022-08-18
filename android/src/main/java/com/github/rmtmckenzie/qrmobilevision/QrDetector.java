@@ -1,9 +1,6 @@
 package com.github.rmtmckenzie.qrmobilevision;
 
-import android.util.Log;
-
-import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
+import java.util.List;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -13,7 +10,9 @@ import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.common.InputImage;
 
-import java.util.List;
+import android.util.Log;
+import androidx.annotation.GuardedBy;
+import androidx.annotation.NonNull;
 
 /**
  * Allows QrCamera classes to send frames to a Detector
@@ -74,7 +73,8 @@ class QrDetector implements OnSuccessListener<List<Barcode>>, OnFailureListener 
                 .addOnSuccessListener(this)
                 .addOnFailureListener(this);
         }
-        frame.close();
+        // commented out as it was causing an issue with "IllegalStateException: Image is already closed" error
+        //frame.close();
     }
 
     @Override

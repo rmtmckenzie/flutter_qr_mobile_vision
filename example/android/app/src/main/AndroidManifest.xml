@@ -17,7 +17,7 @@
         android:label="qr_mobile_vision_example"
         android:allowBackup="false">
         <activity
-            android:name="io.flutter.embedding.android.FlutterActivity"
+            android:name="${applicationName}"
             android:exported="true"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"

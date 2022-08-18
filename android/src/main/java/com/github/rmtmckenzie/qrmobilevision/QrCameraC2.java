@@ -28,6 +28,7 @@ import com.google.mlkit.vision.common.InputImage;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -400,6 +401,8 @@ class QrCameraC2 implements QrCamera {
     }
 
     private Size[] sortSizesAscending(Size[] sizes) {
+        // Java code not supported on older versions of Android
+        /*
         Comparator<Size> compareWidth = new Comparator<Size>() {
             public int compare(Size a, Size b) {
                 return Integer.compare(a.getWidth(), b.getWidth());
@@ -412,6 +415,27 @@ class QrCameraC2 implements QrCamera {
         };
 
         Arrays.sort(sizes, compareWidth.thenComparing(compareHeight));
+        */
+        Comparator<Size> areaComparator = new Comparator<Size>() {
+
+            public int compare(Size size, Size size2) {
+                if (size.equals(size2)) {
+                    return 0;
+                }
+
+                long width = size.getWidth();
+                long width2 = size2.getWidth();
+                long area = width * size.getHeight();
+                long area2 = width2 * size2.getHeight();
+
+                if (area == area2) {
+                    return (width > width2) ? 1 : -1;
+                }
+
+                return (area > area2) ? 1 : -1;
+            }
+        };
+        Collections.sort(Arrays.asList(sizes), areaComparator);
         return sizes;
     }
 }
