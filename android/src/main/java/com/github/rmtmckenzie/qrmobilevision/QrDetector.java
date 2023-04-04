@@ -5,8 +5,11 @@ import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 
+
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.mlkit.vision.barcode.BarcodeScanner;
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 import com.google.mlkit.vision.barcode.BarcodeScanning;
@@ -72,9 +75,11 @@ class QrDetector implements OnSuccessListener<List<Barcode>>, OnFailureListener 
         if (image != null) {
             detector.process(image)
                 .addOnSuccessListener(this)
-                .addOnFailureListener(this);
+                .addOnFailureListener(this)
+                .addOnCompleteListener((Task<List<Barcode>> firebaseVisionBarcodes) -> {
+                    frame.close();
+                });
         }
-        frame.close();
     }
 
     @Override
