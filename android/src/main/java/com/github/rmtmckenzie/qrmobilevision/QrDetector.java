@@ -77,7 +77,10 @@ class QrDetector implements OnSuccessListener<List<Barcode>>, OnFailureListener 
                 .addOnSuccessListener(this)
                 .addOnFailureListener(this)
                 .addOnCompleteListener((Task<List<Barcode>> firebaseVisionBarcodes) -> {
+                    // regardless of failure or success, close the previous frame
+                    // and process the next one.
                     frame.close();
+                    processLatest();;
                 });
         }
     }
@@ -87,7 +90,6 @@ class QrDetector implements OnSuccessListener<List<Barcode>>, OnFailureListener 
         for (Barcode barcode : firebaseVisionBarcodes) {
             communicator.qrRead(barcode.getRawValue());
         }
-        processLatest();
     }
 
     @Override
