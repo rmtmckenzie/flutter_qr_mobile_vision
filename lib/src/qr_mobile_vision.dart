@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_mobile_vision/src/barcode_formats.dart';
 import 'package:qr_mobile_vision/src/camera_direction.dart';
@@ -42,7 +41,7 @@ class QrMobileVision {
     num surfaceHeight = details["surfaceHeight"];
     num surfaceWidth = details["surfaceWidth"];
 
-    final deets = await NativePreviewDetails(surfaceWidth, surfaceHeight, orientation, textureId);
+    final deets = NativePreviewDetails(surfaceWidth, surfaceHeight, orientation, textureId);
     final devInfo = await deviceInfoFut;
 
     return PreviewDetails(deets, devInfo?.version.sdkInt ?? -1);
