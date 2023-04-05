@@ -58,6 +58,12 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
   }
 
   @override
+  void reassemble() {
+    restart();
+    super.reassemble();
+  }
+
+  @override
   dispose() {
     _ambiguate(WidgetsBinding.instance)!.removeObserver(this);
     super.dispose();
