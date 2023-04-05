@@ -1,3 +1,7 @@
+## [4.1.0]
+* Long overdue update to support newer versions of device_info_plus plugin
+* Fixes some crashes due to frame closing on Android
+
 ## [4.0.1]
 * Updates device_info_plus dependency
 
