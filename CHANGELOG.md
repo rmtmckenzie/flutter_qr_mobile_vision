@@ -1,3 +1,6 @@
+## [4.1.1]
+* Add support for 9.x.x versions of device_info_plus
+
 ## [4.1.0]
 * Long overdue update to support newer versions of device_info_plus plugin
 * Fixes some crashes due to frame closing on Android
