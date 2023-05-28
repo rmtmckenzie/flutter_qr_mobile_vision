@@ -25,7 +25,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String qr;
+  String? qr;
   bool camState = false;
   bool dirState = false;
 
