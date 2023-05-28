@@ -1,3 +1,6 @@
+## [4.1.2]
+* Small changes to support dart 3
+
 ## [4.1.1]
 * Add support for 9.x.x versions of device_info_plus
 
