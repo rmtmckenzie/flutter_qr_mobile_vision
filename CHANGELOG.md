@@ -1,3 +1,8 @@
+## [4.1.3]
+* Update android MLKit version, gradle, etc
+* Use triple camera support for iOS when available
+  (tested to work on phones without triple camera)
+
 ## [4.1.2]
 * Small changes to support dart 3
 
