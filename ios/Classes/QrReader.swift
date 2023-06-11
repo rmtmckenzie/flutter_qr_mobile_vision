@@ -148,14 +148,20 @@ class QrReader: NSObject {
     
     captureSession = AVCaptureSession()
     
-    if #available(iOS 10.0, *) {
-      captureDevice = AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInWideAngleCamera, for: AVMediaType.video, position: cameraPosition)
-    } else {
-      for device in AVCaptureDevice.devices(for: AVMediaType.video) {
-        if device.position == cameraPosition {
-          captureDevice = device
-          break
-        }
+    if #available(iOS 13.0, *) {
+        captureDevice = AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInTripleCamera, for: AVMediaType.video, position: cameraPosition)
+    }
+    
+    if captureDevice == nil {
+      if #available(iOS 10.0, *) {
+          captureDevice = AVCaptureDevice.default(AVCaptureDevice.DeviceType.builtInWideAngleCamera, for: AVMediaType.video, position: cameraPosition)
+      } else {
+          for device in AVCaptureDevice.devices(for: AVMediaType.video) {
+            if device.position == cameraPosition {
+              captureDevice = device
+              break
+            }
+          }
       }
     }
     
