@@ -190,8 +190,8 @@ class QrReader: NSObject {
   
   func toggleTorch(on: Bool) {
     guard
-      let device = AVCaptureDevice.default(for: AVMediaType.video),
-      device.hasTorch
+        let device = captureDevice ?? AVCaptureDevice.default(for: AVMediaType.video),
+        device.hasTorch
     else { return }
     
     do {
