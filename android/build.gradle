@@ -22,7 +22,8 @@ rootProject.allprojects {
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 33
+    namespace 'com.github.rmtmckenzie.qrmobilevision'
+    compileSdkVersion 34
 
     defaultConfig {
         minSdkVersion 19
