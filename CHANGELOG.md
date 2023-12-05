@@ -1,3 +1,6 @@
+## [4.1.4]
+* Bugfix for flashlight on phones with multiple cameras
+
 ## [4.1.3]
 * Update android MLKit version, gradle, etc
 * Use triple camera support for iOS when available
