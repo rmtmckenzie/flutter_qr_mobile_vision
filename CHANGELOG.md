@@ -1,4 +1,6 @@
 ## [5.0.0]
+* Bump version to match what is supported by MLKit library.
+  No more Camera1 API needed!
 * No major changes, but did recreate all plumbing with
   flutter create and updated qr_mobile_vision to 2.0
   which might require a flutter clean.
