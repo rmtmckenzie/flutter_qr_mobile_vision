@@ -1,3 +1,8 @@
+## [5.0.0]
+* No major changes, but did recreate all plumbing with
+  flutter create and updated qr_mobile_vision to 2.0
+  which might require a flutter clean.
+
 ## [4.1.4]
 * Bugfix for flashlight on phones with multiple cameras
 
