@@ -1,4 +1,4 @@
-## [5.0.0]
+## [5.0.0] - January 26, 2024
 * Bump version to match what is supported by MLKit library.
   No more Camera1 API needed!
 * No major changes, but did recreate all plumbing with
