@@ -1,3 +1,5 @@
+//ignore_for_file: constant_identifier_names
+
 enum BarcodeFormats {
   ALL_FORMATS,
   AZTEC,
@@ -15,6 +17,6 @@ enum BarcodeFormats {
   UPC_E,
 }
 
-const defaultBarcodeFormats = const [
+const defaultBarcodeFormats = [
   BarcodeFormats.ALL_FORMATS,
 ];

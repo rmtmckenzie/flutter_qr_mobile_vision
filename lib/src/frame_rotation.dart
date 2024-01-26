@@ -1,1 +1,6 @@
-enum FrameRotation { none, ninetyCC, oneeighty, twoseventyCC }
+enum FrameRotation {
+  none,
+  ninetyCC,
+  oneeighty,
+  twoseventyCC,
+}

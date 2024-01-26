@@ -5,18 +5,18 @@ import 'package:qr_mobile_vision/qr_mobile_vision.dart';
 import 'package:qr_mobile_vision/src/preview.dart';
 import 'package:qr_mobile_vision/src/preview_details.dart';
 
-final WidgetBuilder _defaultNotStartedBuilder = (context) => Text("Camera Loading ...");
-final WidgetBuilder _defaultOffscreenBuilder = (context) => Text("Camera Paused.");
-final ErrorCallback _defaultOnError = (BuildContext context, Object? error) {
-  print("Error reading from camera: $error");
-  return Text("Error reading from camera...");
-};
+Widget _defaultNotStartedBuilder(BuildContext context) => const Text("Camera Loading ...");
+Widget _defaultOffscreenBuilder(BuildContext context) => const Text("Camera Paused ...");
+Widget _defaultOnError(BuildContext context, Object? error) {
+  debugPrint("Error reading from camera: $error");
+  return const Text("Error reading from camera...");
+}
 
-typedef Widget ErrorCallback(BuildContext context, Object? error);
+typedef ErrorCallback = Widget Function(BuildContext context, Object? error);
 
 class QrCamera extends StatefulWidget {
-  QrCamera({
-    Key? key,
+  const QrCamera({
+    super.key,
     required this.qrCodeCallback,
     this.child,
     this.fit = BoxFit.cover,
@@ -27,8 +27,7 @@ class QrCamera extends StatefulWidget {
     this.formats,
   })  : notStartedBuilder = notStartedBuilder ?? _defaultNotStartedBuilder,
         offscreenBuilder = offscreenBuilder ?? notStartedBuilder ?? _defaultOffscreenBuilder,
-        onError = onError ?? _defaultOnError,
-        super(key: key);
+        onError = onError ?? _defaultOnError;
 
   final BoxFit fit;
   final ValueChanged<String?> qrCodeCallback;

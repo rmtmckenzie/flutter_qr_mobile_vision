@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import Flutter
 import MLKitVision
 import MLKitBarcodeScanning
 import os.log
