@@ -52,7 +52,9 @@ public class QrMobileVisionPlugin implements FlutterPlugin, MethodCallHandler, A
 
   @Override
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-    channel.setMethodCallHandler(null);
+    if (channel != null) {
+      channel.setMethodCallHandler(null);
+    }
   }
 
   @Override
