@@ -12,14 +12,14 @@ class QrChannelReader {
           }
           break;
         default:
-          print("QrChannelHandler: unknown method call received at "
+          debugPrint("QrChannelHandler: unknown method call received at "
               "${call.method}");
       }
     });
   }
 
   void setQrCodeHandler(ValueChanged<String?>? qrch) {
-    this.qrCodeHandler = qrch;
+    qrCodeHandler = qrch;
   }
 
   MethodChannel channel;

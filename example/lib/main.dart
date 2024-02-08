@@ -4,10 +4,12 @@ import 'package:qr_mobile_vision/qr_camera.dart';
 
 void main() {
   debugPaintSizeEnabled = false;
-  runApp(HomePage());
+  runApp(const HomePage());
 }
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   HomeState createState() => HomeState();
 }
@@ -15,17 +17,19 @@ class HomePage extends StatefulWidget {
 class HomeState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: MyApp());
+    return const MaterialApp(home: MyApp());
   }
 }
 
 class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
   @override
-  _MyAppState createState() => _MyAppState();
+  MyAppState createState() => MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
-  String qr;
+class MyAppState extends State<MyApp> {
+  String? qr;
   bool camState = false;
   bool dirState = false;
 
@@ -38,7 +42,10 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Plugin example app'),
+        title: const Text('Plugin example app'),
+        actions: <Widget>[
+          IconButton(icon: const Icon(Icons.light), onPressed: _swapBackLightState),
+        ],
       ),
       body: Center(
         child: Column(
@@ -48,9 +55,9 @@ class _MyAppState extends State<MyApp> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text("Back"),
+                const Text("Back"),
                 Switch(value: dirState, onChanged: (val) => setState(() => dirState = val)),
-                Text("Front"),
+                const Text("Front"),
               ],
             ),
             Expanded(
@@ -62,7 +69,7 @@ class _MyAppState extends State<MyApp> {
                           child: QrCamera(
                             onError: (context, error) => Text(
                               error.toString(),
-                              style: TextStyle(color: Colors.red),
+                              style: const TextStyle(color: Colors.red),
                             ),
                             cameraDirection: dirState ? CameraDirection.FRONT : CameraDirection.BACK,
                             qrCodeCallback: (code) {
@@ -83,13 +90,13 @@ class _MyAppState extends State<MyApp> {
                           ),
                         ),
                       )
-                    : Center(child: Text("Camera inactive"))),
+                    : const Center(child: Text("Camera inactive"))),
             Text("QRCODE: $qr"),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-          child: Text(
+          child: const Text(
             "on/off",
             textAlign: TextAlign.center,
           ),
@@ -99,5 +106,9 @@ class _MyAppState extends State<MyApp> {
             });
           }),
     );
+  }
+
+  _swapBackLightState() async {
+    QrCamera.toggleFlash();
   }
 }

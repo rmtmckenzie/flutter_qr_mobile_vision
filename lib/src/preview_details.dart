@@ -10,8 +10,8 @@ class NativePreviewDetails {
 class PreviewDetails {
   PreviewDetails(this._nativePreviewDetails, this.sdkInt);
 
-  NativePreviewDetails _nativePreviewDetails;
-  int sdkInt;
+  final NativePreviewDetails _nativePreviewDetails;
+  final int sdkInt;
 
   num get width => _nativePreviewDetails.width;
   num get height => _nativePreviewDetails.height;

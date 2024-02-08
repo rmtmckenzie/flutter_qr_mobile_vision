@@ -1,3 +1,28 @@
+## [5.0.0] - January 26, 2024
+* Bump version to match what is supported by MLKit library.
+  No more Camera1 API needed!
+* No major changes, but did recreate all plumbing with
+  flutter create and updated qr_mobile_vision to 2.0
+  which might require a flutter clean.
+
+## [4.1.4]
+* Bugfix for flashlight on phones with multiple cameras
+
+## [4.1.3]
+* Update android MLKit version, gradle, etc
+* Use triple camera support for iOS when available
+  (tested to work on phones without triple camera)
+
+## [4.1.2]
+* Small changes to support dart 3
+
+## [4.1.1]
+* Add support for 9.x.x versions of device_info_plus
+
+## [4.1.0]
+* Long overdue update to support newer versions of device_info_plus plugin
+* Fixes some crashes due to frame closing on Android
+
 ## [4.0.1]
 * Updates device_info_plus dependency
 

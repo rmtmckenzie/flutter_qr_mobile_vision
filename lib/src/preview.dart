@@ -11,6 +11,7 @@ class Preview extends StatelessWidget {
   final int sdkInt;
 
   Preview({
+    super.key,
     required PreviewDetails previewDetails,
     required this.targetWidth,
     required this.targetHeight,
