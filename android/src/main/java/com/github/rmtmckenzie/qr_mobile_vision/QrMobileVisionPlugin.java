@@ -34,7 +34,8 @@ public class QrMobileVisionPlugin implements FlutterPlugin, MethodCallHandler, A
   private static final String TAG = "cgr.qrmv.QrMobVisPlugin";
   private static final int REQUEST_PERMISSION = 1;
   private MethodChannel channel;
-  private Activity activity;
+  private ActivityPluginBinding activityBinding;
+
   private TextureRegistry textures;
   private Integer lastHeartbeatTimeout;
   private boolean waitingForPermissionResult;
@@ -46,8 +47,6 @@ public class QrMobileVisionPlugin implements FlutterPlugin, MethodCallHandler, A
     textures = binding.getTextureRegistry();
     channel = new MethodChannel(binding.getBinaryMessenger(), "qr_mobile_vision");
     channel.setMethodCallHandler(this);
-    Application app = (Application) binding.getApplicationContext();
-
   }
 
   @Override
@@ -58,7 +57,7 @@ public class QrMobileVisionPlugin implements FlutterPlugin, MethodCallHandler, A
   @Override
   public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
     binding.addRequestPermissionsResultListener(this);
-    activity = binding.getActivity();
+    activityBinding = binding;
   }
 
   @Override
@@ -73,9 +72,7 @@ public class QrMobileVisionPlugin implements FlutterPlugin, MethodCallHandler, A
 
   @Override
   public void onDetachedFromActivity() {
-    activity = null;
-    channel.setMethodCallHandler(null);
-    channel = null;
+    activityBinding = null;
   }
 
   @Override
@@ -118,6 +115,8 @@ public class QrMobileVisionPlugin implements FlutterPlugin, MethodCallHandler, A
           result.error("QRREADER_ERROR", "noPermission", null);
         } else if (readingInstance != null) {
           result.error("ALREADY_RUNNING", "Start cannot be called when already running", "");
+        } else if (activityBinding == null) {
+          result.error("DETACHED", "Cannot start when not attached to activity", null);
         } else {
           lastHeartbeatTimeout = methodCall.argument("heartbeatTimeout");
           Integer targetWidth = methodCall.argument("targetWidth");
@@ -133,7 +132,7 @@ public class QrMobileVisionPlugin implements FlutterPlugin, MethodCallHandler, A
           BarcodeScannerOptions options = BarcodeFormats.optionsFromStringList(formatStrings);
 
           TextureRegistry.SurfaceTextureEntry textureEntry = textures.createSurfaceTexture();
-          QrReader reader = new QrReader(targetWidth, targetHeight, activity, options,
+          QrReader reader = new QrReader(targetWidth, targetHeight, activityBinding.getActivity(), options,
             this, this, textureEntry.surfaceTexture());
 
           readingInstance = new ReadingInstance(reader, textureEntry, result);
@@ -150,8 +149,11 @@ public class QrMobileVisionPlugin implements FlutterPlugin, MethodCallHandler, A
             result.error(e.reason().name(), "Error starting camera for reason: " + e.reason().name(), null);
           } catch (NoPermissionException e) {
             waitingForPermissionResult = true;
-            ActivityCompat.requestPermissions(activity,
-              new String[]{Manifest.permission.CAMERA}, REQUEST_PERMISSION);
+            ActivityCompat.requestPermissions(
+              activityBinding.getActivity(),
+              new String[]{Manifest.permission.CAMERA},
+              REQUEST_PERMISSION
+            );
           }
         }
         break;

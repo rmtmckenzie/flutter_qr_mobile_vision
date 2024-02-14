@@ -26,7 +26,8 @@ android {
         namespace 'com.github.rmtmckenzie.qr_mobile_vision'
     }
 
-    compileSdk 34
+    // update this when flutter default changes
+    compileSdk 33
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
