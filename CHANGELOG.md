@@ -1,3 +1,7 @@
+## [5.0.1] - Feb 14, 2024
+* Fix null pointer exception on disconnect for android
+* Fix deprecated Handler
+
 ## [5.0.0] - January 26, 2024
 * Bump version to match what is supported by MLKit library.
   No more Camera1 API needed!
