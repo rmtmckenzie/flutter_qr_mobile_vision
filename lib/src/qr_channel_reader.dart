@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:qr_mobile_vision/qr_camera.dart';
 
 class QrChannelReader {
   QrChannelReader(this.channel) {
@@ -7,8 +8,9 @@ class QrChannelReader {
       switch (call.method) {
         case 'qrRead':
           if (qrCodeHandler != null) {
-            assert(call.arguments is String);
-            qrCodeHandler!(call.arguments);
+            assert(call.arguments is List);
+            assert((call.arguments as List).length ==2);
+            qrCodeHandler!(call.arguments[0],BarcodeFormat.fromString(call.arguments[1]) );
           }
           break;
         default:
@@ -18,10 +20,10 @@ class QrChannelReader {
     });
   }
 
-  void setQrCodeHandler(ValueChanged<String?>? qrch) {
-    qrCodeHandler = qrch;
+  void setQrCodeHandler(void Function(String?, BarcodeFormats?)? handler) {
+    qrCodeHandler = handler;
   }
 
   MethodChannel channel;
-  ValueChanged<String?>? qrCodeHandler;
+  void Function(String?, BarcodeFormats?)? qrCodeHandler;
 }
