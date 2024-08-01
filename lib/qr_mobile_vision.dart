@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:qr_mobile_vision/src/barcode_formats.dart';
 import 'package:qr_mobile_vision/src/camera_direction.dart';
 import 'package:qr_mobile_vision/src/preview_details.dart';
@@ -15,7 +14,7 @@ class QrMobileVision {
   static Future<PreviewDetails> start({
     required int width,
     required int height,
-    required ValueChanged<String?> qrCodeHandler,
+    required void Function(String?, BarcodeFormats?) qrCodeHandler,
     CameraDirection cameraDirection = CameraDirection.BACK,
     List<BarcodeFormats>? formats = defaultBarcodeFormats,
   }) async {

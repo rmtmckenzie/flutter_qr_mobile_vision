@@ -86,7 +86,7 @@ class QrDetector implements OnSuccessListener<List<Barcode>>, OnFailureListener 
     @Override
     public void onSuccess(List<Barcode> firebaseVisionBarcodes) {
         for (Barcode barcode : firebaseVisionBarcodes) {
-            communicator.qrRead(barcode.getRawValue());
+            communicator.qrRead(barcode.getRawValue(),BarcodeFormats.getEnumByString(barcode.getFormat()));
         }
     }
 

@@ -96,5 +96,10 @@ public enum BarcodeFormats {
             .setBarcodeFormats(first, rest).build();
     }
 
-
+  public static String getEnumByString(int code){
+    for(BarcodeFormats e : BarcodeFormats.values()){
+      if(e.intValue==(code)) return e.name();
+    }
+    return "";
+  }
 }

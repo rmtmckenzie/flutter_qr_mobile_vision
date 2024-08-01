@@ -1,4 +1,3 @@
-import 'package:flutter/widgets.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:qr_mobile_vision/src/barcode_formats.dart';
 import 'package:qr_mobile_vision/src/camera_direction.dart';
@@ -29,7 +28,7 @@ abstract class QrMobileVisionPlatform extends PlatformInterface {
   Future<PreviewDetails> start({
     required int width,
     required int height,
-    required ValueChanged<String?> qrCodeHandler,
+    required void Function(String?, BarcodeFormats?) qrCodeHandler,
     CameraDirection cameraDirection = CameraDirection.BACK,
     List<BarcodeFormats>? formats = defaultBarcodeFormats,
   });

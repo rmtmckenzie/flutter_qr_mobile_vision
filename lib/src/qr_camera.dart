@@ -30,7 +30,7 @@ class QrCamera extends StatefulWidget {
         onError = onError ?? _defaultOnError;
 
   final BoxFit fit;
-  final ValueChanged<String?> qrCodeCallback;
+  final void Function(String?, BarcodeFormats?) qrCodeCallback;
   final Widget? child;
   final WidgetBuilder notStartedBuilder;
   final WidgetBuilder offscreenBuilder;

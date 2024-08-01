@@ -52,8 +52,8 @@ public class QrMobileVisionPlugin: NSObject, FlutterPlugin {
           targetHeight: targetHeight,
           direction: cameraDirection,
           textureRegistry: textureRegistry,
-          options: options) { [unowned self] qr in
-            self.channel.invokeMethod("qrRead", arguments: qr)
+          options: options) { [unowned self] qr,format in
+            self.channel.invokeMethod("qrRead", arguments: [qr,format])
           }
         
         reader!.start();

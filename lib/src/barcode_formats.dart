@@ -17,6 +17,16 @@ enum BarcodeFormats {
   UPC_E,
 }
 
+extension BarcodeFormat on BarcodeFormats {
+  static BarcodeFormats fromString(String? value) {
+    return BarcodeFormats.values.firstWhere(
+      (e) =>
+          e.toString().toUpperCase() == 'BarcodeFormats.$value'.toUpperCase(),
+      orElse: () => BarcodeFormats.ALL_FORMATS,
+    );
+  }
+}
+
 const defaultBarcodeFormats = [
   BarcodeFormats.ALL_FORMATS,
 ];
