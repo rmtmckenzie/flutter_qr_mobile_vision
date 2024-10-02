@@ -32,7 +32,7 @@ import io.flutter.view.TextureRegistry;
  */
 public class QrMobileVisionPlugin implements FlutterPlugin, MethodCallHandler, ActivityAware, PluginRegistry.RequestPermissionsResultListener, QrReaderCallbacks, QrReader.QRReaderStartedCallback {
   private static final String TAG = "cgr.qrmv.QrMobVisPlugin";
-  private static final int REQUEST_PERMISSION = 1;
+  private static final int REQUEST_PERMISSION = 1934726;
   private MethodChannel channel;
   private ActivityPluginBinding activityBinding;
 
