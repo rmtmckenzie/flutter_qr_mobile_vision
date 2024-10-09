@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'qr_mobile_vision'
-  s.version          = '0.0.1'
+  s.version          = '0.0.2'
   s.summary          = 'Plugin for reading QR codes using Firebase&#x27;s Mobile Vision API.'
   s.description      = <<-DESC
 Plugin for reading QR codes using Google&#x27;s Mobile Vision API.
@@ -17,6 +17,7 @@ Plugin for reading QR codes using Google&#x27;s Mobile Vision API.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
   s.swift_version = '5.0'
 
-  s.dependency 'GoogleMLKit/BarcodeScanning'
+  s.dependency 'GoogleMLKit/BarcodeScanning', '~> 7.0.0'
+  s.platform = :ios, '15.5.0'
   s.static_framework = true
 end
