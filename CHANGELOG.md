@@ -1,3 +1,11 @@
+## TBD
+
+**BREAKING CHANGES:**
+
+* [iOS] iOS 15.5.0 is now the minimum supported iOS version.
+* [iOS] Updates MLKit to version 7.0.0.
+* [iOS] Updates the minimum supported XCode version to 15.3.0.
+
 ## [5.0.1] - Feb 14, 2024
 * Fix null pointer exception on disconnect for android
 * Fix deprecated Handler
