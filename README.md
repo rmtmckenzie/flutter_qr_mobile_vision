@@ -13,9 +13,9 @@ output to show within the defined area.
 
 ## Android Models
 
-With this new version of MLKit, there are two seperate models you can use to do the barcode scanning. Currently, this
+With this new version of MLKit, there are two separate models you can use to do the barcode scanning. Currently, this
 apk chooses to use the build-in model.  This will increase your code size by ~2.2MB but will
-result in better scanning and won't require a seperate package to be downloaded in the background for barcode scanning
+result in better scanning and won't require a separate package to be downloaded in the background for barcode scanning
 to work properly.
 
 You could also use the Google Play Services and tell your app to download it on install from the play store. See the
@@ -48,43 +48,18 @@ Note that if you do this, you should tell your app to automatically download the
 
 If this doesn't work for you please open an issue.
 
-## 64 Bit Only on iOS
+## iOS
 
-Unfortunately, Google has only released  MLKit as a 64 bit binary. That means that this plugin and therefore your app
-don't support building or running on 32 bit. There were two possible approaches to dealing with this, but only one
-made it so that most users will be able to use the plugin easily.app
+For recent versions of Google's Barcode Scanning library ('GoogleMLKit/BarcodeScanning'),
+an iOS version of 15.5+ is required.
 
-When you upgrade, if you are targeting a version of iOS before 11, you'll see a warning during the `pod install`
-and your app probably won't build (at least for release). That's because it'll be trying to build the 32-bit version and
-won't find the required files.
+The podspec has not been updated to reflect this requirement as usage of older versions
+of the dependency library is still possible (and necessary if you use an older
+Firebase version). However, if you are having dependency errors when updating this plugin
+in conjunction with the Firebase libraries, ensuring that your project has a version of 
+15.5+ might be required.
 
-The easy way to solve this is by updating to build for iOS 11 and later. To do this:
-
-1) Add this line to your Podfile:
-```
-platform :ios, '11.0'
-```
-
-2) (optional) Make sure your podfile sets build versions to 11 - if you see this at the bottom of your podfile make sure
- the line setting the deployment target to 11 is in there.
-```
-post_install do |installer|
-    installer.pods_project.targets.each do |target|
-        target.build_configurations.each do |config|
-            config.build_settings['ENABLE_BITCODE'] = 'NO'
-            config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '11.0'
-        end
-    end
-end
-```
-
-3) Setting the `iOS Deployment Target` to 11 in XCode -> Runner -> Build Settings -> Deployment -> iOS Deployment Target.
-
-## Building for 64-bit before 11.0.
-
-If you absolutely need to build for devices before 11.0, you might need to use an old version of the library that supports
-32-bit. If you're willing to live without 32 bit but do need to target before 11.0, you can do that by ignoring the warning
-CocoaPods will give you, and setting XCode -> Runner -> Build Settings -> Architectures -> Architectures to `${ARCHS_STANDARD_64_BIT}`.
+The example project has been updated to reflect this.
 
 ## Usage
 
