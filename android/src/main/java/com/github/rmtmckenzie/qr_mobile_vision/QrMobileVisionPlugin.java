@@ -13,6 +13,7 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,6 @@ public class QrMobileVisionPlugin implements FlutterPlugin, MethodCallHandler, A
   private static final int REQUEST_PERMISSION = 1934726;
   private MethodChannel channel;
   private ActivityPluginBinding activityBinding;
-
   private TextureRegistry textures;
   private Integer lastHeartbeatTimeout;
   private boolean waitingForPermissionResult;
@@ -185,8 +185,8 @@ public class QrMobileVisionPlugin implements FlutterPlugin, MethodCallHandler, A
   }
 
   @Override
-  public void qrRead(String data) {
-    channel.invokeMethod("qrRead", data);
+  public void qrRead(String data, String format) {
+    channel.invokeMethod("qrRead", new ArrayList<Object>(Arrays.asList(data, format)));
   }
 
   @Override

@@ -22,7 +22,7 @@ class MethodChannelQrMobileVision extends QrMobileVisionPlatform {
   Future<PreviewDetails> start({
     required int width,
     required int height,
-    required ValueChanged<String?> qrCodeHandler,
+    required void Function(String?, BarcodeFormats?) qrCodeHandler,
     CameraDirection cameraDirection = CameraDirection.BACK,
     List<BarcodeFormats>? formats = defaultBarcodeFormats,
   }) async {

@@ -132,11 +132,11 @@ class QrReader: NSObject {
   var textureId: Int64!
   var pixelBuffer : CVPixelBuffer?
   let barcodeDetector: BarcodeScanner
-  let qrCallback: (_:String) -> Void
+    let qrCallback: (_:String, _:String) -> Void
   
   
   
-  init(targetWidth: Int, targetHeight: Int, direction: QrCameraDirection, textureRegistry: FlutterTextureRegistry, options: BarcodeScannerOptions, qrCallback: @escaping (_:String) -> Void) throws {
+    init(targetWidth: Int, targetHeight: Int, direction: QrCameraDirection, textureRegistry: FlutterTextureRegistry, options: BarcodeScannerOptions, qrCallback: @escaping (_:String,_:String) -> Void) throws {
     self.targetWidth = targetWidth
     self.targetHeight = targetHeight
     self.textureRegistry = textureRegistry
@@ -263,7 +263,7 @@ extension QrReader: AVCaptureVideoDataOutputSampleBufferDelegate {
         
         for feature in features {
           if let value = feature.rawValue {
-            self.qrCallback(value)
+            self.qrCallback(value,self.getFormatName(format: feature.format))
           }
         }
       }
@@ -291,5 +291,39 @@ extension QrReader: AVCaptureVideoDataOutputSampleBufferDelegate {
       return imageOrientation(deviceOrientation: defaultOrientation, defaultOrientation: .portrait)
     }
   }
-  
+    
+  func getFormatName (format: BarcodeFormat) -> String {
+        switch format  {
+        case .all:
+          return "ALL_FORMATS"
+        case .aztec:
+          return "AZTEC"
+        case .code128:
+          return "CODE_128"
+        case .code39:
+          return "CODE_39"
+        case .code93:
+          return "CODE_93"
+        case .codaBar:
+          return "CODABAR"
+        case .dataMatrix:
+          return "DATA_MATRIX"
+        case .EAN13:
+          return "EAN_13"
+        case .EAN8:
+          return "EAN_8"
+        case .ITF:
+          return "ITF"
+        case .PDF417:
+          return "PDF417"
+        case .qrCode:
+          return "QR_CODE"
+        case .UPCA:
+          return "UPC_A"
+        case .UPCE:
+          return "UPC_E"
+        default:
+          return "ALL_FORMATS"
+        }
+    }
 }
