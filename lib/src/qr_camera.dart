@@ -108,6 +108,7 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    print('state is $state');
     if (state == AppLifecycleState.resumed) {
       setState(() => onScreen = true);
     } else {
@@ -169,7 +170,6 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
       } else if (!onScreen) {
         return widget.offscreenBuilder(context);
       }
-
       return FutureBuilder(
         future: _asyncInitOnce,
         builder: (BuildContext context, AsyncSnapshot<PreviewDetails> details) {
