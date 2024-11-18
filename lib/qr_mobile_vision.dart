@@ -17,7 +17,6 @@ class QrMobileVision {
     required int width,
     required int height,
     required ValueChanged<BarcodeData> qrCodeHandler,
-    required int timeout,
     CameraDirection cameraDirection = CameraDirection.BACK,
     List<BarcodeFormats>? formats = defaultBarcodeFormats,
   }) async {

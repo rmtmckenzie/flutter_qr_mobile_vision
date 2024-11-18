@@ -34,6 +34,30 @@ enum QrDetectionSpeed {
   unrestricted;
 }
 
+class _Throttler {
+  Timer? _timer;
+  bool _isRunning = false;
+  final Duration duration;
+
+  _Throttler(this.duration);
+
+  void run(void Function() func) {
+    if (_isRunning) return;
+    _isRunning = true;
+    dispose();
+    func();
+    _timer = Timer(duration, () {
+      _isRunning = false;
+      dispose();
+    });
+  }
+
+  void dispose() {
+    _timer?.cancel();
+    _timer = null;
+  }
+}
+
 class QrCamera extends StatefulWidget {
   const QrCamera({
     super.key,
@@ -42,7 +66,7 @@ class QrCamera extends StatefulWidget {
     this.child,
     this.fit = BoxFit.cover,
     this.detectionSpeed = QrDetectionSpeed.noDuplicates,
-    this.timeout = 0,
+    this.timeout = 250,
     WidgetBuilder? notStartedBuilder,
     WidgetBuilder? offscreenBuilder,
     ErrorCallback? onError,
@@ -77,6 +101,7 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
   T? _ambiguate<T>(T? value) => value;
   String? _lastScannedValue;
   StreamSubscription<void>? _sub;
+  late final _throttler = _Throttler(Duration(milliseconds: widget.timeout));
   @override
   void initState() {
     super.initState();
@@ -98,6 +123,7 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
   @override
   dispose() {
     _ambiguate(WidgetsBinding.instance)!.removeObserver(this);
+    _throttler.dispose();
     _sub?.cancel();
     _sub = null;
     super.dispose();
@@ -140,7 +166,6 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
       qrCodeHandler: _qrCodeHandler,
       formats: widget.formats,
       cameraDirection: widget.cameraDirection,
-      timeout: widget.timeout,
     );
   }
 
@@ -227,7 +252,9 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
       case QrDetectionSpeed.unrestricted:
         break;
     }
-    _lastScannedValue = barcode.rawValue;
-    widget.qrCodeCallback(barcode);
+    _throttler.run(() {
+      _lastScannedValue = barcode.rawValue;
+      widget.qrCodeCallback(barcode);
+    });
   }
 }

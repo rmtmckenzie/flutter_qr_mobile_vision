@@ -68,7 +68,6 @@ void main() {
         width: 100,
         height: 100,
         qrCodeHandler: handler,
-        timeout: 0,
         formats: [BarcodeFormats.QR_CODE, BarcodeFormats.AZTEC],
         cameraDirection: CameraDirection.FRONT,
       );
