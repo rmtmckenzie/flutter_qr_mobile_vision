@@ -21,20 +21,19 @@ public class ScannedData {
     this.boundingBox = boundingBox;
   }
 
-  Map<String, Object> geJson(Float x) {
-    x = x == null ? 1 : x;
+  Map<String, Object> geJson() {
     HashMap<String, Object> result = new HashMap<>();
-    List<List<Float>> points = new ArrayList<>();
+    List<List<Integer>> points = new ArrayList<>();
     for (Point corner : corners) {
-      List<Float> point = new ArrayList<>();
-      point.add(corner.x / x);
-      point.add(corner.y / x);
+      List<Integer> point = new ArrayList<>();
+      point.add(corner.x);
+      point.add(corner.y);
       points.add(point);
     }
     result.put("corners", points);
     result.put("rawValue", rawValue);
-    result.put("width", boundingBox.width() / x);
-    result.put("height", boundingBox.height() / x);
+    result.put("width", boundingBox.width());
+    result.put("height", boundingBox.height());
     return result;
   }
 }

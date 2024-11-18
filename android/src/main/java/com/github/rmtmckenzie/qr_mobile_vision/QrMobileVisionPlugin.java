@@ -187,11 +187,7 @@ public class QrMobileVisionPlugin implements FlutterPlugin, MethodCallHandler, A
 
   @Override
   public void qrRead(ScannedData data) {
-    Float x = null;
-    if (activityBinding != null) {
-      x = ((float) activityBinding.getActivity().getResources().getDisplayMetrics().densityDpi / DisplayMetrics.DENSITY_DEFAULT);
-    }
-    channel.invokeMethod("qrRead", data.geJson(x));
+    channel.invokeMethod("qrRead", data.geJson());
   }
 
   @Override
