@@ -29,6 +29,11 @@ class ScannerController {
   Stream<void> get stream => _controller.stream;
 }
 
+enum QrDetectionSpeed {
+  noDuplicates,
+  unrestricted;
+}
+
 class QrCamera extends StatefulWidget {
   const QrCamera({
     super.key,
@@ -36,6 +41,7 @@ class QrCamera extends StatefulWidget {
     this.controller,
     this.child,
     this.fit = BoxFit.cover,
+    this.detectionSpeed = QrDetectionSpeed.noDuplicates,
     this.timeout = 0,
     WidgetBuilder? notStartedBuilder,
     WidgetBuilder? offscreenBuilder,
@@ -46,6 +52,7 @@ class QrCamera extends StatefulWidget {
         offscreenBuilder = offscreenBuilder ?? notStartedBuilder ?? _defaultOffscreenBuilder,
         onError = onError ?? _defaultOnError;
 
+  final QrDetectionSpeed detectionSpeed;
   final ScannerController? controller;
   final BoxFit fit;
   final ValueChanged<BarcodeData> qrCodeCallback;
@@ -68,6 +75,7 @@ class QrCamera extends StatefulWidget {
 class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
   // needed for flutter < 3.0 to still be supported
   T? _ambiguate<T>(T? value) => value;
+  String? _lastScannedValue;
   StreamSubscription<void>? _sub;
   @override
   void initState() {
@@ -108,7 +116,6 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    print('state is $state');
     if (state == AppLifecycleState.resumed) {
       setState(() => onScreen = true);
     } else {
@@ -130,7 +137,7 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
     return await QrMobileVision.start(
       width: (devicePixelRatio * width.toInt()).ceil(),
       height: (devicePixelRatio * height.toInt()).ceil(),
-      qrCodeHandler: widget.qrCodeCallback,
+      qrCodeHandler: _qrCodeHandler,
       formats: widget.formats,
       cameraDirection: widget.cameraDirection,
       timeout: widget.timeout,
@@ -144,6 +151,7 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
       await QrMobileVision.stop();
       setState(() {
         _asyncInitOnce = null;
+        _lastScannedValue = null;
       });
     })();
   }
@@ -209,5 +217,17 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
         },
       );
     });
+  }
+
+  void _qrCodeHandler(BarcodeData barcode) async {
+    switch (widget.detectionSpeed) {
+      case QrDetectionSpeed.noDuplicates:
+        if (_lastScannedValue != null && barcode.rawValue == _lastScannedValue) return;
+        break;
+      case QrDetectionSpeed.unrestricted:
+        break;
+    }
+    _lastScannedValue = barcode.rawValue;
+    widget.qrCodeCallback(barcode);
   }
 }
