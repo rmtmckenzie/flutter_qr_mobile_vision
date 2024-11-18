@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:qr_mobile_vision/src/barcode_data.dart';
 
 class QrChannelReader {
   QrChannelReader(this.channel) {
@@ -7,8 +8,9 @@ class QrChannelReader {
       switch (call.method) {
         case 'qrRead':
           if (qrCodeHandler != null) {
-            assert(call.arguments is String);
-            qrCodeHandler!(call.arguments);
+            final data = call.arguments;
+            assert(data is Map);
+            qrCodeHandler!(BarcodeData.fromNative(data));
           }
           break;
         default:
@@ -18,10 +20,10 @@ class QrChannelReader {
     });
   }
 
-  void setQrCodeHandler(ValueChanged<String?>? qrch) {
+  void setQrCodeHandler(ValueChanged<BarcodeData>? qrch) {
     qrCodeHandler = qrch;
   }
 
   MethodChannel channel;
-  ValueChanged<String?>? qrCodeHandler;
+  ValueChanged<BarcodeData>? qrCodeHandler;
 }

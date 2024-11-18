@@ -29,7 +29,7 @@ class MyApp extends StatefulWidget {
 }
 
 class MyAppState extends State<MyApp> {
-  String? qr;
+  BarcodeData? qr;
   bool camState = false;
   bool dirState = false;
 
@@ -67,12 +67,14 @@ class MyAppState extends State<MyApp> {
                           width: 300.0,
                           height: 600.0,
                           child: QrCamera(
+                            // timeout: 1000,
                             onError: (context, error) => Text(
                               error.toString(),
                               style: const TextStyle(color: Colors.red),
                             ),
                             cameraDirection: dirState ? CameraDirection.FRONT : CameraDirection.BACK,
                             qrCodeCallback: (code) {
+                              debugPrint(code.toString());
                               setState(() {
                                 qr = code;
                               });
@@ -91,7 +93,7 @@ class MyAppState extends State<MyApp> {
                         ),
                       )
                     : const Center(child: Text("Camera inactive"))),
-            Text("QRCODE: $qr"),
+            Text("QRCODE: ${qr?.rawValue}"),
           ],
         ),
       ),

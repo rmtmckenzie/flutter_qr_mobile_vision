@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:qr_mobile_vision/qr_mobile_vision.dart';
+import 'package:qr_mobile_vision/src/barcode_data.dart';
 import 'package:qr_mobile_vision/src/preview.dart';
 import 'package:qr_mobile_vision/src/preview_details.dart';
 
@@ -20,6 +21,7 @@ class QrCamera extends StatefulWidget {
     required this.qrCodeCallback,
     this.child,
     this.fit = BoxFit.cover,
+    this.timeout = 0,
     WidgetBuilder? notStartedBuilder,
     WidgetBuilder? offscreenBuilder,
     ErrorCallback? onError,
@@ -30,13 +32,14 @@ class QrCamera extends StatefulWidget {
         onError = onError ?? _defaultOnError;
 
   final BoxFit fit;
-  final ValueChanged<String?> qrCodeCallback;
+  final ValueChanged<BarcodeData> qrCodeCallback;
   final Widget? child;
   final WidgetBuilder notStartedBuilder;
   final WidgetBuilder offscreenBuilder;
   final ErrorCallback onError;
   final List<BarcodeFormats>? formats;
   final CameraDirection cameraDirection;
+  final int timeout;
 
   static toggleFlash() {
     QrMobileVision.toggleFlash();
@@ -105,6 +108,7 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
       qrCodeHandler: widget.qrCodeCallback,
       formats: widget.formats,
       cameraDirection: widget.cameraDirection,
+      timeout: widget.timeout,
     );
   }
 

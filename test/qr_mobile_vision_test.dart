@@ -2,6 +2,7 @@ import 'package:flutter/src/foundation/basic_types.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:qr_mobile_vision/qr_mobile_vision.dart';
+import 'package:qr_mobile_vision/src/barcode_data.dart';
 import 'package:qr_mobile_vision/src/preview_details.dart';
 import 'package:qr_mobile_vision/src/qr_mobile_vision_method_channel.dart';
 import 'package:qr_mobile_vision/src/qr_mobile_vision_platform_interface.dart';
@@ -18,7 +19,7 @@ class MockQrMobileVisionPlatform with MockPlatformInterfaceMixin implements QrMo
   Future<PreviewDetails> start({
     required int width,
     required int height,
-    required ValueChanged<String?> qrCodeHandler,
+    required ValueChanged<BarcodeData> qrCodeHandler,
     CameraDirection cameraDirection = CameraDirection.BACK,
     List<BarcodeFormats>? formats = defaultBarcodeFormats,
   }) async {
@@ -62,11 +63,12 @@ void main() {
     });
 
     test('start', () async {
-      handler(String? code) => print(code);
+      handler(BarcodeData code) => print(code);
       final details = await QrMobileVision.start(
         width: 100,
         height: 100,
         qrCodeHandler: handler,
+        timeout: 0,
         formats: [BarcodeFormats.QR_CODE, BarcodeFormats.AZTEC],
         cameraDirection: CameraDirection.FRONT,
       );

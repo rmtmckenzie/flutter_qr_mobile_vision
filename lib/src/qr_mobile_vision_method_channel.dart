@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:qr_mobile_vision/src/barcode_data.dart';
 import 'package:qr_mobile_vision/src/barcode_formats.dart';
 import 'package:qr_mobile_vision/src/camera_direction.dart';
 import 'package:qr_mobile_vision/src/preview_details.dart';
@@ -22,7 +23,7 @@ class MethodChannelQrMobileVision extends QrMobileVisionPlatform {
   Future<PreviewDetails> start({
     required int width,
     required int height,
-    required ValueChanged<String?> qrCodeHandler,
+    required ValueChanged<BarcodeData> qrCodeHandler,
     CameraDirection cameraDirection = CameraDirection.BACK,
     List<BarcodeFormats>? formats = defaultBarcodeFormats,
   }) async {
