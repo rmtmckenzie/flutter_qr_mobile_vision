@@ -23,11 +23,17 @@ final class BarcodeData {
     } else {
       corners = [
         for (int i = 0; i < items.length; i++)
-          Offset(((items[i] as List).first as num).toDouble(), ((items[i] as List).last  as num).toDouble())
+          Offset(((items[i] as List).first as num).toDouble(), ((items[i] as List).last as num).toDouble())
       ];
     }
     return BarcodeData(corners: corners, rawValue: rawValue, size: size);
   }
+
+  BarcodeData normalize(double pr) => BarcodeData(
+        corners: corners.map((e) => e / pr).toList(),
+        rawValue: rawValue,
+        size: size / pr,
+      );
 
   @override
   String toString() => '$rawValue\n$size\n${corners.join(', ')}';
