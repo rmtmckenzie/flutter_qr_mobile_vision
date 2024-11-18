@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:qr_mobile_vision/qr_mobile_vision.dart';
 import 'package:qr_mobile_vision/src/barcode_data.dart';
+import 'package:qr_mobile_vision/src/exceptions.dart';
 import 'package:qr_mobile_vision/src/preview.dart';
 import 'package:qr_mobile_vision/src/preview_details.dart';
 
@@ -13,7 +14,7 @@ Widget _defaultOnError(BuildContext context, Object? error) {
   return const Text("Error reading from camera...");
 }
 
-typedef ErrorCallback = Widget Function(BuildContext context, Object? error);
+typedef ErrorCallback = Widget Function(BuildContext context, QrException error);
 
 class QrCamera extends StatefulWidget {
   const QrCamera({
@@ -156,7 +157,7 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
             case ConnectionState.done:
               if (details.hasError) {
                 debugPrint(details.error.toString());
-                return widget.onError(context, details.error);
+                return widget.onError(context, QrException.fromError(details.error));
               }
               Widget preview = SizedBox(
                 width: constraints.maxWidth,

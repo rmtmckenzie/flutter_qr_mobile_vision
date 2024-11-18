@@ -1,5 +1,19 @@
+import 'package:flutter/services.dart';
+
 sealed class QrException implements Exception {
   const QrException();
+
+  factory QrException.fromError(Object? error) {
+    switch (error) {
+      case PlatformException(code: final code):
+        if (code == 'ALREADY_RUNNING') return AlreadyRunningException();
+        if (code == 'QRREADER_ERROR') return CameraPermissionException();
+        if (code == 'noHardware') return NoCameraException();
+        return UnknownException();
+      default:
+        return UnknownException();
+    }
+  }
 }
 
 /// ALREADY_RUNNING
