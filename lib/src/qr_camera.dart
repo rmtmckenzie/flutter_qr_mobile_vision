@@ -19,7 +19,7 @@ typedef ErrorCallback = Widget Function(BuildContext context, QrException error)
 class ScannerController {
   final _controller = StreamController<void>.broadcast();
 
-  void sendFeedback(bool isSuccess) {
+  void restart() {
     if (_controller.isClosed) return;
     _controller.add(null);
   }
