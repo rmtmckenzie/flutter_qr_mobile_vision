@@ -16,10 +16,24 @@ Widget _defaultOnError(BuildContext context, Object? error) {
 
 typedef ErrorCallback = Widget Function(BuildContext context, QrException error);
 
+class ScannerController {
+  final _controller = StreamController<void>.broadcast();
+
+  void sendFeedback(bool isSuccess) {
+    if (_controller.isClosed) return;
+    _controller.add(null);
+  }
+
+  void dispose() => _controller.close();
+
+  Stream<void> get stream => _controller.stream;
+}
+
 class QrCamera extends StatefulWidget {
   const QrCamera({
     super.key,
     required this.qrCodeCallback,
+    this.controller,
     this.child,
     this.fit = BoxFit.cover,
     this.timeout = 0,
@@ -32,6 +46,7 @@ class QrCamera extends StatefulWidget {
         offscreenBuilder = offscreenBuilder ?? notStartedBuilder ?? _defaultOffscreenBuilder,
         onError = onError ?? _defaultOnError;
 
+  final ScannerController? controller;
   final BoxFit fit;
   final ValueChanged<BarcodeData> qrCodeCallback;
   final Widget? child;
@@ -53,11 +68,17 @@ class QrCamera extends StatefulWidget {
 class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
   // needed for flutter < 3.0 to still be supported
   T? _ambiguate<T>(T? value) => value;
-
+  StreamSubscription<void>? _sub;
   @override
   void initState() {
     super.initState();
     _ambiguate(WidgetsBinding.instance)!.addObserver(this);
+    if (widget.controller != null) {
+      _sub?.cancel();
+      _sub = widget.controller?.stream.listen((_) {
+        restart();
+      });
+    }
   }
 
   @override
@@ -69,6 +90,8 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
   @override
   dispose() {
     _ambiguate(WidgetsBinding.instance)!.removeObserver(this);
+    _sub?.cancel();
+    _sub = null;
     super.dispose();
   }
 
