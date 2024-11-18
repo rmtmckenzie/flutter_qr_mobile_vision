@@ -254,8 +254,8 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
     }
     _throttler.run(() {
       _lastScannedValue = barcode.rawValue;
-      // final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
-      widget.qrCodeCallback(barcode);
+      final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+      widget.qrCodeCallback(barcode.normalize(devicePixelRatio));
     });
   }
 }
