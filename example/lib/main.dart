@@ -64,31 +64,38 @@ class MyAppState extends State<MyApp> {
                 child: camState
                     ? Center(
                         child: SizedBox(
-                          width: 300.0,
-                          height: 600.0,
-                          child: QrCamera(
-                            // timeout: 1000,
-                            onError: (context, error) => Text(
-                              error.toString(),
-                              style: const TextStyle(color: Colors.red),
-                            ),
-                            cameraDirection: dirState ? CameraDirection.FRONT : CameraDirection.BACK,
-                            qrCodeCallback: (code) {
-                              debugPrint(code.toString());
-                              setState(() {
-                                qr = code;
-                              });
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.transparent,
-                                border: Border.all(
-                                  color: Colors.orange,
-                                  width: 10.0,
-                                  style: BorderStyle.solid,
+                          width: double.infinity,
+                          height: 400.0,
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: QrCamera(
+                                  timeout: 1000,
+                                  detectionSpeed: QrDetectionSpeed.unrestricted,
+                                  onError: (context, error) => Text(
+                                    error.toString(),
+                                    style: const TextStyle(color: Colors.red),
+                                  ),
+                                  cameraDirection: dirState ? CameraDirection.FRONT : CameraDirection.BACK,
+                                  qrCodeCallback: (code) {
+                                    debugPrint(code.toString());
+                                    setState(() {
+                                      qr = code;
+                                    });
+                                  },
                                 ),
                               ),
-                            ),
+                              if (qr != null)
+                                Positioned(
+                                  left: qr!.getLeft,
+                                  top: qr!.getTop,
+                                  child: Container(
+                                    width: qr!.barcodeSize.width,
+                                    height: qr!.barcodeSize.height,
+                                    decoration: BoxDecoration(border: Border.all()),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       )

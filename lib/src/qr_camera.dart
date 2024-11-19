@@ -158,12 +158,14 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
   bool onScreen = true;
   Future<PreviewDetails>? _asyncInitOnce;
 
-  Future<PreviewDetails> _asyncInit(num width, num height) async {
-    final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+  Future<PreviewDetails> _asyncInit(double width, double height) async {
+    // final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
     return await QrMobileVision.start(
-      width: (devicePixelRatio * width.toInt()).ceil(),
-      height: (devicePixelRatio * height.toInt()).ceil(),
-      qrCodeHandler: _qrCodeHandler,
+      width: width.ceil(),
+      height: height.ceil(),
+      // width: (devicePixelRatio * width).ceil(),
+      // height: (devicePixelRatio * height).ceil(),
+      qrCodeHandler: (value) => _qrCodeHandler(value, Size(width, height)),
       formats: widget.formats,
       cameraDirection: widget.cameraDirection,
     );
@@ -244,7 +246,7 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
     });
   }
 
-  void _qrCodeHandler(BarcodeData barcode) async {
+  void _qrCodeHandler(BarcodeData barcode, Size cameraSize) async {
     switch (widget.detectionSpeed) {
       case QrDetectionSpeed.noDuplicates:
         if (_lastScannedValue != null && barcode.rawValue == _lastScannedValue) return;
@@ -254,8 +256,19 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
     }
     _throttler.run(() {
       _lastScannedValue = barcode.rawValue;
-      final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
-      widget.qrCodeCallback(barcode.normalize(devicePixelRatio));
+      widget.qrCodeCallback(barcode._normalize(cameraSize, widget.fit));
     });
+  }
+}
+
+extension _BarcodeDataExt on BarcodeData {
+  BarcodeData _normalize(Size cameraSize, BoxFit boxFit) {
+    return BarcodeData(
+      corners: corners,
+      rawValue: rawValue,
+      barcodeSize: barcodeSize,
+      cameraSize: cameraSize,
+      boxFit: boxFit,
+    );
   }
 }
