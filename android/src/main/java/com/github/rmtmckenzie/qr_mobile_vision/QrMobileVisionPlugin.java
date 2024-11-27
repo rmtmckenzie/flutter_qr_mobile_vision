@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.Application;
 import android.content.pm.PackageManager;
+import android.util.DisplayMetrics;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -185,8 +186,8 @@ public class QrMobileVisionPlugin implements FlutterPlugin, MethodCallHandler, A
   }
 
   @Override
-  public void qrRead(String data) {
-    channel.invokeMethod("qrRead", data);
+  public void qrRead(ScannedData data) {
+    channel.invokeMethod("qrRead", data.geJson());
   }
 
   @Override

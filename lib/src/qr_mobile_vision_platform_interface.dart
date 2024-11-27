@@ -5,6 +5,8 @@ import 'package:qr_mobile_vision/src/camera_direction.dart';
 import 'package:qr_mobile_vision/src/preview_details.dart';
 import 'package:qr_mobile_vision/src/qr_mobile_vision_method_channel.dart';
 
+import 'barcode_data.dart';
+
 abstract class QrMobileVisionPlatform extends PlatformInterface {
   /// Constructs a QrMobileVisionPlatform.
   QrMobileVisionPlatform() : super(token: _token);
@@ -29,7 +31,7 @@ abstract class QrMobileVisionPlatform extends PlatformInterface {
   Future<PreviewDetails> start({
     required int width,
     required int height,
-    required ValueChanged<String?> qrCodeHandler,
+    required ValueChanged<BarcodeData> qrCodeHandler,
     CameraDirection cameraDirection = CameraDirection.BACK,
     List<BarcodeFormats>? formats = defaultBarcodeFormats,
   });
