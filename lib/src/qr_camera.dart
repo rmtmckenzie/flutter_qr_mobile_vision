@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:qr_mobile_vision/qr_mobile_vision.dart';
-import 'package:qr_mobile_vision/src/preview.dart';
+import 'package:qr_mobile_vision/src/preview.dart' as qr_camera_preview;
 import 'package:qr_mobile_vision/src/preview_details.dart';
 
 Widget _defaultNotStartedBuilder(BuildContext context) => const Text("Camera Loading ...");
@@ -157,7 +157,7 @@ class QrCameraState extends State<QrCamera> with WidgetsBindingObserver {
               Widget preview = SizedBox(
                 width: constraints.maxWidth,
                 height: constraints.maxHeight,
-                child: Preview(
+                child: qr_camera_preview.Preview(
                   previewDetails: details.data!,
                   targetWidth: constraints.maxWidth,
                   targetHeight: constraints.maxHeight,
