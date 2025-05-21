@@ -1,7 +1,11 @@
+## [5.0.3] - May 21, 2025
+* Fix Preview conflict with new Flutter version
+* Bump dependencies
+
 ## [5.0.2] - Oct 21, 2024
 * Fix permission conflict on android
 * Bump dependencies
-c
+
 ## [5.0.1] - Feb 14, 2024
 * Fix null pointer exception on disconnect for android
 * Fix deprecated Handler
