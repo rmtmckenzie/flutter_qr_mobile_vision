@@ -51,7 +51,6 @@ class Preview extends StatelessWidget {
             nativeRotation = 270;
             break;
           case NativeDeviceOrientation.unknown:
-          default:
             break;
         }
 
