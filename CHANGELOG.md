@@ -1,3 +1,8 @@
+## [6.0.0] - May 28, 2025
+* Support 16 KB page sizes
+* Bump android MLKit version
+* Match MLKit minimum sdk version (26)
+
 ## [5.0.3] - May 21, 2025
 * Fix Preview conflict with new Flutter version
 * Bump dependencies

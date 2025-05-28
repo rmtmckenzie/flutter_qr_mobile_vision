@@ -35,11 +35,11 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion 21
+        minSdkVersion 26
     }
 
     dependencies {
-        implementation 'com.google.mlkit:barcode-scanning:17.2.0'
+        implementation 'com.google.mlkit:barcode-scanning:[17.3.0, 18.0.0)'
         testImplementation 'junit:junit:4.13.2'
         testImplementation 'org.mockito:mockito-core:5.0.0'
     }
