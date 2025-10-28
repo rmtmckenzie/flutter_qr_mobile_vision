@@ -1,3 +1,7 @@
+## [6.0.2] - Oct 28, 2025
+* Update compile sdk to 36
+* Update build tools version.
+
 ## [6.0.1] - Oct 8, 2025
 * Bump dependencies
 
