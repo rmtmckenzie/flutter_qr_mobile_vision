@@ -1,3 +1,6 @@
+## [6.0.3] - Sep 6, 2026
+* Bump dependencies (device info plus)
+
 ## [6.0.2] - Oct 28, 2025
 * Update compile sdk to 36
 * Update build tools version.
